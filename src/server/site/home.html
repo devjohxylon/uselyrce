@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Usely — Rust Console admin panel</title>
-  <meta name="description" content="The easiest Rust Console admin panel — kit builder, live players, kick/ban, RCON, and Discord staff access. Your panel at you.usely.dev." />
+  <meta name="description" content="Usely is the admin panel and Discord bot for Rust Console Edition. Kits, players, RCON, staff roles — your panel at you.usely.dev." />
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -85,15 +85,14 @@
     .btn-ghost:hover { border-color: var(--chrome-dim); }
 
     .hero {
-      position: relative;
       min-height: calc(100vh - 5rem);
       display: flex;
       flex-direction: column;
       justify-content: center;
       padding: 3rem 0 4rem;
-      gap: 1.35rem;
-      max-width: 40rem;
-      animation: rise .55s ease both;
+      gap: 1.2rem;
+      max-width: 38rem;
+      animation: rise .5s ease both;
     }
     .hero-mark {
       display: flex;
@@ -113,7 +112,7 @@
     }
     .hero h1 {
       margin: 0;
-      font-size: clamp(1.45rem, 3vw, 1.85rem);
+      font-size: clamp(1.4rem, 2.8vw, 1.75rem);
       font-weight: 500;
       line-height: 1.3;
       letter-spacing: -.015em;
@@ -122,18 +121,9 @@
     .hero p {
       margin: 0;
       color: var(--muted);
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       line-height: 1.55;
-      max-width: 32rem;
-    }
-    .hero p code {
-      font-family: var(--mono);
-      font-size: .86em;
-      color: var(--chrome);
-      background: var(--bg3);
-      border: 1px solid var(--line);
-      padding: .1rem .4rem;
-      border-radius: 3px;
+      max-width: 34rem;
     }
     .cta-row { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .35rem; }
 
@@ -142,7 +132,7 @@
       border-top: 1px solid var(--line);
     }
     section.block > .label {
-      margin: 0 0 1.5rem;
+      margin: 0 0 1.75rem;
       font-size: .72rem;
       font-family: var(--mono);
       letter-spacing: .16em;
@@ -150,21 +140,31 @@
       color: var(--chrome-dim);
       font-weight: 500;
     }
-    .gets {
+
+    .features {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem 1.75rem;
+      gap: 0;
+      border-top: 1px solid var(--line);
     }
-    .gets h2 {
-      margin: 0 0 .4rem;
-      font-size: 1.05rem;
+    .feat {
+      display: grid;
+      grid-template-columns: 11rem 1fr;
+      gap: 1.5rem;
+      padding: 1.35rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .feat h2 {
+      margin: 0;
+      font-size: .95rem;
       font-weight: 600;
+      color: var(--chrome);
     }
-    .gets p {
+    .feat p {
       margin: 0;
       color: var(--muted);
-      font-size: .92rem;
-      line-height: 1.5;
+      font-size: .95rem;
+      line-height: 1.55;
+      max-width: 36rem;
     }
 
     .plans {
@@ -215,14 +215,15 @@
     footer a:hover { color: var(--text); }
 
     @keyframes rise {
-      from { transform: translateY(12px); opacity: .6; }
-      to { transform: none; opacity: 1; }
+      from { transform: translateY(10px); }
+      to { transform: none; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .hero { animation: none; opacity: 1; }
+      .hero { animation: none; }
     }
     @media (max-width: 800px) {
-      .gets, .plans { grid-template-columns: 1fr; }
+      .plans { grid-template-columns: 1fr; }
+      .feat { grid-template-columns: 1fr; gap: .4rem; }
       .hero { min-height: auto; padding: 2.5rem 0 3rem; }
     }
   </style>
@@ -243,8 +244,8 @@
         <img src="/logo.png" alt="" />
         <div class="name">USELY</div>
       </div>
-      <h1>The easiest admin panel for Rust Console.</h1>
-      <p>See who’s online, kick and ban in one click, build custom kits with a visual editor, run broadcasts and wipe schedules, and drop straight into RCON when you need it. Discord bot included — map staff roles and your mods are in. Your panel lives at <code>you.usely.dev</code>.</p>
+      <h1>Admin panel + Discord bot for Rust Console.</h1>
+      <p>Built for Nitrado hosts who need a real staff panel — not a spreadsheet and a shared RCON password.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="/signup">Get started</a>
         <a class="btn btn-ghost" href="/pricing">Pricing</a>
@@ -252,19 +253,27 @@
     </section>
 
     <section class="block">
-      <p class="label">Included</p>
-      <div class="gets">
-        <div>
+      <p class="label">What’s in Usely</p>
+      <div class="features">
+        <div class="feat">
+          <h2>Admin panel</h2>
+          <p>Browser dashboard for your server. See who’s online, kick or ban players, send broadcasts, manage wipe countdown, and run RCON commands when you need the console.</p>
+        </div>
+        <div class="feat">
           <h2>Kit builder</h2>
-          <p>Drag items into kits, set cooldowns and limits, push them live — no JSON editing.</p>
+          <p>Click items from the Console catalog to build kits, set cooldowns and claim limits, then save. Players redeem them in-game through the bot.</p>
         </div>
-        <div>
-          <h2>Staff that just works</h2>
-          <p>Discord bot included. Map roles to kick, ban, kits, or full RCON. Mods sign in themselves.</p>
+        <div class="feat">
+          <h2>Discord bot</h2>
+          <p>Included with every plan. Invite it to your Discord, map roles to permissions (kick, ban, kits, RCON, etc.), and staff sign in with Discord — no shared access keys.</p>
         </div>
-        <div>
-          <h2>Multi-server ready</h2>
-          <p>One workspace, as many Nitrado boxes as your plan allows. Switch servers from the header.</p>
+        <div class="feat">
+          <h2>Your URL</h2>
+          <p>Each community gets its own panel address, like <span style="font-family:var(--mono);color:var(--chrome);font-size:.9em">astral.usely.dev</span>. Owners use email login; staff use Discord.</p>
+        </div>
+        <div class="feat">
+          <h2>Multi-server</h2>
+          <p>Add more than one Nitrado WebRCON endpoint on Pro and Network. Switch which server you’re managing from the panel header.</p>
         </div>
       </div>
     </section>
