@@ -184,58 +184,6 @@
       color: var(--chrome);
     }
 
-    /* ——— pricing ——— */
-    .plans {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-    }
-    .plan {
-      background: var(--bg2);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 1.5rem 1.35rem;
-      display: grid;
-      gap: .35rem;
-      align-content: start;
-      transition: border-color .15s ease;
-    }
-    .plan:hover { border-color: var(--line2); }
-    .plan.hot {
-      border-color: rgba(215,221,230,.3);
-      background:
-        linear-gradient(180deg, rgba(215,221,230,.05), transparent 45%),
-        var(--bg3);
-    }
-    .plan .nm {
-      font-family: var(--mono);
-      font-size: .68rem;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: var(--chrome-dim);
-    }
-    .plan.hot .nm { color: var(--chrome); }
-    .plan .servers {
-      font-size: .95rem;
-      font-weight: 500;
-      color: var(--muted);
-      margin-top: .15rem;
-    }
-    .plan .pr {
-      font-size: 2.15rem;
-      font-weight: 700;
-      letter-spacing: -.03em;
-      line-height: 1;
-      margin: .85rem 0 1.25rem;
-    }
-    .plan .pr span {
-      font-size: .85rem;
-      color: var(--muted);
-      font-weight: 500;
-      letter-spacing: 0;
-    }
-    .plan .btn { width: 100%; }
-
     footer {
       border-top: 1px solid var(--line);
       padding: 1.75rem 0 2.5rem;
@@ -259,7 +207,6 @@
 
     @media (max-width: 820px) {
       .wrap { width: calc(100% - 2.25rem); }
-      .plans { grid-template-columns: 1fr; }
       .feat {
         grid-template-columns: 1fr;
         gap: .45rem;
@@ -321,30 +268,6 @@
         <div class="feat">
           <h2>Multi-server</h2>
           <p>Pro and Network support more than one WebRCON connection. Switch the active server from the panel header.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="block" id="pricing">
-      <p class="label">Pricing</p>
-      <div class="plans">
-        <div class="plan">
-          <div class="nm">Basic</div>
-          <div class="servers">1 server</div>
-          <div class="pr">$20 <span>/ mo</span></div>
-          <a class="btn btn-ghost" href="/signup?plan=basic">Choose Basic</a>
-        </div>
-        <div class="plan hot">
-          <div class="nm">Pro</div>
-          <div class="servers">2 servers</div>
-          <div class="pr">$49 <span>/ mo</span></div>
-          <a class="btn btn-primary" href="/signup?plan=pro">Choose Pro</a>
-        </div>
-        <div class="plan">
-          <div class="nm">Network</div>
-          <div class="servers">2+ servers</div>
-          <div class="pr">$99 <span>/ mo</span></div>
-          <a class="btn btn-ghost" href="/signup?plan=network">Choose Network</a>
         </div>
       </div>
     </section>
