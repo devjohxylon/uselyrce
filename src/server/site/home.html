@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Usely — Rust Console admin</title>
-  <meta name="description" content="Kick, ban, kits, and RCON for Rust Console. Your panel at you.usely.dev." />
+  <title>Usely — Rust Console admin panel</title>
+  <meta name="description" content="The easiest admin panel for Rust Console. Players, kits, bans, RCON — Discord bot included. Your panel at you.usely.dev." />
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,7 +14,6 @@
       --bg: #050506;
       --bg2: #0c0d10;
       --bg3: #12141a;
-      --bg-elev: #181b22;
       --line: rgba(255,255,255,.07);
       --line2: rgba(255,255,255,.14);
       --text: #f0f2f5;
@@ -23,7 +22,6 @@
       --chrome: #d7dde6;
       --chrome-dim: #8a93a0;
       --accent: #e8edf4;
-      --ok: #5ed9a0;
       --radius: 4px;
       --font: "Space Grotesk", system-ui, sans-serif;
       --mono: "JetBrains Mono", ui-monospace, monospace;
@@ -34,11 +32,14 @@
       margin: 0;
       font-family: var(--font);
       color: var(--text);
-      background: var(--bg);
+      background:
+        radial-gradient(900px 520px at 70% -5%, rgba(215,221,230,.07), transparent 55%),
+        radial-gradient(700px 400px at 10% 40%, rgba(215,221,230,.03), transparent 50%),
+        var(--bg);
       min-height: 100vh;
     }
     a { color: inherit; text-decoration: none; }
-    .wrap { width: min(1120px, calc(100% - 2.5rem)); margin: 0 auto; }
+    .wrap { width: min(1080px, calc(100% - 2.5rem)); margin: 0 auto; }
 
     .nav {
       display: flex;
@@ -46,8 +47,6 @@
       justify-content: space-between;
       padding: 1.15rem 0;
       gap: 1rem;
-      position: relative;
-      z-index: 2;
     }
     .brand {
       display: flex;
@@ -78,58 +77,54 @@
       font-size: .9rem;
       cursor: pointer;
       border-radius: var(--radius);
-      transition: background .15s ease, border-color .15s ease, color .15s ease;
+      transition: background .15s ease, border-color .15s ease;
     }
     .btn-primary { background: var(--accent); color: #0b0c0e; }
     .btn-primary:hover { background: #fff; }
     .btn-ghost { background: transparent; border-color: var(--line2); color: var(--text); }
     .btn-ghost:hover { border-color: var(--chrome-dim); }
 
-    /* ——— Hero: one composition ——— */
     .hero {
-      min-height: calc(100vh - 4.5rem);
-      display: grid;
-      grid-template-columns: 1fr 1.15fr;
-      gap: 2.5rem;
-      align-items: center;
-      padding: 1.5rem 0 3rem;
+      position: relative;
+      min-height: calc(100vh - 5rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 0 4rem;
+      gap: 1.35rem;
+      max-width: 40rem;
+      animation: rise .55s ease both;
     }
-    .hero-copy {
-      display: grid;
-      gap: 1.15rem;
-      max-width: 28rem;
-      opacity: 0;
-      animation: rise .7s ease .1s forwards;
-    }
-    .hero-brand {
+    .hero-mark {
       display: flex;
       align-items: center;
-      gap: .85rem;
+      gap: 1rem;
     }
-    .hero-brand img {
-      width: 52px;
-      height: 52px;
-      border-radius: 12px;
+    .hero-mark img {
+      width: clamp(56px, 8vw, 72px);
+      height: clamp(56px, 8vw, 72px);
+      border-radius: 14px;
     }
-    .hero-brand .name {
-      font-size: clamp(2.6rem, 5.5vw, 3.6rem);
+    .hero-mark .name {
+      font-size: clamp(3rem, 8vw, 4.5rem);
       font-weight: 700;
-      letter-spacing: .12em;
+      letter-spacing: .14em;
       line-height: 1;
     }
     .hero h1 {
       margin: 0;
-      font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+      font-size: clamp(1.45rem, 3vw, 1.85rem);
       font-weight: 500;
-      line-height: 1.25;
-      letter-spacing: -.01em;
+      line-height: 1.3;
+      letter-spacing: -.015em;
       color: var(--chrome);
     }
     .hero p {
       margin: 0;
       color: var(--muted);
-      font-size: 1rem;
+      font-size: 1.05rem;
       line-height: 1.55;
+      max-width: 32rem;
     }
     .hero p code {
       font-family: var(--mono);
@@ -137,119 +132,33 @@
       color: var(--chrome);
       background: var(--bg3);
       border: 1px solid var(--line);
-      padding: .12rem .4rem;
+      padding: .1rem .4rem;
       border-radius: 3px;
     }
-    .cta-row { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .2rem; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .35rem; }
 
-    .hero-visual {
-      opacity: 0;
-      animation: rise .8s ease .22s forwards;
-      position: relative;
-    }
-    .panel-mock {
+    .url-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      margin-top: .5rem;
+      padding: .55rem .85rem;
       border: 1px solid var(--line2);
       border-radius: var(--radius);
       background: var(--bg2);
-      overflow: hidden;
-      box-shadow: 0 28px 80px rgba(0,0,0,.55);
-      display: grid;
-      grid-template-columns: 9.5rem 1fr;
-      min-height: 320px;
-    }
-    .pm-side {
-      border-right: 1px solid var(--line);
-      background: var(--bg);
-      padding: 1rem .85rem;
-      display: grid;
-      gap: .45rem;
-      align-content: start;
-    }
-    .pm-side .mark {
-      display: flex;
-      align-items: center;
-      gap: .45rem;
-      font-size: .65rem;
-      font-weight: 700;
-      letter-spacing: .14em;
-      margin-bottom: .6rem;
-      color: var(--chrome);
-    }
-    .pm-side .mark img { width: 18px; height: 18px; border-radius: 4px; }
-    .pm-nav {
-      font-size: .72rem;
-      color: var(--faint);
-      padding: .35rem .45rem;
-      border-radius: 3px;
-    }
-    .pm-nav.on {
-      background: var(--bg3);
-      color: var(--text);
-    }
-    .pm-main { padding: 1rem 1.1rem; display: grid; gap: .85rem; align-content: start; }
-    .pm-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 1rem;
-    }
-    .pm-top h2 {
-      margin: 0;
-      font-size: .95rem;
-      font-weight: 600;
-    }
-    .pm-top span {
       font-family: var(--mono);
-      font-size: .65rem;
-      color: var(--ok);
-      letter-spacing: .04em;
+      font-size: .82rem;
+      color: var(--chrome-dim);
+      width: fit-content;
+      animation: rise .6s ease .08s both;
     }
-    .pm-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: .5rem;
-    }
-    .pm-stat {
-      border: 1px solid var(--line);
-      background: var(--bg3);
-      padding: .65rem .7rem;
-      border-radius: var(--radius);
-    }
-    .pm-stat .l {
-      font-family: var(--mono);
-      font-size: .58rem;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      color: var(--faint);
-    }
-    .pm-stat .v {
-      font-size: 1.15rem;
-      font-weight: 600;
-      margin-top: .2rem;
-    }
-    .pm-list {
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .pm-row {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 1rem;
-      padding: .5rem .75rem;
-      font-size: .78rem;
-      border-top: 1px solid var(--line);
-      color: var(--muted);
-    }
-    .pm-row:first-child { border-top: 0; color: var(--faint); font-family: var(--mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; }
-    .pm-row b { color: var(--text); font-weight: 500; }
+    .url-chip strong { color: var(--chrome); font-weight: 600; }
 
-    /* ——— Sections ——— */
     section.block {
-      padding: 3.25rem 0;
+      padding: 3rem 0;
       border-top: 1px solid var(--line);
     }
-    section.block h2 {
+    section.block > .label {
       margin: 0 0 1.5rem;
       font-size: .72rem;
       font-family: var(--mono);
@@ -261,9 +170,9 @@
     .gets {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 2rem 1.5rem;
+      gap: 2rem 1.75rem;
     }
-    .gets h3 {
+    .gets h2 {
       margin: 0 0 .4rem;
       font-size: 1.05rem;
       font-weight: 600;
@@ -288,7 +197,7 @@
       background: var(--bg2);
       padding: 1.35rem 1.25rem;
       display: grid;
-      gap: .55rem;
+      gap: .5rem;
       align-content: start;
     }
     .plan.hot { background: var(--bg3); }
@@ -306,8 +215,8 @@
       line-height: 1;
     }
     .plan .pr span { font-size: .85rem; color: var(--muted); font-weight: 500; }
-    .plan .desc { color: var(--muted); font-size: .88rem; margin: 0 0 .4rem; }
-    .plan a { justify-self: start; margin-top: .35rem; }
+    .plan .desc { color: var(--muted); font-size: .88rem; margin: 0 0 .35rem; }
+    .plan a { justify-self: start; margin-top: .3rem; }
 
     footer {
       border-top: 1px solid var(--line);
@@ -323,22 +232,15 @@
     footer a:hover { color: var(--text); }
 
     @keyframes rise {
-      from { opacity: 0; transform: translateY(14px); }
-      to { opacity: 1; transform: none; }
+      from { transform: translateY(12px); opacity: .6; }
+      to { transform: none; opacity: 1; }
     }
-
-    @media (max-width: 900px) {
-      .hero {
-        grid-template-columns: 1fr;
-        min-height: auto;
-        padding: 2rem 0 2.5rem;
-        gap: 2rem;
-      }
-      .hero-visual { order: -1; }
+    @media (prefers-reduced-motion: reduce) {
+      .hero, .url-chip { animation: none; opacity: 1; }
+    }
+    @media (max-width: 800px) {
       .gets, .plans { grid-template-columns: 1fr; }
-      .panel-mock { grid-template-columns: 1fr; }
-      .pm-side { display: none; }
-      .nav-links .hide-sm { display: none; }
+      .hero { min-height: auto; padding: 2.5rem 0 3rem; }
     }
   </style>
 </head>
@@ -347,77 +249,46 @@
     <header class="nav">
       <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
       <nav class="nav-links">
-        <a class="hide-sm" href="/#pricing">Pricing</a>
+        <a href="/#pricing">Pricing</a>
         <a class="btn btn-ghost" href="/admin">Sign in</a>
         <a class="btn btn-primary" href="/signup">Get started</a>
       </nav>
     </header>
 
     <section class="hero">
-      <div class="hero-copy">
-        <div class="hero-brand">
-          <img src="/logo.png" alt="" />
-          <div class="name">USELY</div>
-        </div>
-        <h1>Run your Rust Console servers from Discord.</h1>
-        <p>Kick, ban, kits, RCON. Your panel lives at <code>you.usely.dev</code>.</p>
-        <div class="cta-row">
-          <a class="btn btn-primary" href="/signup">Get started</a>
-          <a class="btn btn-ghost" href="/pricing">Pricing</a>
-        </div>
+      <div class="hero-mark">
+        <img src="/logo.png" alt="" />
+        <div class="name">USELY</div>
       </div>
-
-      <div class="hero-visual" aria-hidden="true">
-        <div class="panel-mock">
-          <aside class="pm-side">
-            <div class="mark"><img src="/logo.png" alt="" />USELY</div>
-            <div class="pm-nav on">Home</div>
-            <div class="pm-nav">Players</div>
-            <div class="pm-nav">Kits</div>
-            <div class="pm-nav">Workspace</div>
-            <div class="pm-nav">RCON</div>
-          </aside>
-          <div class="pm-main">
-            <div class="pm-top">
-              <h2>Astral Main</h2>
-              <span>● CONNECTED</span>
-            </div>
-            <div class="pm-stats">
-              <div class="pm-stat"><div class="l">Online</div><div class="v">42</div></div>
-              <div class="pm-stat"><div class="l">FPS</div><div class="v">58</div></div>
-              <div class="pm-stat"><div class="l">Queue</div><div class="v">0</div></div>
-            </div>
-            <div class="pm-list">
-              <div class="pm-row"><span>Player</span><span>Action</span><span></span></div>
-              <div class="pm-row"><b>Penumbra</b><span>Kick</span><span>Ban</span></div>
-              <div class="pm-row"><b>RustyNail</b><span>Kick</span><span>Ban</span></div>
-              <div class="pm-row"><b>Kiwi</b><span>Kick</span><span>Ban</span></div>
-            </div>
-          </div>
-        </div>
+      <h1>The easiest admin panel for Rust Console.</h1>
+      <p>Players, kits, bans, and RCON in one place. Discord bot included for staff access. Your panel lives at <code>you.usely.dev</code>.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/signup">Get started</a>
+        <a class="btn btn-ghost" href="/pricing">Pricing</a>
       </div>
+      <div class="url-chip">https://<strong>yourserver</strong>.usely.dev</div>
     </section>
 
     <section class="block">
-      <h2>What you get</h2>
+      <p class="label">Included</p>
       <div class="gets">
         <div>
-          <h3>Live panel</h3>
-          <p>Players, kits, broadcasts, and RCON in one place. Switch servers from the header.</p>
+          <h2>Web panel</h2>
+          <p>Live players, kick/ban, kits, broadcasts, schedules, and RCON — from any browser.</p>
         </div>
         <div>
-          <h3>Discord staff</h3>
-          <p>Map roles to permissions. Mods sign in with Discord — no shared passwords.</p>
+          <h2>Discord bot</h2>
+          <p>Comes with the panel. Map Discord roles to permissions so mods can sign in.</p>
         </div>
         <div>
-          <h3>Your URL</h3>
-          <p>Every workspace gets its own address. Staff bookmark <code style="font-family:var(--mono);font-size:.86em;color:var(--chrome)">astral.usely.dev</code>.</p>
+          <h2>Your own URL</h2>
+          <p>Every workspace gets a private address. Staff bookmark it and go.</p>
         </div>
       </div>
     </section>
 
     <section class="block" id="pricing">
-      <h2>Pricing</h2>
+      <p class="label">Pricing</p>
       <div class="plans">
         <div class="plan">
           <div class="nm">Basic</div>
