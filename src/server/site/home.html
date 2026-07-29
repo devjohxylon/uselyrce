@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Usely — Rust Console admin panel</title>
-  <meta name="description" content="The easiest admin panel for Rust Console. Players, kits, bans, RCON — Discord bot included. Your panel at you.usely.dev." />
+  <meta name="description" content="The easiest Rust Console admin panel — kit builder, live players, kick/ban, RCON, and Discord staff access. Your panel at you.usely.dev." />
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -137,23 +137,6 @@
     }
     .cta-row { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .35rem; }
 
-    .url-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: .55rem;
-      margin-top: .5rem;
-      padding: .55rem .85rem;
-      border: 1px solid var(--line2);
-      border-radius: var(--radius);
-      background: var(--bg2);
-      font-family: var(--mono);
-      font-size: .82rem;
-      color: var(--chrome-dim);
-      width: fit-content;
-      animation: rise .6s ease .08s both;
-    }
-    .url-chip strong { color: var(--chrome); font-weight: 600; }
-
     section.block {
       padding: 3rem 0;
       border-top: 1px solid var(--line);
@@ -236,7 +219,7 @@
       to { transform: none; opacity: 1; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .hero, .url-chip { animation: none; opacity: 1; }
+      .hero { animation: none; opacity: 1; }
     }
     @media (max-width: 800px) {
       .gets, .plans { grid-template-columns: 1fr; }
@@ -261,28 +244,27 @@
         <div class="name">USELY</div>
       </div>
       <h1>The easiest admin panel for Rust Console.</h1>
-      <p>Players, kits, bans, and RCON in one place. Discord bot included for staff access. Your panel lives at <code>you.usely.dev</code>.</p>
+      <p>See who’s online, kick and ban in one click, build custom kits with a visual editor, run broadcasts and wipe schedules, and drop straight into RCON when you need it. Discord bot included — map staff roles and your mods are in. Your panel lives at <code>you.usely.dev</code>.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="/signup">Get started</a>
         <a class="btn btn-ghost" href="/pricing">Pricing</a>
       </div>
-      <div class="url-chip">https://<strong>yourserver</strong>.usely.dev</div>
     </section>
 
     <section class="block">
       <p class="label">Included</p>
       <div class="gets">
         <div>
-          <h2>Web panel</h2>
-          <p>Live players, kick/ban, kits, broadcasts, schedules, and RCON — from any browser.</p>
+          <h2>Kit builder</h2>
+          <p>Drag items into kits, set cooldowns and limits, push them live — no JSON editing.</p>
         </div>
         <div>
-          <h2>Discord bot</h2>
-          <p>Comes with the panel. Map Discord roles to permissions so mods can sign in.</p>
+          <h2>Staff that just works</h2>
+          <p>Discord bot included. Map roles to kick, ban, kits, or full RCON. Mods sign in themselves.</p>
         </div>
         <div>
-          <h2>Your own URL</h2>
-          <p>Every workspace gets a private address. Staff bookmark it and go.</p>
+          <h2>Multi-server ready</h2>
+          <p>One workspace, as many Nitrado boxes as your plan allows. Switch servers from the header.</p>
         </div>
       </div>
     </section>
@@ -299,13 +281,13 @@
         <div class="plan hot">
           <div class="nm">Pro</div>
           <div class="pr">$49 <span>/ mo</span></div>
-          <p class="desc">Up to 5 servers</p>
+          <p class="desc">2 servers</p>
           <a class="btn btn-primary" href="/signup?plan=pro">Choose Pro</a>
         </div>
         <div class="plan">
           <div class="nm">Network</div>
           <div class="pr">$99 <span>/ mo</span></div>
-          <p class="desc">Up to 15 servers</p>
+          <p class="desc">2+ servers</p>
           <a class="btn btn-ghost" href="/signup?plan=network">Choose Network</a>
         </div>
       </div>

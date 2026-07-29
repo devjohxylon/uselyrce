@@ -1,7 +1,8 @@
 export const PLAN_LIMITS = {
   basic: 1,
-  pro: 5,
-  network: 15,
+  pro: 2,
+  // Network is marketed as "2+" — soft unlimited for practical hosts
+  network: 100,
 };
 
 export const PLAN_PRICES_USD = {
