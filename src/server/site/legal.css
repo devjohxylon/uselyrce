@@ -1,0 +1,36 @@
+.legal {
+  display: grid;
+  gap: 2.25rem;
+  max-width: 72ch;
+  padding-bottom: clamp(3rem, 7vh, 4rem);
+  animation: rise .55s ease .05s both;
+}
+.legal section { display: grid; gap: .2rem; }
+.legal h2 {
+  margin: 0 0 .6rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+.legal p, .legal li {
+  color: var(--muted);
+  font-size: .975rem;
+  line-height: 1.75;
+}
+.legal p { margin: 0 0 .85rem; }
+.legal p:last-child { margin-bottom: 0; }
+.legal ul { margin: 0 0 .85rem; padding-left: 1.2rem; }
+.legal li { margin-bottom: .45rem; }
+.legal a { color: var(--chrome); text-decoration: underline; }
+.legal dt {
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: .9rem;
+}
+.legal dd {
+  margin: .25rem 0 0;
+  color: var(--muted);
+  font-size: .95rem;
+  line-height: 1.7;
+}

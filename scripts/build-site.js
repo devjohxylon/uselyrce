@@ -7,6 +7,7 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { renderEntries } from "../src/server/site/changelog.js";
+import { applyShell } from "../src/server/site/shell.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "public");
@@ -16,23 +17,31 @@ const assets = path.join(root, "assets");
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
-const copy = (from, to) => cpSync(path.join(site, from), path.join(out, to));
+const read = (file) => readFileSync(path.join(site, file), "utf8");
+const write = (file, contents) => writeFileSync(path.join(out, file), contents);
 
-copy("home.html", "index.html");
-copy("pricing.html", "pricing.html");
-copy("faq.html", "faq.html");
-copy("contact.html", "contact.html");
-copy("site.css", "site.css");
+const pages = {
+  "index.html": "home.html",
+  "pricing.html": "pricing.html",
+  "docs.html": "docs.html",
+  "faq.html": "faq.html",
+  "contact.html": "contact.html",
+  "changelog.html": "changelog.html",
+  "terms.html": "terms.html",
+  "privacy.html": "privacy.html",
+};
 
-writeFileSync(
-  path.join(out, "changelog.html"),
-  readFileSync(path.join(site, "changelog.html"), "utf8").replace(
-    "<!--ENTRIES-->",
-    renderEntries(),
-  ),
-);
+for (const [target, source] of Object.entries(pages)) {
+  write(
+    target,
+    applyShell(read(source)).replace("<!--ENTRIES-->", () => renderEntries()),
+  );
+}
+
+write("site.css", read("site.css"));
+write("legal.css", read("legal.css"));
 
 cpSync(path.join(assets, "usely-logo.png"), path.join(out, "logo.png"));
 cpSync(path.join(assets, "usely-logo.png"), path.join(out, "favicon.ico"));
 
-console.log("Marketing site built to public/");
+console.log(`Marketing site built to public/ (${Object.keys(pages).length} pages)`);

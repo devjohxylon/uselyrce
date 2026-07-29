@@ -8,11 +8,13 @@
 export const entries = [
   {
     date: "2026-07-29",
-    title: "FAQ, contact, and changelog",
+    title: "Docs, FAQ, contact, and changelog",
     changes: [
+      { type: "added", text: "Documentation covering setup, WebRCON, kits, the Discord bot, staff permissions, and troubleshooting." },
       { type: "added", text: "FAQ page covering setup, WebRCON, staff permissions, and billing." },
       { type: "added", text: "Contact page with a form that reaches the team by email." },
       { type: "added", text: "Changelog page listing every user-visible change." },
+      { type: "added", text: "Terms of Service and Privacy Policy." },
       { type: "changed", text: "Rebuilt the marketing site layout on a consistent spacing and type scale." },
       { type: "changed", text: "Moved plan cards off the homepage so pricing lives in one place." },
       { type: "fixed", text: "Overlapping text in the Basic plan feature list." },

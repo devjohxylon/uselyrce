@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Usely</title>
+  <meta name="description" content="What data Usely collects, why, who processes it, and how to have it deleted." />
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/legal.css" />
+</head>
+<body>
+  <div class="wrap">
+<!--NAV:-->
+
+    <section class="page-hero">
+      <p class="label">Legal</p>
+      <h1>Privacy Policy</h1>
+      <p>Last updated July 29, 2026. What we collect, why we collect it, and how to get it removed.</p>
+    </section>
+
+    <div class="legal">
+      <section>
+        <h2>What we collect</h2>
+        <p>We collect the minimum needed to run the product:</p>
+        <dl>
+          <dt>Account data</dt>
+          <dd>Your email address and a hashed password. Passwords are hashed with a salted key derivation function — we can't read them and can't recover them for you.</dd>
+          <dt>Staff identity</dt>
+          <dd>For staff who sign in with Discord: their Discord user ID, username, and the roles relevant to the permissions you configured. We don't read your Discord messages.</dd>
+          <dt>Server credentials</dt>
+          <dd>The host, port, and RCON password for each server you connect. Passwords are encrypted before storage.</dd>
+          <dt>Game data</dt>
+          <dd>Data your server reports over RCON — player names and gamertags, session activity, bans, and events like kills that drive Discord feeds.</dd>
+          <dt>Billing data</dt>
+          <dd>Your subscription status and a Stripe customer reference. Card numbers go directly to Stripe and never reach our servers.</dd>
+          <dt>Operational logs</dt>
+          <dd>Technical logs including IP addresses and error traces, used to debug problems and limit abuse.</dd>
+        </dl>
+      </section>
+
+      <section>
+        <h2>How we use it</h2>
+        <p>To operate your workspace, authenticate you and your staff, connect to your servers, deliver the Discord features you enable, take payment, and support you when you ask. We don't sell your data, and we don't use it to advertise to you or your players.</p>
+      </section>
+
+      <section>
+        <h2>Player data</h2>
+        <p>Managing a game server means handling data about the people playing on it. That data comes from your server, it's visible to you and the staff you authorize, and it stays isolated to your workspace — no other customer can see it.</p>
+        <p>If a player asks you to remove their data, contact us and we'll remove it from your workspace. Note that bans are records you may need to keep to enforce them.</p>
+      </section>
+
+      <section>
+        <h2>Who processes it</h2>
+        <p>We use a small number of providers to run Usely. Each only receives what it needs:</p>
+        <ul>
+          <li><strong>Supabase</strong> — database hosting for workspace, account, and server data.</li>
+          <li><strong>Stripe</strong> — subscription payments and card handling.</li>
+          <li><strong>Resend</strong> — transactional email such as setup links.</li>
+          <li><strong>Discord</strong> — bot functionality and staff sign-in.</li>
+          <li><strong>Vercel and Railway</strong> — hosting for this website and the application.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Cookies</h2>
+        <p>We set a session cookie so you stay signed in, and that's it. No advertising cookies, no third-party trackers, and no cross-site profiling. Clearing it signs you out.</p>
+      </section>
+
+      <section>
+        <h2>Retention</h2>
+        <p>We keep workspace data while your subscription is active. After cancellation we retain it for a short grace period so you can come back or export it, then delete it. Operational logs rotate out on a shorter cycle. Records we're legally required to keep, such as invoices, are kept as long as the law requires.</p>
+      </section>
+
+      <section>
+        <h2>Your rights</h2>
+        <p>You can ask us to show you the data we hold about you, correct it, delete it, or export it. Email <a href="mailto:support@usely.dev">support@usely.dev</a> and we'll respond within 30 days. Deleting your account removes your workspace and the server data in it.</p>
+      </section>
+
+      <section>
+        <h2>Security</h2>
+        <p>Server credentials are encrypted at rest, passwords are hashed, traffic is encrypted in transit, and each workspace's data is isolated from every other workspace. Permissions are enforced on every action rather than only at sign-in. No system is perfectly secure — if you find a vulnerability, please report it to <a href="mailto:support@usely.dev">support@usely.dev</a> rather than disclosing it publicly.</p>
+      </section>
+
+      <section>
+        <h2>Children</h2>
+        <p>Usely is a tool for server administrators and isn't directed at children. We don't knowingly create accounts for anyone under 13.</p>
+      </section>
+
+      <section>
+        <h2>Changes</h2>
+        <p>If we change this policy materially, we'll email subscribers before it takes effect and update the date above.</p>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p>Privacy questions or requests: <a href="mailto:support@usely.dev">support@usely.dev</a>, or use the <a href="/contact">contact page</a>.</p>
+      </section>
+    </div>
+
+<!--FOOTER-->
+  </div>
+</body>
+</html>

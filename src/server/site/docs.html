@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Docs — Usely</title>
+  <meta name="description" content="Usely documentation: create a workspace, connect a Rust Console server over WebRCON, build kits, invite the Discord bot, and manage staff permissions." />
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <style>
+    .docs {
+      display: grid;
+      grid-template-columns: 14rem 1fr;
+      gap: 3rem;
+      padding-bottom: clamp(3rem, 7vh, 4rem);
+      align-items: start;
+      animation: rise .55s ease .05s both;
+    }
+
+    .toc { position: sticky; top: 2rem; display: grid; gap: .55rem; }
+    .toc .label { margin: 0 0 .35rem; }
+    .toc a {
+      color: var(--muted);
+      font-size: .875rem;
+      line-height: 1.4;
+      padding-left: .8rem;
+      border-left: 1px solid var(--line);
+      transition: color .15s ease, border-color .15s ease;
+    }
+    .toc a:hover { color: var(--text); border-color: var(--chrome-dim); }
+
+    .doc-body { display: grid; gap: 2.75rem; min-width: 0; }
+    .doc-body section { scroll-margin-top: 1.5rem; }
+    .doc-body h2 {
+      margin: 0 0 .9rem;
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -.02em;
+    }
+    .doc-body h3 {
+      margin: 1.75rem 0 .6rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .doc-body p, .doc-body li {
+      color: var(--muted);
+      font-size: .975rem;
+      line-height: 1.7;
+    }
+    .doc-body p { margin: 0 0 .9rem; max-width: 70ch; }
+    .doc-body ul, .doc-body ol { margin: 0 0 .9rem; padding-left: 1.2rem; max-width: 70ch; }
+    .doc-body li { margin-bottom: .45rem; }
+    .doc-body li strong { color: var(--text); font-weight: 600; }
+    .doc-body a { color: var(--chrome); text-decoration: underline; }
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 2px solid var(--chrome-dim);
+      border-radius: var(--radius);
+      background: var(--bg2);
+      padding: 1rem 1.15rem;
+      margin: 1.25rem 0;
+      max-width: 70ch;
+    }
+    .callout p { margin: 0; font-size: .925rem; }
+    .callout strong { color: var(--text); }
+
+    dl { margin: 0 0 .9rem; max-width: 70ch; }
+    dt {
+      font-size: .925rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 1rem;
+    }
+    dd {
+      margin: .3rem 0 0;
+      color: var(--muted);
+      font-size: .95rem;
+      line-height: 1.65;
+    }
+
+    @media (max-width: 900px) {
+      .docs { grid-template-columns: 1fr; gap: 2rem; }
+      .toc {
+        position: static;
+        grid-auto-flow: column;
+        grid-template-columns: none;
+        grid-auto-columns: max-content;
+        overflow-x: auto;
+        gap: 1.25rem;
+        padding-bottom: .5rem;
+      }
+      .toc .label { display: none; }
+      .toc a { border-left: 0; padding-left: 0; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+<!--NAV:docs-->
+
+    <section class="page-hero">
+      <p class="label">Documentation</p>
+      <h1>Docs</h1>
+      <p>Everything you need to go from a fresh purchase to a fully managed server.</p>
+    </section>
+
+    <div class="docs">
+      <nav class="toc">
+        <p class="label">On this page</p>
+        <a href="#how-it-works">How it works</a>
+        <a href="#workspace">Create your workspace</a>
+        <a href="#connect">Connect a server</a>
+        <a href="#players">Players and moderation</a>
+        <a href="#kits">Kits</a>
+        <a href="#discord">Discord bot</a>
+        <a href="#staff">Staff permissions</a>
+        <a href="#multi">Multiple servers</a>
+        <a href="#billing">Billing</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </nav>
+
+      <div class="doc-body">
+        <section id="how-it-works">
+          <h2>How it works</h2>
+          <p>Usely is hosted, so there is nothing to install on your game server. You give us your server's WebRCON details once, and we hold an outbound connection to it. That connection powers three things:</p>
+          <ul>
+            <li><strong>The web panel</strong> — your browser view of players, kits, bans, and the RCON console.</li>
+            <li><strong>The Discord bot</strong> — population channels, kill feeds, and staff sign-in.</li>
+            <li><strong>Your workspace</strong> — the container for your servers, staff, and billing, reachable at your own address on <code>usely.dev</code>.</li>
+          </ul>
+          <p>No plugins, no mods, no uploads. If you change hosts, you only update the connection details.</p>
+        </section>
+
+        <section id="workspace">
+          <h2>Create your workspace</h2>
+          <p>Usely is buy-first: you pick a plan before the workspace exists, which keeps signup to a single step.</p>
+          <ol>
+            <li>Choose a plan on the <a href="/pricing">pricing page</a> and pay.</li>
+            <li>We email you a setup link. It's valid for seven days.</li>
+            <li>Open the link and pick your <strong>panel address</strong> — the subdomain your panel lives on, like <code>astral.usely.dev</code>. Lowercase letters, numbers, and hyphens; some names are reserved.</li>
+            <li>Set your owner password. You'll sign in with your email address and this password from now on.</li>
+          </ol>
+          <div class="callout">
+            <p><strong>Choose your address carefully.</strong> It's what you and your staff type to reach the panel, and changing it later means everyone updates their bookmarks. Use your community name, not a server name you might retire.</p>
+          </div>
+        </section>
+
+        <section id="connect">
+          <h2>Connect a server</h2>
+          <p>Each server is one WebRCON connection. From the panel, add a server and provide:</p>
+          <dl>
+            <dt>Host</dt>
+            <dd>The IP address or hostname your host exposes WebRCON on.</dd>
+            <dt>Port</dt>
+            <dd>The WebRCON port — usually different from the game port players connect to.</dd>
+            <dt>Password</dt>
+            <dd>Your RCON password. It's encrypted before it's stored, and it's never shown back to you in full.</dd>
+          </dl>
+          <p>Your host's control panel is where all three values live, often under a remote console, RCON, or server settings section. If you can't find them, your host's support can tell you which port WebRCON is on.</p>
+          <p>Once saved, the connection comes up on its own and the panel starts showing live data. If it can't connect, the server shows as offline and Usely keeps retrying — you don't need to reconnect by hand after a restart or wipe.</p>
+        </section>
+
+        <section id="players">
+          <h2>Players and moderation</h2>
+          <p>The players view lists everyone currently online, pulled live from the server rather than a cached snapshot. From there you can:</p>
+          <ul>
+            <li>Kick a player, with a reason they'll see.</li>
+            <li>Ban a player, which adds them to your ban list.</li>
+            <li>Review and unban from the ban list, including bans placed before you started using Usely.</li>
+            <li>Broadcast a message to everyone on the server.</li>
+            <li>See which players have linked Discord accounts.</li>
+          </ul>
+          <h3>RCON console</h3>
+          <p>The console runs any command your server accepts and shows the raw response, for the cases the panel doesn't cover. Access to it is a separate permission, so you can give staff moderation tools without giving them full server control.</p>
+        </section>
+
+        <section id="kits">
+          <h2>Kits</h2>
+          <p>A kit is a named set of items players can claim in-game. To build one, select items from the Rust Console item list and save the kit — there's no JSON to write and no file to upload.</p>
+          <p>Players claim kits through the quick chat phrases you configure, so the flow works with a controller and needs no typing. Kits are per-workspace, so a kit you build is available on whichever of your servers you assign it to.</p>
+          <div class="callout">
+            <p><strong>Console item list only.</strong> The catalog is limited to items that exist in Rust Console Edition, so you can't accidentally build a kit around a PC-only item, scope, or attachment that would silently fail in-game.</p>
+          </div>
+        </section>
+
+        <section id="discord">
+          <h2>Discord bot</h2>
+          <p>The bot is included with every plan. Invite it to your server from the panel, and give it permission to read and post in the channels you want it to manage.</p>
+          <p>What it handles:</p>
+          <ul>
+            <li><strong>Population channels</strong> — a channel name that updates with your live player count, so members can see how busy the server is without launching the game.</li>
+            <li><strong>Kill feeds</strong> — in-game kills posted to a channel.</li>
+            <li><strong>Staff sign-in</strong> — moderators authenticate to the panel with Discord instead of a password you have to share.</li>
+          </ul>
+          <p>If the bot goes offline, the panel keeps working — they're independent connections.</p>
+        </section>
+
+        <section id="staff">
+          <h2>Staff permissions</h2>
+          <p>You don't create accounts for your staff. Instead, you map <strong>Discord roles</strong> to permissions in your workspace. Anyone with that role can sign in with Discord and gets exactly what the role allows.</p>
+          <p>The practical effect: promoting someone is giving them a Discord role, and removing their access is taking it away. Nothing to deprovision, and no shared credentials to rotate when someone leaves.</p>
+          <p>Permissions are checked on every action, not just at sign-in, so a role that can kick and ban but not use RCON genuinely cannot run RCON commands.</p>
+          <div class="callout">
+            <p><strong>The owner account stays separate.</strong> Billing and server credentials belong to your email login, not to any Discord role — so staff access can be broad without exposing your payment details or RCON passwords.</p>
+          </div>
+        </section>
+
+        <section id="multi">
+          <h2>Multiple servers</h2>
+          <p>Basic covers one server. Pro covers two, and Network covers more. Each one is its own WebRCON connection with its own players, bans, and status.</p>
+          <p>Switch which server you're managing from the panel header. Your kits and staff role mappings belong to the workspace, so you configure them once rather than repeating the setup per server.</p>
+          <p>If you downgrade to a plan with a lower limit, disconnect the extra servers first.</p>
+        </section>
+
+        <section id="billing">
+          <h2>Billing</h2>
+          <p>Plans are monthly, and payment is handled by Stripe — card details never touch Usely's servers. From the panel you can change plans, update your payment method, download invoices, and cancel.</p>
+          <p>Upgrades take effect immediately so you can add a server right away. Cancelling stops future charges and your workspace stays available until the end of the period you've paid for.</p>
+        </section>
+
+        <section id="troubleshooting">
+          <h2>Troubleshooting</h2>
+          <h3>The server shows as offline</h3>
+          <p>Almost always the host, port, or password. Confirm the port is the WebRCON port and not the game port, and re-enter the password if it was changed on the host. If your host rotates IPs, the host value may be stale.</p>
+          <h3>No players are listed but the server is online</h3>
+          <p>An online status with an empty list usually means the server genuinely has nobody on it. If players are in-game and still not showing, the connection may be authenticated but restricted — check that your RCON user has full console access on the host.</p>
+          <h3>The Discord bot is offline or silent</h3>
+          <p>Check that it's still in your Discord and can view and post in the channels you assigned. Population channels also need permission to rename the channel, which is separate from posting.</p>
+          <h3>Staff can't sign in</h3>
+          <p>Confirm the Discord role is mapped in your workspace and that the person actually holds that role. Discord role changes can take a moment to appear.</p>
+          <h3>Something else</h3>
+          <p>Check the <a href="/faq">FAQ</a>, then <a href="/contact">get in touch</a> — include your panel address so we can find your workspace.</p>
+        </section>
+      </div>
+    </div>
+
+<!--FOOTER-->
+  </div>
+</body>
+</html>
