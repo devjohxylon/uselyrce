@@ -15,6 +15,7 @@ export const entries = [
       { type: "added", text: "Contact page with a form that reaches the team by email." },
       { type: "added", text: "Changelog page listing every user-visible change." },
       { type: "added", text: "Terms of Service and Privacy Policy." },
+      { type: "added", text: "Status page showing live health of the panel, Discord bot, and RCON connections." },
       { type: "changed", text: "Rebuilt the marketing site layout on a consistent spacing and type scale." },
       { type: "changed", text: "Moved plan cards off the homepage so pricing lives in one place." },
       { type: "fixed", text: "Overlapping text in the Basic plan feature list." },

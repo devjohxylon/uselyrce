@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--HEAD:status-->
+  <style>
+    .overall {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg2);
+      padding: 1.35rem 1.5rem;
+      margin-bottom: 1rem;
+      animation: rise .55s ease .05s both;
+    }
+    .overall .dot { width: .7rem; height: .7rem; flex: none; }
+    .overall .text { display: grid; gap: .2rem; }
+    .overall h2 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+    .overall p { margin: 0; color: var(--muted); font-size: .9rem; }
+
+    .dot {
+      width: .55rem;
+      height: .55rem;
+      border-radius: 50%;
+      background: var(--faint);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.04);
+    }
+    .dot.operational { background: #7fd1a4; }
+    .dot.degraded { background: #e2c37a; }
+    .dot.down { background: #e58f8f; }
+    .dot.unknown { background: var(--faint); }
+
+    .components {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg2);
+      overflow: hidden;
+      animation: rise .55s ease .1s both;
+    }
+    .component {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: center;
+      padding: 1.15rem 1.4rem;
+      border-top: 1px solid var(--line);
+    }
+    .component:first-child { border-top: 0; }
+    .component h3 { margin: 0 0 .2rem; font-size: .95rem; font-weight: 600; }
+    .component p { margin: 0; color: var(--muted); font-size: .875rem; }
+    .state {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-family: var(--mono);
+      font-size: .66rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--chrome-dim);
+      white-space: nowrap;
+    }
+
+    .meta-line {
+      margin: 1.25rem 0 3rem;
+      color: var(--faint);
+      font-size: .82rem;
+      display: flex;
+      gap: .5rem 1.25rem;
+      flex-wrap: wrap;
+    }
+    .meta-line a { color: var(--muted); text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+<!--NAV:-->
+
+    <section class="page-hero">
+      <p class="label">Status</p>
+      <h1>System status</h1>
+      <p>Live health of the panel, the Discord bot, and RCON connections. Checked when you load this page.</p>
+    </section>
+
+    <div class="overall">
+      <span class="dot unknown" id="overallDot"></span>
+      <div class="text">
+        <h2 id="overallText">Checking…</h2>
+        <p id="overallSub">Contacting the application.</p>
+      </div>
+    </div>
+
+    <div class="components" id="components">
+      <div class="component">
+        <div>
+          <h3>Admin panel</h3>
+          <p>The web panel and its API.</p>
+        </div>
+        <span class="state"><span class="dot unknown" data-dot="panel"></span><span data-state="panel">Checking</span></span>
+      </div>
+      <div class="component">
+        <div>
+          <h3>Discord bot</h3>
+          <p>Population channels, kill feeds, and Discord sign-in.</p>
+        </div>
+        <span class="state"><span class="dot unknown" data-dot="discord"></span><span data-state="discord">Checking</span></span>
+      </div>
+      <div class="component">
+        <div>
+          <h3>RCON connections</h3>
+          <p>Live links to connected game servers.</p>
+        </div>
+        <span class="state"><span class="dot unknown" data-dot="rcon"></span><span data-state="rcon">Checking</span></span>
+      </div>
+    </div>
+
+    <p class="meta-line">
+      <span id="checkedAt"></span>
+      <span>Problem not shown here? <a href="/contact">Let us know</a>.</span>
+    </p>
+
+<!--FOOTER-->
+  </div>
+
+  <script>
+    const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ||
+      location.hostname.endsWith(".localhost");
+    const API = LOCAL || location.hostname === "app.usely.dev" ? "" : "https://app.usely.dev";
+
+    const OVERALL = {
+      operational: ["All systems operational", "Everything is running normally."],
+      degraded: ["Partial degradation", "Some components are not fully healthy."],
+      down: ["Major outage", "One or more core components are down."],
+      unknown: ["Status unavailable", "We couldn't reach the application to check."],
+    };
+
+    function paint(key, state, detail) {
+      const dot = document.querySelector(`[data-dot="${key}"]`);
+      const label = document.querySelector(`[data-state="${key}"]`);
+      if (dot) dot.className = `dot ${state}`;
+      if (label) label.textContent = state;
+      if (detail) label.closest(".component").querySelector("p").textContent = detail;
+    }
+
+    function setOverall(state) {
+      const [title, sub] = OVERALL[state] ?? OVERALL.unknown;
+      document.getElementById("overallDot").className = `dot ${state}`;
+      document.getElementById("overallText").textContent = title;
+      document.getElementById("overallSub").textContent = sub;
+    }
+
+    async function check() {
+      try {
+        const res = await fetch(API + "/api/status", { cache: "no-store" });
+        if (!res.ok) throw new Error("bad response");
+        const data = await res.json();
+
+        setOverall(data.overall);
+        for (const [key, value] of Object.entries(data.components)) {
+          paint(key, value.state, value.detail);
+        }
+
+        const when = new Date(data.checkedAt);
+        document.getElementById("checkedAt").textContent =
+          `Last checked ${when.toLocaleTimeString()}`;
+      } catch {
+        setOverall("unknown");
+        for (const key of ["panel", "discord", "rcon"]) paint(key, "unknown");
+        document.getElementById("checkedAt").textContent = "Could not reach the application.";
+      }
+    }
+
+    check();
+    setInterval(check, 30000);
+  </script>
+</body>
+</html>

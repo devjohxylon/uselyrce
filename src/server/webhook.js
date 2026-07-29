@@ -79,7 +79,7 @@ export async function createWebhookServer(client) {
     res.type("image/png").sendFile(LOGO_PNG);
   });
 
-  attachMarketingSite(app);
+  attachMarketingSite(app, client);
   await attachAdminPanel(app, client);
 
   app.get("/health", (_req, res) => {

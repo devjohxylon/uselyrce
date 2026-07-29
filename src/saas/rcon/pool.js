@@ -222,3 +222,12 @@ export function destroyPool() {
 export function listAttachedServerIds() {
   return [...states.keys()];
 }
+
+/** Aggregate counts for the public status page — no per-tenant detail. */
+export function getPoolHealth() {
+  const ids = [...states.keys()];
+  return {
+    attached: ids.length,
+    connected: ids.filter((id) => socketIsOpen(id)).length,
+  };
+}
