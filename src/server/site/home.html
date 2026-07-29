@@ -170,20 +170,26 @@
     .plans {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: var(--line);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      overflow: hidden;
+      gap: 1rem;
     }
     .plan {
       background: var(--bg2);
-      padding: 1.35rem 1.25rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.25rem;
       display: grid;
       gap: .5rem;
       align-content: start;
+      transition: border-color .15s ease;
     }
-    .plan.hot { background: var(--bg3); }
+    .plan:hover { border-color: var(--line2); }
+    .plan.hot {
+      border-color: rgba(215,221,230,.35);
+      background:
+        linear-gradient(180deg, rgba(215,221,230,.06), transparent 45%),
+        var(--bg3);
+      box-shadow: 0 18px 40px rgba(0,0,0,.4);
+    }
     .plan .nm {
       font-family: var(--mono);
       font-size: .68rem;
@@ -191,15 +197,21 @@
       text-transform: uppercase;
       color: var(--chrome-dim);
     }
+    .plan.hot .nm { color: var(--chrome); }
+    .plan .servers {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--chrome);
+    }
     .plan .pr {
-      font-size: 2rem;
+      font-size: 2.2rem;
       font-weight: 700;
       letter-spacing: -.02em;
       line-height: 1;
+      margin: .15rem 0 .35rem;
     }
     .plan .pr span { font-size: .85rem; color: var(--muted); font-weight: 500; }
-    .plan .desc { color: var(--muted); font-size: .88rem; margin: 0 0 .35rem; }
-    .plan a { justify-self: start; margin-top: .3rem; }
+    .plan a { justify-self: start; margin-top: .45rem; }
 
     footer {
       border-top: 1px solid var(--line);
@@ -245,7 +257,7 @@
         <div class="name">USELY</div>
       </div>
       <h1>Admin panel + Discord bot for Rust Console.</h1>
-      <p>Built for Nitrado hosts who need a real staff panel — not a spreadsheet and a shared RCON password.</p>
+      <p>Built for RCE servers that need a real staff panel, not just a bot and a shared RCON password.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="/signup">Get started</a>
         <a class="btn btn-ghost" href="/pricing">Pricing</a>
@@ -257,23 +269,23 @@
       <div class="features">
         <div class="feat">
           <h2>Admin panel</h2>
-          <p>Browser dashboard for your server. See who’s online, kick or ban players, send broadcasts, manage wipe countdown, and run RCON commands when you need the console.</p>
+          <p>Browser dashboard for your server. See who’s online, kick or ban players, send broadcasts, check who has linked with Discord, and run RCON commands.</p>
         </div>
         <div class="feat">
           <h2>Kit builder</h2>
-          <p>Click items from the Console catalog to build kits, set cooldowns and claim limits, then save. Players redeem them in-game through the bot.</p>
+          <p>Click items from the item list to build kits, then save. Players redeem them in-game through quick chats you set up from the panel.</p>
         </div>
         <div class="feat">
           <h2>Discord bot</h2>
-          <p>Included with every plan. Invite it to your Discord, map roles to permissions (kick, ban, kits, RCON, etc.), and staff sign in with Discord — no shared access keys.</p>
+          <p>Included with every plan. Invite it to your Discord, and that’s it — pop channels, kill feeds, and the usual Rust Console bot features. Staff can also sign in to the panel with Discord.</p>
         </div>
         <div class="feat">
           <h2>Your URL</h2>
-          <p>Each community gets its own panel address, like <span style="font-family:var(--mono);color:var(--chrome);font-size:.9em">astral.usely.dev</span>. Owners use email login; staff use Discord.</p>
+          <p>Each community gets its own panel address, like <span style="font-family:var(--mono);color:var(--chrome);font-size:.9em">astral.usely.dev</span>. Owners use email login &amp; staff use Discord.</p>
         </div>
         <div class="feat">
           <h2>Multi-server</h2>
-          <p>Add more than one Nitrado WebRCON endpoint on Pro and Network. Switch which server you’re managing from the panel header.</p>
+          <p>Add more than one RCE WebRCON endpoint on Pro and Network. Switch which server you’re managing from the panel header.</p>
         </div>
       </div>
     </section>
@@ -283,20 +295,20 @@
       <div class="plans">
         <div class="plan">
           <div class="nm">Basic</div>
+          <div class="servers">1 server</div>
           <div class="pr">$20 <span>/ mo</span></div>
-          <p class="desc">1 server</p>
           <a class="btn btn-ghost" href="/signup?plan=basic">Choose Basic</a>
         </div>
         <div class="plan hot">
           <div class="nm">Pro</div>
+          <div class="servers">2 servers</div>
           <div class="pr">$49 <span>/ mo</span></div>
-          <p class="desc">2 servers</p>
           <a class="btn btn-primary" href="/signup?plan=pro">Choose Pro</a>
         </div>
         <div class="plan">
           <div class="nm">Network</div>
+          <div class="servers">2+ servers</div>
           <div class="pr">$99 <span>/ mo</span></div>
-          <p class="desc">2+ servers</p>
           <a class="btn btn-ghost" href="/signup?plan=network">Choose Network</a>
         </div>
       </div>
