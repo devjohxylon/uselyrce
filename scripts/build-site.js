@@ -17,7 +17,6 @@ mkdirSync(out, { recursive: true });
 
 cpSync(path.join(site, "home.html"), path.join(out, "index.html"));
 cpSync(path.join(site, "pricing.html"), path.join(out, "pricing.html"));
-cpSync(path.join(assets, "usely-mark.svg"), path.join(out, "logo.svg"));
 cpSync(path.join(assets, "usely-logo.png"), path.join(out, "logo.png"));
 cpSync(path.join(assets, "usely-logo.png"), path.join(out, "favicon.ico"));
 
