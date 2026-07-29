@@ -1,7 +1,7 @@
 {
-  "name": "astral-bot",
+  "name": "usely",
   "version": "1.0.0",
-  "description": "Discord community + website bridge bot for Astral Vanilla+ (Rust RCE)",
+  "description": "Usely — multi-tenant Discord + WebRCON admin for Rust Console servers",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -9,17 +9,20 @@
     "dev": "node --watch src/index.js",
     "register-commands": "node src/register-commands.js",
     "test:ingest": "node scripts/test-ingest-server.js",
-    "debug:leaderboard": "node scripts/debug-leaderboard.js"
+    "debug:leaderboard": "node scripts/debug-leaderboard.js",
+    "seed:astral-org": "node scripts/seed-astral-org.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.111.0",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "rce.js": "^4.6.1",
     "socket.io": "^4.8.3",
+    "stripe": "^22.3.2",
     "ws": "^8.21.1"
   }
 }

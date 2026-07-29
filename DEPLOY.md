@@ -1,116 +1,100 @@
-# Run Astral Bot 24/7
+# Run Usely 24/7
 
-Your PC must stay on for the bot to work locally. For **24/7**, host it on Railway.
+For **local testing**, see [Local SaaS test](#local-saas-test) below.
 
-**Recommended: Railway** (~$5/month)
+## Production architecture
 
-## Quick Railway setup
+The Discord bot and WebRCON connections must stay online 24/7, so the app
+can't run on serverless. Production is split across two hosts:
 
-1. Push this repo to GitHub (**never commit `.env`**)
-2. [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub** → pick this repo
-3. Open the service → **Variables** → add every key from `.env.example` (copy values from your local `.env`)
-4. Deploy — logs should show `Logged in as Astral Vanilla+#xxxx`
-5. Admin panel: open `https://admin.astralrce.com/admin`  
-   Password = `ADMIN_PANEL_PASSWORD` (or `BOT_WEBHOOK_SECRET` if unset)
+| Piece | Host | Domain |
+| --- | --- | --- |
+| Marketing site (home, pricing) | Vercel | `usely.dev`, `www.usely.dev` |
+| App: panel, bot, RCON, signup/billing APIs | Railway | `app.usely.dev` + `*.usely.dev` (org panels) |
 
-### Custom domain (`admin.astralrce.com`)
+Repo: https://github.com/devjohxylon/uselyrce
 
-`localhost:8080` in Railway logs is **inside the container** — your browser cannot open it.
+### Vercel (marketing site)
 
-Custom domains live inside a **service**, not the project. From the project canvas, click the
-bot service box first, then **Settings** → scroll to **Public Networking**.
+1. [vercel.com](https://vercel.com) → **Add New Project** → import `devjohxylon/uselyrce`.
+2. No settings needed — `vercel.json` builds `public/` via `scripts/build-site.js`
+   and redirects `/signup`, `/setup`, `/admin`, `/api/*` to `app.usely.dev`.
+3. Domains: add `usely.dev` and `www.usely.dev`.
 
-1. Service → **Settings** → **Public Networking** → **+ Custom Domain**
-2. Enter `admin.astralrce.com`, port `8080` if it asks
-3. Railway gives you **two** records: a `CNAME` and a `TXT`
-4. In your DNS for `astralrce.com` (Cloudflare, Namecheap, wherever it's registered), add **both**
-   exactly as shown. Missing the `TXT` means the domain resolves but returns 404 — Railway uses it
-   to verify ownership before routing traffic. On Cloudflare set the CNAME to **DNS only** (grey cloud).
-5. Wait for the green check in Railway (usually minutes)
-6. Railway Variables → add:
-   ```
-   ADMIN_PANEL_URL=https://admin.astralrce.com
-   ADMIN_PANEL_PASSWORD=your-password
-   ```
-7. Open: **https://admin.astralrce.com/admin**
+### Railway (app)
 
-Keep `astralrce.com` / `www` on Vercel for the site; only the `admin` subdomain points at Railway.
+1. [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub** → `uselyrce`.
+2. Variables → copy from `.env.example`. Key prod values:
 
-Prefer the CLI? From the project folder:
-
-```powershell
-railway link
-railway domain admin.astralrce.com --port 8080
+```env
+SAAS_MODE=true
+SAAS_MOCK=false
+ADMIN_PANEL_URL=https://app.usely.dev
+SAAS_BASE_DOMAIN=usely.dev
+BRAND_URL=https://usely.dev
+RESEND_API_KEY=...        # verify usely.dev as a sending domain in Resend
+EMAIL_FROM=Usely <onboarding@usely.dev>
 ```
 
-It prints the same CNAME + TXT records to add.
+3. Custom domains on the Railway service: `app.usely.dev` **and** `*.usely.dev`
+   (wildcard — this is what makes `astral.usely.dev` org panels work).
+4. Discord OAuth redirect: `https://app.usely.dev/admin/auth/callback`
+5. Stripe webhook: `https://app.usely.dev/billing/stripe/webhook`
+   (events: `checkout.session.completed`, `customer.subscription.updated`,
+   `customer.subscription.deleted`)
+6. Supabase → SQL editor → run both files in `supabase/migrations/`.
 
-To confirm the app is reachable before DNS is done, use **Generate Domain** in the same
-Public Networking section and open `https://<generated>.up.railway.app/admin`.
+### DNS at your registrar
 
-### Critical variables for RCON
+| Record | Name | Points to |
+| --- | --- | --- |
+| A / ALIAS | `usely.dev` | Vercel |
+| CNAME | `www` | Vercel |
+| CNAME | `app` | Railway |
+| CNAME | `*` | Railway |
 
-```
-DISCORD_TOKEN=
-DISCORD_CLIENT_ID=
-GUILD_ID=
-WEBSITE_INGEST_URL=
-WEBSITE_API_SECRET=
-BOT_WEBHOOK_SECRET=
-ADMIN_PANEL_PASSWORD=
-RCON_HOST=
-RCON_PORT=25800
-RCON_PASSWORD=
-RCON_SERVER_NAME=astral
-CHANNEL_KILLFEED=
-CHANNEL_JOIN_LEAVE=
-CHANNEL_POP_STATUS=
-CHANNEL_WIPE_STATUS=
-ROLE_VIP=
-VIP_KIT_ID=vip
-```
+### Volume (game JSON)
 
-Plus your other channel/role IDs. Railway sets `PORT` automatically — leave `BOT_WEBHOOK_PORT` unset in production.
-
-### Persistent data (REQUIRED — links, kits, stats, keys)
-
-Every redeploy wipes the container filesystem. **Account links, kits, wipe time,
-staff keys, and stats live in `.data`** — without a volume they disappear (this is
-why `/link` "stops saving").
-
-1. Railway → your bot service → **Volumes** → **Add Volume**
-2. Mount path: `/app/.data` (Nixpacks `cwd` is `/app`)
-3. Redeploy once after attaching
-4. Optional variable: `DATA_DIR=/app/.data`
-
-Confirm in logs:
-```
-Data directory: /app/.data (N linked account(s))
-Data persistence OK ...
-```
-
-If you see `PERSISTENCE WARNING`, the volume is missing or mounted on the wrong path.
-
-### Website live boards
-
-1. Copy files from `integration/nextjs/` into your Vercel site (ingest route, `/api/server/status`, `/api/server/wipe`, `LiveServerBoard`).
-2. Match `WEBSITE_API_SECRET` on Railway and Vercel.
-3. Set `WEBSITE_INGEST_URL` to `https://YOUR-SITE/api/discord/ingest`.
+Railway → Volumes → mount path matching `DATA_DIR` (default `/app/.data`).
 
 ## After deploy checklist
 
-- [ ] Bot online in Discord
-- [ ] Logs show `RCON connected` (if testing cloud RCON)
-- [ ] `/astral-status` works
-- [ ] Admin panel loads at `https://YOUR-RAILWAY-URL/admin`
-- [ ] Create kit `vip` in panel Kits tab (if using VIP sync)
-- [ ] `WEBSITE_API_SECRET` matches Vercel
+- [ ] `usely.dev` shows the marketing site (Vercel)
+- [ ] `usely.dev/signup` redirects to `app.usely.dev/signup`
+- [ ] Buy → setup email arrives → setup page picks a `*.usely.dev` address
+- [ ] Owner email login works on their subdomain; staff Discord login works
+- [ ] Bot online in Discord; org can add a server and see RCON connected
+- [ ] Stripe webhook deliveries succeed
 - [ ] Volume mounted on `.data`
 
-## Slash command updates
+## Local SaaS test
 
-After changing commands, run locally once (uses your Discord token):
+Fastest path — mock mode fakes Supabase, Stripe, OAuth, and email:
+
+```env
+SAAS_MODE=true
+SAAS_MOCK=true
+```
+
+Then `npm.cmd run dev` → http://localhost:3847/signup. Mock "emails" land in
+`.data/mock-outbox.json`, and org panels live at `<slug>.localhost:3847`.
+
+For a real-backend local test instead, set `SAAS_MOCK=false` and fill in
+Supabase, `RCON_ENCRYPTION_KEY`, and Discord OAuth secrets per `.env.example`,
+plus the Discord redirect `http://localhost:3847/admin/auth/callback`.
+Stripe can stay empty until you set price IDs; checkout will fail gracefully.
+
+## Slash command updates
 
 ```powershell
 npm.cmd run register-commands
 ```
+
+## Seed first org (optional)
+
+```powershell
+$env:ASTRAL_OWNER_DISCORD_ID="your_discord_user_id"
+npm.cmd run seed:astral-org
+```
+
+That seeds an **org named Astral** (a customer server), not the product brand.

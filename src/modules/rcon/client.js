@@ -1,5 +1,24 @@
 import { RCEManager, LogLevel, RCEEvent, RCEIntent } from "rce.js";
 import { config } from "../../config.js";
+import {
+  startPool,
+  attachServer as poolAttach,
+  detachServer as poolDetach,
+  destroyPool,
+  getPoolStatus,
+  getPoolServer,
+  getPoolServerInfo,
+  getPoolOnlinePlayers,
+  poolSendCommand,
+  poolFetchInfo,
+  getActiveServerId,
+  runWithServer,
+  getPoolManager,
+  listAttachedServerIds,
+} from "../../saas/rcon/pool.js";
+import { listAllEnabledForPool } from "../../saas/db/servers.js";
+
+export { runWithServer, getActiveServerId };
 
 let manager = null;
 let lastError = null;
@@ -10,7 +29,48 @@ let reconnectAttempts = 0;
 
 const WATCHDOG_MS = 12_000;
 
+function saasOn() {
+  return Boolean(config.saas?.enabled);
+}
+
+function mockOn() {
+  return Boolean(config.saas?.mock);
+}
+
+const MOCK_BOOTED_AT = new Date();
+const MOCK_PLAYERS = [
+  "Penumbra", "xXWolfyXx", "RustyNail", "BradTheBuilder", "Kiwi",
+  "SgtScrap", "NoLifeNate", "Vex", "TurretTina", "HempFarmer420",
+].map((ign) => ({ ign, isOnline: true }));
+
+function mockServerInfo() {
+  return {
+    Hostname: "Astral Main [MOCK]",
+    Players: MOCK_PLAYERS.length,
+    MaxPlayers: 100,
+    Queued: 0,
+    Joining: 0,
+    EntityCount: 118432,
+    GameTime: "14:20",
+    Uptime: Math.floor((Date.now() - MOCK_BOOTED_AT.getTime()) / 1000) + 3600,
+    Map: "Procedural Map",
+    Framerate: 58,
+    Memory: 4096,
+    NetworkIn: 128,
+    NetworkOut: 256,
+  };
+}
+
+function requireServerId(explicit) {
+  const id = explicit || getActiveServerId();
+  if (!id) {
+    throw new Error("No active server selected. Pick a server in the panel.");
+  }
+  return id;
+}
+
 export function isRconEnabled() {
+  if (saasOn()) return true;
   const { enabled, host, port, password } = config.rcon;
   return Boolean(enabled && host && port && password);
 }
@@ -30,12 +90,43 @@ function serverOptions() {
 }
 
 function socketIsOpen() {
+  if (saasOn()) {
+    const id = getActiveServerId() || listAttachedServerIds()[0];
+    if (!id) return false;
+    const socket = getPoolServer(id)?.socket;
+    return Boolean(socket && socket.readyState === 1);
+  }
   const socket = getServer()?.socket;
-  // ws readyState: 0 CONNECTING, 1 OPEN, 2 CLOSING, 3 CLOSED
   return Boolean(socket && socket.readyState === 1);
 }
 
-export function getRconStatus() {
+export function getRconStatus(serverId) {
+  if (saasOn()) {
+    const id = serverId || getActiveServerId() || listAttachedServerIds()[0];
+    if (mockOn() && id) {
+      return {
+        enabled: true,
+        connected: true,
+        lastError: null,
+        connectedAt: MOCK_BOOTED_AT,
+        identifier: id,
+        host: "mock-rcon",
+        port: 28016,
+      };
+    }
+    if (!id) {
+      return {
+        enabled: false,
+        connected: false,
+        lastError: null,
+        connectedAt: null,
+        identifier: null,
+        host: null,
+        port: null,
+      };
+    }
+    return getPoolStatus(id);
+  }
   const live = socketIsOpen();
   return {
     enabled: isRconEnabled(),
@@ -49,18 +140,33 @@ export function getRconStatus() {
 }
 
 export function getManager() {
+  if (saasOn()) return getPoolManager();
   return manager;
 }
 
-export function getServer() {
+export function getServer(serverId) {
+  if (saasOn()) {
+    const id = serverId || getActiveServerId() || listAttachedServerIds()[0];
+    return id ? getPoolServer(id) : null;
+  }
   return manager?.getServer(config.rcon.identifier) ?? null;
 }
 
-export function getServerInfo() {
+export function getServerInfo(serverId) {
+  if (saasOn()) {
+    const id = serverId || getActiveServerId() || listAttachedServerIds()[0];
+    if (mockOn() && id) return mockServerInfo();
+    return id ? getPoolServerInfo(id) : null;
+  }
   return getServer()?.info ?? null;
 }
 
-export function getOnlinePlayers() {
+export function getOnlinePlayers(serverId) {
+  if (saasOn()) {
+    const id = serverId || getActiveServerId() || listAttachedServerIds()[0];
+    if (mockOn() && id) return [...MOCK_PLAYERS];
+    return id ? getPoolOnlinePlayers(id) : [];
+  }
   const players = getServer()?.players ?? [];
   return players.filter((p) => p.isOnline !== false);
 }
@@ -79,10 +185,6 @@ async function attachServer() {
   return Boolean(added);
 }
 
-// rce.js gives up permanently if the FIRST websocket attempt fails
-// (it only auto-reconnects after a successful connection). This watchdog
-// re-attaches the server whenever the socket is down so a bad moment at
-// deploy time doesn't leave RCON dead until the next restart.
 async function watchdogTick() {
   if (reattaching || socketIsOpen()) return;
   reattaching = true;
@@ -99,6 +201,23 @@ async function watchdogTick() {
 }
 
 export async function connectRcon() {
+  if (saasOn()) {
+    if (mockOn()) {
+      console.log("SaaS MOCK mode: skipping real RCON — serving fake server data.");
+      return null;
+    }
+    const servers = await listAllEnabledForPool().catch((e) => {
+      console.error("Failed to load SaaS servers for RCON pool:", e.message);
+      return [];
+    });
+    if (!servers.length) {
+      console.log("SaaS mode: no enabled servers in database yet.");
+      return null;
+    }
+    console.log(`SaaS mode: attaching ${servers.length} RCON server(s)…`);
+    return startPool(servers);
+  }
+
   if (!isRconEnabled()) {
     console.log("RCON disabled — set RCON_HOST, RCON_PORT, RCON_PASSWORD in .env to connect.");
     return null;
@@ -121,8 +240,6 @@ export async function connectRcon() {
     lastError = msg;
     console.error("RCON error:", msg);
 
-    // Nitrado often drops the socket with ECONNRESET — kick the watchdog
-    // immediately instead of waiting for the next interval tick.
     if (/ECONNRESET|ECONNREFUSED|ETIMEDOUT|closed|WebSocket error/i.test(msg)) {
       setTimeout(() => watchdogTick().catch(() => {}), 1500);
     }
@@ -137,25 +254,41 @@ export async function connectRcon() {
   return manager;
 }
 
-export async function sendGameCommand(command) {
+export async function sendGameCommand(command, serverId) {
+  if (saasOn()) {
+    const id = requireServerId(serverId);
+    if (mockOn()) return `[mock] accepted: ${command}`;
+    return poolSendCommand(id, command);
+  }
   if (!manager || !socketIsOpen()) {
     throw new Error("RCON is not connected to the game server.");
   }
-  // Note: commands with no console output resolve undefined after rce.js's
-  // 3s timeout — that's still a successful send, not a failure.
   const response = await manager.sendCommand(config.rcon.identifier, command);
   return response ?? "";
 }
 
-export async function fetchServerInfo() {
+export async function fetchServerInfo(serverId) {
+  if (saasOn()) {
+    const id = requireServerId(serverId);
+    if (mockOn()) return mockServerInfo();
+    return poolFetchInfo(id);
+  }
   if (!manager || !socketIsOpen()) {
     throw new Error("RCON is not connected to the game server.");
   }
   return manager.fetchInfo(config.rcon.identifier);
 }
 
-export async function broadcast(message) {
-  return sendGameCommand(`say ${message}`);
+export async function broadcast(message, serverId) {
+  return sendGameCommand(`say ${message}`, serverId);
+}
+
+export async function attachSaasServer(server) {
+  return poolAttach(server);
+}
+
+export function detachSaasServer(serverId) {
+  return poolDetach(serverId);
 }
 
 let cachedMapMetadata = null;
@@ -172,7 +305,6 @@ function parseMapNumber(raw) {
 function mapImageCandidates(seed, size) {
   const custom = process.env.RUST_MAP_IMAGE_URL?.trim();
   if (custom) return [custom];
-  // Served by /admin/api/map/image after RustMaps / custom download into .data/maps
   if (seed) return [`/admin/api/map/image?seed=${seed}&size=${size || 4000}`];
   return [];
 }
@@ -183,7 +315,7 @@ export async function getMapMetadata() {
   const envSeed = process.env.RUST_MAP_SEED ? parseMapNumber(process.env.RUST_MAP_SEED) : null;
   const envSize = process.env.RUST_MAP_SIZE ? parseMapNumber(process.env.RUST_MAP_SIZE) : null;
 
-  if (!manager || !socketIsOpen()) {
+  if (!getManager() || !socketIsOpen()) {
     const seed = envSeed;
     const size = envSize || 4000;
     return {
@@ -237,6 +369,11 @@ export function clearMapMetadataCache() {
 }
 
 export function destroyRcon() {
+  if (saasOn()) {
+    destroyPool();
+    cachedMapMetadata = null;
+    return;
+  }
   if (watchdog) {
     clearInterval(watchdog);
     watchdog = null;

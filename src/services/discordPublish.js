@@ -70,7 +70,7 @@ function buildPayload(body) {
         color,
         fields,
         url,
-        footer: "Astral RCE",
+        footer: "Usely",
       }),
     ],
     pin: Boolean(pin),

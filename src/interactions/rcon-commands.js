@@ -181,7 +181,7 @@ export async function handleRconCommand(interaction) {
 
   if (sub === "say") {
     const message = interaction.options.getString("message", true);
-    command = `say <color=#00ffcc>[Astral]</color> ${message}`;
+    command = `say <color=#00ffcc>[Usely]</color> ${message}`;
     summary = `Broadcast: ${message}`;
   } else if (sub === "console") {
     command = interaction.options.getString("command", true);

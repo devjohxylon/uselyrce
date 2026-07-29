@@ -6,8 +6,9 @@
 <meta name="theme-color" content="#050506" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>Astral Control</title>
-<link rel="icon" type="image/png" href="/logo.png" />
+<title>Usely</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg" />
+<link rel="alternate icon" type="image/png" href="/logo.png" />
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -817,17 +818,31 @@ button { transition: all .15s ease; }
 <div id="login" class="hidden">
   <div class="login-stage">
     <div class="login-header">
-      <img class="login-mark" src="/logo.png" alt="Astral" />
-      <h1 class="login-title">ASTRAL CTRL</h1>
-      <p class="login-subtitle">Server Administration</p>
+      <img class="login-mark" src="/logo.svg" alt="Usely" />
+      <h1 class="login-title">USELY</h1>
+      <p class="login-subtitle">Rust Console Admin</p>
     </div>
     <div class="login-card">
-      <label for="password">Access Key</label>
-      <input id="password" type="password" placeholder="Enter your admin password" autocomplete="current-password" />
-      <button class="primary" id="loginBtn">Sign In</button>
+      <div id="legacyLogin">
+        <label for="password">Access Key</label>
+        <input id="password" type="password" placeholder="Enter your admin password" autocomplete="current-password" />
+        <button class="primary" id="loginBtn">Sign In</button>
+      </div>
+      <div id="saasLogin" class="hidden">
+        <label for="saasEmail">Email</label>
+        <input id="saasEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+        <label for="saasPassword" style="margin-top:.6rem">Password</label>
+        <input id="saasPassword" type="password" placeholder="Your password" autocomplete="current-password" />
+        <button class="primary" id="saasEmailLoginBtn" style="margin-top:.85rem">Sign In</button>
+        <div style="display:flex;align-items:center;gap:.6rem;margin:1rem 0;color:var(--faint);font-size:.75rem">
+          <span style="flex:1;height:1px;background:var(--line)"></span>staff<span style="flex:1;height:1px;background:var(--line)"></span>
+        </div>
+        <a class="primary" id="discordLoginBtn" href="/admin/auth/discord" style="display:block;text-align:center;text-decoration:none;padding:.85rem 1rem;background:transparent;border:1px solid var(--line2);color:var(--text)">Continue with Discord</a>
+        <p class="login-subtitle" style="margin-top:1rem;margin-bottom:0">Owners sign in with email. Staff with a mapped Discord role use Discord. New here? <a href="/signup" style="color:var(--chrome)">Create a workspace</a>.</p>
+      </div>
       <div id="loginError" class="login-error hidden"></div>
     </div>
-    <p class="login-dev-note">In development — report bugs to <b>Penumbra</b> on Discord</p>
+    <p class="login-dev-note">usely.dev — multi-server Rust Console admin</p>
   </div>
 </div>
 
@@ -837,13 +852,13 @@ button { transition: all .15s ease; }
     <button type="button" class="icon-btn ghost" id="navToggle" aria-label="Open menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
-    <div class="brand-mini"><img src="/logo.png" alt="" />ASTRAL</div>
+    <div class="brand-mini"><img src="/logo.svg" alt="" />USELY</div>
     <button type="button" class="ghost" id="logoutBtnMobile" style="font-size:.72rem;padding:.35rem .55rem">Out</button>
   </header>
 
   <aside class="nav" id="sideNav">
     <div class="brand">
-      <img class="logo" src="/logo.png" alt="Astral" /><span>ASTRAL <span style="background:linear-gradient(180deg,#fff,#9aa3af);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:600;letter-spacing:.08em;font-size:.65rem">CTRL</span></span>
+      <img class="logo" src="/logo.svg" alt="Usely" /><span>USELY</span>
       <button type="button" class="sidebar-toggle ghost" id="sidebarToggle" aria-label="Close menu" title="Close menu">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
@@ -862,6 +877,8 @@ button { transition: all .15s ease; }
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M8.5 7.5l1-1a4 4 0 0 1 6 6l-1 1M15.5 16.5l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Community</button>
       <button type="button" data-nav="server">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Server</button>
+      <button type="button" data-nav="workspace" data-perm-any="servers,keys,billing">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Workspace</button>
     </div>
 
     <div class="nav-group nav-advanced" id="navAdvanced">
@@ -898,9 +915,9 @@ button { transition: all .15s ease; }
     </div>
     <button class="ghost" id="logoutBtn" style="margin-top:.45rem;justify-content:flex-start;gap:.5rem">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12H4M8 8l-4 4 4 4M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>Log out</button>
-    <div class="dev-banner" title="Astral Control is under active development">
+    <div class="dev-banner" title="Usely is under active development">
       <strong>In development</strong>
-      <span>Report bugs to <b>Penumbra</b> on Discord</span>
+      <span>usely.dev · Rust Console admin SaaS</span>
     </div>
     <div class="nav-foot" id="navMeta">—</div>
   </aside>
@@ -916,6 +933,10 @@ button { transition: all .15s ease; }
         </div>
       </div>
       <div class="pills" id="statusPills"></div>
+      <div id="saasContext" class="hidden" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <select id="orgSelect" title="Organization" style="max-width:10rem"></select>
+        <select id="serverSelect" title="Server" style="max-width:10rem"></select>
+      </div>
     </div>
     <div class="subtabs page-subtabs" id="pageSubtabs"></div>
     <section id="view"></section>
@@ -985,6 +1006,15 @@ const NAV_SECTIONS = {
     sub: "Leaderboards and lookups",
     tabs: [{ id: "stats", label: "Stats", perm: "stats" }],
   },
+  workspace: {
+    title: "Workspace",
+    sub: "Org, servers, roles, billing",
+    tabs: [
+      { id: "servers", label: "Servers", perm: "servers" },
+      { id: "roles", label: "Roles", perm: "keys" },
+      { id: "billing", label: "Billing", perm: "billing" },
+    ],
+  },
 };
 
 const ADVANCED_TABS = [
@@ -1008,6 +1038,9 @@ const TAB_META = {
   automation: { title: "Community", sub: "Auto messages and scheduled commands", perm: "automation" },
   events: { title: "Community", sub: "Automate RCON commands on a schedule", perm: "schedule" },
   stats: { title: "Server", sub: "Leaderboards and lookups", perm: "stats" },
+  servers: { title: "Workspace", sub: "Add and manage Nitrado WebRCON servers", perm: "servers" },
+  roles: { title: "Workspace", sub: "Map Discord roles to panel permissions", perm: "keys" },
+  billing: { title: "Workspace", sub: "Plan and Stripe subscription", perm: "billing" },
 };
 
 for (const t of ADVANCED_TABS) {
@@ -1055,6 +1088,7 @@ function can(perm) {
   if (!state.session) return false;
   if (state.session.role === "owner") return true;
   if (perm === "automation") return Boolean(state.session.permissions?.automessages || state.session.permissions?.schedule);
+  if (perm === "servers" || perm === "billing") return Boolean(state.session.permissions?.[perm]);
   return Boolean(state.session.permissions?.[perm]);
 }
 
@@ -1123,15 +1157,51 @@ function setNavOpen(open) {
 }
 
 async function api(path, opts = {}) {
+  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  if (state.session?.orgId) headers["X-Org-Id"] = state.session.orgId;
+  if (state.session?.serverId) headers["X-Server-Id"] = state.session.serverId;
   const res = await fetch(`/admin/api${path}`, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+    headers,
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || res.statusText);
   return data;
+}
+
+function renderSaasContext(session) {
+  const wrap = document.getElementById("saasContext");
+  if (!session?.saas) {
+    wrap?.classList.add("hidden");
+    return;
+  }
+  wrap.classList.remove("hidden");
+  wrap.style.display = "flex";
+  const orgSel = document.getElementById("orgSelect");
+  const srvSel = document.getElementById("serverSelect");
+  const servers = session.servers || [];
+  if (session.org) {
+    orgSel.innerHTML = `<option value="${session.org.id}">${esc(session.org.name)}</option>`;
+    orgSel.value = session.org.id;
+  }
+  srvSel.innerHTML = servers.length
+    ? servers.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join("")
+    : `<option value="">No servers</option>`;
+  if (session.serverId) srvSel.value = session.serverId;
+}
+
+async function switchSaasContext() {
+  const orgId = document.getElementById("orgSelect")?.value;
+  const serverId = document.getElementById("serverSelect")?.value || null;
+  await fetch("/admin/api/saas/context", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orgId, serverId }),
+  });
+  location.reload();
 }
 
 function toast(msg, bad = false) {
@@ -1172,11 +1242,49 @@ function stopLoginScene() {
 
 async function boot() {
   const session = await api("/session");
-  document.getElementById("login").classList.toggle("hidden", session.authed);
-  document.getElementById("app").classList.toggle("hidden", !session.authed);
-  if (session.authed) {
+  const saasLogin = document.getElementById("saasLogin");
+  const legacyLogin = document.getElementById("legacyLogin");
+  if (session.saas) {
+    saasLogin?.classList.remove("hidden");
+    legacyLogin?.classList.add("hidden");
+  } else {
+    saasLogin?.classList.add("hidden");
+    legacyLogin?.classList.remove("hidden");
+  }
+
+  const showApp = session.authed;
+  document.getElementById("login").classList.toggle("hidden", showApp);
+  document.getElementById("app").classList.toggle("hidden", !showApp);
+
+  if (session.needsOnboarding && session.saas) {
+    document.getElementById("login").classList.remove("hidden");
+    document.getElementById("app").classList.add("hidden");
+    stopLoginScene();
+    initLoginScene();
+    const err = document.getElementById("loginError");
+    err.classList.remove("hidden");
+    err.innerHTML = `Logged in as ${esc(session.label)}. <button type="button" id="createOrgBtn" class="primary" style="margin-top:.75rem;width:100%">Create your organization</button>`;
+    document.getElementById("createOrgBtn")?.addEventListener("click", async () => {
+      const name = prompt("Organization / community name?");
+      if (!name) return;
+      const res = await fetch("/admin/api/saas/orgs", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) return toast(data.error || "Failed", true);
+      if (data.botInviteUrl) window.open(data.botInviteUrl, "_blank");
+      location.reload();
+    });
+    return;
+  }
+
+  if (showApp) {
     stopLoginScene();
     state.session = session;
+    renderSaasContext(session);
     applyNavPermissions();
     setAdvancedOpen(localStorage.getItem("advancedNavOpen") === "true");
     const label = session.label || "Panel";
@@ -1339,6 +1447,9 @@ async function render() {
     if (state.tab === "events") view.innerHTML = await renderEvents();
     if (state.tab === "keys") view.innerHTML = await renderKeys();
     if (state.tab === "logs") view.innerHTML = await renderLogs();
+    if (state.tab === "servers") view.innerHTML = await renderServers();
+    if (state.tab === "roles") view.innerHTML = await renderRoleMaps();
+    if (state.tab === "billing") view.innerHTML = await renderBilling();
     bindView();
   } catch (e) {
     view.innerHTML = `<div class="card"><p class="muted">${e.message}</p></div>`;
@@ -2336,7 +2447,155 @@ async function renderKits() {
     </div>`;
 }
 
+function saasDisabledCard(title) {
+  return `<div class="card">
+    <h3>${esc(title)}</h3>
+    <p class="muted">This is the multi-tenant Usely workspace. Enable it locally by setting <code>SAAS_MODE=true</code> in <code>.env</code> (plus Supabase + Discord OAuth), then restart. See <a href="/" style="color:var(--acc,#2dd4bf)">the homepage</a> and DEPLOY.md.</p>
+    <p class="muted" style="margin-top:.75rem">Until then, this panel is the staff console for a single env-configured server.</p>
+  </div>`;
+}
+
+async function saasFetch(path, opts = {}) {
+  const res = await fetch(`/admin/api/saas${path}`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(state.session?.orgId ? { "X-Org-Id": state.session.orgId } : {}),
+      ...(state.session?.serverId ? { "X-Server-Id": state.session.serverId } : {}),
+      ...(opts.headers || {}),
+    },
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+async function renderServers() {
+  if (!state.session?.saas) return saasDisabledCard("Servers");
+  if (!can("servers")) {
+    return `<div class="card"><p class="muted">Only the org owner can add servers.</p></div>`;
+  }
+  let servers = [];
+  try {
+    const data = await saasFetch("/servers");
+    servers = data.servers || [];
+  } catch (e) {
+    return `<div class="card"><p class="muted">${esc(e.message)}</p></div>`;
+  }
+  const rows = servers.map((s) => `
+    <tr>
+      <td><strong>${esc(s.name)}</strong><div class="muted">${esc(s.rcon_host)}:${esc(String(s.rcon_port))}</div></td>
+      <td>${s.enabled ? `<span class="pill ok">ON</span>` : `<span class="pill bad">OFF</span>`}</td>
+      <td class="actions">
+        <button data-action="saasDefaultServer" data-id="${esc(s.id)}">Default</button>
+        <button class="danger" data-action="saasDeleteServer" data-id="${esc(s.id)}">Remove</button>
+      </td>
+    </tr>`).join("") || `<tr><td colspan="3" class="muted">No servers yet — add your first Nitrado WebRCON below.</td></tr>`;
+
+  const org = state.session.org || {};
+  return `
+    <div class="card" style="margin-bottom:1rem">
+      <h3>${esc(org.name || "Workspace")}</h3>
+      <p class="muted">Plan: <strong>${esc(org.plan || "basic")}</strong> · status <strong>${esc(org.planStatus || "—")}</strong>
+      ${org.guildId ? ` · Discord guild linked` : ` · <a href="${esc(state.session.botInviteUrl || "#")}" target="_blank" rel="noopener" style="color:var(--acc,#2dd4bf)">Invite bot</a> then paste guild ID below`}</p>
+      ${!org.guildId ? `
+        <div class="form-row" style="margin-top:.75rem;grid-template-columns:1fr auto;gap:.5rem">
+          <input id="saasGuildId" placeholder="Discord guild ID" />
+          <button class="primary" data-action="saasLinkGuild">Link guild</button>
+        </div>` : ""}
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <h3>Connected servers</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Server</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3>Add server</h3>
+      <p class="muted">From Nitrado → Settings → WebRCON. Host is IP only; port is the RCON port.</p>
+      <div class="form-row" style="grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.75rem">
+        <input id="saasSrvName" placeholder="Display name (e.g. Astral Main)" />
+        <input id="saasSrvHost" placeholder="RCON host" />
+        <input id="saasSrvPort" placeholder="RCON port" />
+        <input id="saasSrvPass" type="password" placeholder="RCON password" />
+      </div>
+      <button class="primary" style="margin-top:.75rem" data-action="saasAddServer">Add server</button>
+    </div>`;
+}
+
+async function renderRoleMaps() {
+  if (!state.session?.saas) return saasDisabledCard("Staff roles");
+  if (!can("keys") && state.session.role !== "owner") {
+    return `<div class="card"><p class="muted">Missing permission to edit role maps.</p></div>`;
+  }
+  let maps = [];
+  let defaults = state.session.staffPermissionDefaults || {};
+  try {
+    const data = await saasFetch("/role-maps");
+    maps = data.maps || [];
+  } catch (e) {
+    return `<div class="card"><p class="muted">${esc(e.message)}</p></div>`;
+  }
+  const permKeys = Object.keys(defaults);
+  const rows = maps.map((m) => `
+    <tr>
+      <td><strong>${esc(m.label || m.discord_role_id)}</strong><div class="muted">${esc(m.discord_role_id)}</div></td>
+      <td class="muted" style="font-size:.7rem">${Object.entries(m.permissions || {}).filter(([,v])=>v).map(([p])=>p).join(", ") || "none"}</td>
+      <td class="actions"><button class="danger" data-action="saasDeleteRole" data-id="${esc(m.discord_role_id)}">Remove</button></td>
+    </tr>`).join("") || `<tr><td colspan="3" class="muted">No role maps yet</td></tr>`;
+
+  const checks = permKeys.map((p) => `
+    <label style="display:flex;gap:.4rem;align-items:center;font-size:.8rem">
+      <input type="checkbox" data-saas-perm="${esc(p)}" ${defaults[p] ? "checked" : ""} /> ${esc(p)}
+    </label>`).join("");
+
+  return `
+    <div class="card" style="margin-bottom:1rem">
+      <h3>Discord role → permissions</h3>
+      <p class="muted">Anyone with a mapped role in your linked Discord can log in with Discord and use the panel.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Role</th><th>Permissions</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3>Add / update map</h3>
+      <div class="form-row" style="grid-template-columns:1fr 1fr;gap:.6rem">
+        <input id="saasRoleId" placeholder="Discord role ID" />
+        <input id="saasRoleLabel" placeholder="Label (e.g. Mod)" />
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(9rem,1fr));gap:.35rem;margin-top:.75rem">${checks}</div>
+      <button class="primary" style="margin-top:.75rem" data-action="saasSaveRole">Save role map</button>
+    </div>`;
+}
+
+async function renderBilling() {
+  if (!state.session?.saas) return saasDisabledCard("Billing");
+  if (!can("billing")) {
+    return `<div class="card"><p class="muted">Only the org owner can manage billing.</p></div>`;
+  }
+  const org = state.session.org || {};
+  return `
+    <div class="card">
+      <h3>Plan</h3>
+      <p class="muted">Current: <strong>${esc(org.plan || "basic")}</strong> · <strong>${esc(org.planStatus || "inactive")}</strong></p>
+      <p class="muted">Basic $20 / 1 server · Pro $49 / 5 · Network $99 / 15 — <a href="/pricing" style="color:var(--acc,#2dd4bf)">pricing page</a></p>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem">
+        <button class="primary" data-action="saasCheckout" data-plan="basic">Checkout Basic</button>
+        <button class="primary" data-action="saasCheckout" data-plan="pro">Checkout Pro</button>
+        <button class="primary" data-action="saasCheckout" data-plan="network">Checkout Network</button>
+        <button data-action="saasPortal">Manage subscription</button>
+      </div>
+    </div>`;
+}
+
 async function renderKeys() {
+  if (state.session?.saas) {
+    return `<div class="card"><h3>Access keys</h3><p class="muted">SaaS mode uses Discord role maps instead of shared keys. Open <strong>Workspace → Roles</strong>.</p></div>`;
+  }
   const data = await api("/keys");
   const permKeys = Object.keys(data.defaults || {});
   const created = state.lastCreatedKey
@@ -3094,6 +3353,80 @@ function bindView() {
             toast(r.error, true);
           }
         }
+
+        if (a === "saasAddServer") {
+          await saasFetch("/servers", {
+            method: "POST",
+            body: {
+              name: document.getElementById("saasSrvName")?.value,
+              host: document.getElementById("saasSrvHost")?.value,
+              port: document.getElementById("saasSrvPort")?.value,
+              password: document.getElementById("saasSrvPass")?.value,
+            },
+          });
+          toast("Server added");
+          const session = await api("/session");
+          state.session = session;
+          renderSaasContext(session);
+          render();
+        }
+        if (a === "saasDeleteServer") {
+          if (!confirm("Remove this server?")) return;
+          await saasFetch(`/servers/${el.dataset.id}`, { method: "DELETE" });
+          toast("Server removed");
+          render();
+        }
+        if (a === "saasDefaultServer") {
+          await saasFetch(`/servers/${el.dataset.id}/default`, { method: "POST", body: {} });
+          toast("Default server updated");
+          render();
+        }
+        if (a === "saasLinkGuild") {
+          const guildId = document.getElementById("saasGuildId")?.value?.trim();
+          await saasFetch(`/orgs/${state.session.orgId}/guild`, {
+            method: "POST",
+            body: { guildId },
+          });
+          toast("Guild linked");
+          const session = await api("/session");
+          state.session = session;
+          render();
+        }
+        if (a === "saasSaveRole") {
+          const permissions = {};
+          document.querySelectorAll("[data-saas-perm]").forEach((box) => {
+            permissions[box.dataset.saasPerm] = box.checked;
+          });
+          await saasFetch("/role-maps", {
+            method: "PUT",
+            body: {
+              discordRoleId: document.getElementById("saasRoleId")?.value,
+              label: document.getElementById("saasRoleLabel")?.value,
+              permissions,
+            },
+          });
+          toast("Role map saved");
+          render();
+        }
+        if (a === "saasDeleteRole") {
+          if (!confirm("Remove this role map?")) return;
+          await saasFetch(`/role-maps/${el.dataset.id}`, { method: "DELETE" });
+          toast("Role map removed");
+          render();
+        }
+        if (a === "saasCheckout") {
+          const r = await saasFetch("/billing/checkout", {
+            method: "POST",
+            body: { plan: el.dataset.plan },
+          });
+          if (r.url) location.href = r.url;
+          else toast("No checkout URL", true);
+        }
+        if (a === "saasPortal") {
+          const r = await saasFetch("/billing/portal", { method: "POST", body: {} });
+          if (r.url) location.href = r.url;
+          else toast("No portal URL", true);
+        }
       } catch (e) {
         toast(e.message, true);
       }
@@ -3170,6 +3503,30 @@ document.getElementById("loginBtn").onclick = async () => {
 document.getElementById("password").onkeydown = (e) => {
   if (e.key === "Enter") document.getElementById("loginBtn").click();
 };
+document.getElementById("saasEmailLoginBtn").onclick = async () => {
+  const errorEl = document.getElementById("loginError");
+  errorEl.classList.add("hidden");
+  try {
+    const r = await fetch("/admin/auth/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: document.getElementById("saasEmail").value.trim(),
+        password: document.getElementById("saasPassword").value,
+      }),
+    }).then((r) => r.json());
+    if (!r.ok) throw new Error(r.error || "Login failed");
+    await boot();
+  } catch (e) {
+    errorEl.textContent = e.message || "Invalid email or password";
+    errorEl.classList.remove("hidden");
+  }
+};
+document.getElementById("saasPassword").onkeydown = (e) => {
+  if (e.key === "Enter") document.getElementById("saasEmailLoginBtn").click();
+};
+document.getElementById("orgSelect")?.addEventListener("change", () => switchSaasContext());
+document.getElementById("serverSelect")?.addEventListener("change", () => switchSaasContext());
 document.getElementById("logoutBtn").onclick = async () => {
   await api("/logout", { method: "POST", body: {} });
   location.reload();

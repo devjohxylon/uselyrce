@@ -1,65 +1,32 @@
-# Astral Bot
+# Usely
 
-Discord bridge for **Astral Vanilla+** (Rust RCE). Works **alongside KAOS** — KAOS keeps running the server; Astral relays Discord channels to your website and posts site updates back into Discord.
+**Usely** (`usely.dev`) is a multi-tenant Discord + WebRCON admin panel for Rust Console Edition servers.
 
-## ⚡ NEW: Advanced Admin Panel
+Communities (e.g. Astral, Aces) sign in with Discord, invite the shared bot, add one or more Nitrado WebRCON servers, map staff roles to permissions, and manage players from the web panel.
 
-The admin panel now includes powerful real-time features:
-- **🔴 Live WebSocket Updates** - Real-time server stats, player positions, kill feeds
-- **📊 Analytics Dashboard** - Player activity trends, weapon stats, performance metrics
-- **🗺️ Live Map** - Real-time player positions on 2D grid
-- **👥 Player Profiles** - Detailed player history, notes, tags, warnings
+## Stack
 
-See [ADMIN_PANEL_FEATURES.md](./ADMIN_PANEL_FEATURES.md) for full documentation.
+- Node.js + Express admin panel + Socket.IO
+- discord.js bot (shared across guilds)
+- `rce.js` WebRCON (multi-server pool)
+- Supabase (orgs / servers / role maps)
+- Stripe (Basic $20 / Pro $49 / Network $99)
 
-## What it does
+## Quick start (local)
 
-| Direction | Behavior |
-|-----------|----------|
-| **Discord → Website** | Watches `#kaos-activity`, `#leaderboard` (KAOS stats), and optionally `#announcements` |
-| **Leaderboard sync** | Parses KAOS leaderboard embeds/images (including edits) and POSTs to your site |
-| **Website → Discord** | Your site calls the bot webhook; Astral posts to `#announcements`, `#wipes`, or `#events` |
-
-## Setup
-
-### 1. Create / rename the Discord application
-
-1. Open [Discord Developer Portal](https://discord.com/developers/applications) → your app (or **New Application**)
-2. Rename to **Astral Bot** (General Information)
-3. **Bot** → set username to **Astral Bot** (or similar)
-4. Enable **Message Content Intent** + **Server Members Intent**
-5. Invite with scopes: `bot`, `applications.commands`
-
-### 2. Configure channels
-
-Copy channel IDs into `.env` (see `.env.example`).
-
-### 3. Install and run
-
-```bash
-npm install
-npm run register-commands
-npm start
+```powershell
+copy .env.example .env
+# fill DISCORD_* and optionally RCON_*
+npm.cmd install
+npm.cmd run dev
 ```
 
-### 4. Host the bot
+Panel: http://localhost:3847/admin
 
-The bot needs a **always-on** process. See [DEPLOY.md](./DEPLOY.md).
+Legacy mode (`SAAS_MODE=false`): access-key login.  
+SaaS mode (`SAAS_MODE=true`): Discord OAuth — see [DEPLOY.md](DEPLOY.md).
 
----
+## Docs
 
-## Slash commands
-
-| Command | Description |
-|---------|-------------|
-| `/astral-status` | Bot uptime, watched channels, website URL |
-| `/astral-leaderboard` | Push latest KAOS leaderboard message to your site |
-| `/astral-sync` | Backfill recent messages from a channel to your site |
-
-Plus moderation, giveaways, tickets — see [FEATURES.md](./FEATURES.md).
-
----
-
-## Website integration
-
-See [integration/SITE_SETUP.md](./integration/SITE_SETUP.md) and [FEATURES.md](./FEATURES.md).
+- [DEPLOY.md](DEPLOY.md) — local + Railway
+- [docs/superpowers/specs/2026-07-28-saas-multitenant-design.md](docs/superpowers/specs/2026-07-28-saas-multitenant-design.md)

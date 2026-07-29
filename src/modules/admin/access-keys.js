@@ -36,13 +36,13 @@ export const OWNER_PERMISSIONS = {
 };
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const COOKIE = "astral_admin";
+const COOKIE = "usely_admin";
 
 function signingSecret() {
   return (
     config.adminPanel.sessionSecret ||
     config.adminPanel.password ||
-    "astral-admin"
+    "usely-admin"
   );
 }
 
@@ -143,7 +143,7 @@ export async function resolveSession(req) {
   return null;
 }
 
-function sanitizeStaffPerms(input = {}) {
+export function sanitizeStaffPerms(input = {}) {
   const out = { ...STAFF_PERMISSIONS };
   for (const key of Object.keys(STAFF_PERMISSIONS)) {
     if (typeof input[key] === "boolean") out[key] = input[key];

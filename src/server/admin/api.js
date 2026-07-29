@@ -77,6 +77,12 @@ import {
   setSessionCookie,
   updateAccessKey,
 } from "../../modules/admin/access-keys.js";
+import { config } from "../../config.js";
+import {
+  attachSaasRoutes,
+  resolvePanelSession,
+} from "../../saas/auth/routes.js";
+import { runWithServer } from "../../modules/rcon/client.js";
 import { getAnalyticsSummary } from "../../modules/analytics/tracker.js";
 import {
   getPlayerProfile,
@@ -136,9 +142,17 @@ function clearLoginFailures(ip) {
 
 async function requireAuth(req, res, next) {
   try {
-    const session = await resolveSession(req);
-    if (!session) return res.status(401).json({ error: "Unauthorized" });
+    const session = await resolvePanelSession(req, req.app?.locals?.discordClient || null);
+    if (!session || session.needsOnboarding) {
+      if (session?.needsOnboarding) {
+        return res.status(403).json({ error: "Create an organization first", needsOnboarding: true });
+      }
+      return res.status(401).json({ error: "Unauthorized" });
+    }
     req.session = session;
+    if (config.saas.enabled && session.serverId) {
+      return runWithServer(session.serverId, () => next());
+    }
     return next();
   } catch (error) {
     return res.status(500).json({ error: error.message || "Auth failed" });
@@ -169,7 +183,8 @@ async function audit(req, action, detail = {}) {
 }
 
 export async function attachAdminPanel(app, client) {
-  app.get("/", (_req, res) => res.redirect(302, "/admin"));
+  app.locals.discordClient = client;
+  attachSaasRoutes(app, client);
 
   app.get("/admin", (_req, res) => {
     res.type("html").send(PANEL_HTML);
@@ -178,6 +193,14 @@ export async function attachAdminPanel(app, client) {
   app.get("/admin/", (_req, res) => res.redirect("/admin"));
 
   app.post("/admin/api/login", async (req, res) => {
+    if (config.saas.enabled) {
+      return res.status(400).json({
+        ok: false,
+        error: "Use Discord login",
+        saas: true,
+        loginUrl: "/admin/auth/discord",
+      });
+    }
     const ip = clientIp(req);
     const rate = checkLoginRate(ip);
     if (!rate.ok) {
@@ -223,6 +246,11 @@ export async function attachAdminPanel(app, client) {
   });
 
   app.post("/admin/api/logout", async (req, res) => {
+    if (config.saas.enabled) {
+      const { clearSaasSessionCookie } = await import("../../saas/auth/discord-session.js");
+      clearSaasSessionCookie(res);
+      return res.json({ ok: true });
+    }
     const session = await resolveSession(req);
     if (session) {
       await appendPanelLog({
@@ -237,11 +265,38 @@ export async function attachAdminPanel(app, client) {
   });
 
   app.get("/admin/api/session", async (req, res) => {
+    if (config.saas.enabled) {
+      const session = await resolvePanelSession(req, client);
+      if (!session) return res.json({ ok: true, authed: false, saas: true });
+      return res.json({
+        ok: true,
+        authed: !session.needsOnboarding,
+        saas: true,
+        needsOnboarding: Boolean(session.needsOnboarding),
+        role: session.role,
+        label: session.label,
+        permissions: session.permissions,
+        orgId: session.orgId,
+        org: session.org
+          ? {
+              id: session.org.id,
+              name: session.org.name,
+              plan: session.org.plan,
+              planStatus: session.org.plan_status,
+              guildId: session.org.discord_guild_id,
+            }
+          : null,
+        serverId: session.serverId,
+        servers: session.servers || [],
+        staffPermissionDefaults: STAFF_PERMISSIONS,
+      });
+    }
     const session = await resolveSession(req);
-    if (!session) return res.json({ ok: true, authed: false });
+    if (!session) return res.json({ ok: true, authed: false, saas: false });
     return res.json({
       ok: true,
       authed: true,
+      saas: false,
       role: session.role,
       label: session.label,
       permissions: session.permissions,
@@ -462,7 +517,7 @@ export async function attachAdminPanel(app, client) {
     try {
       const message = String(req.body?.message ?? "").trim();
       if (!message) return res.status(400).json({ ok: false, error: "Missing message" });
-      const result = await sendGameCommand(`say <color=#00ffcc>[Astral]</color> ${message}`);
+      const result = await sendGameCommand(`say <color=#00ffcc>[Usely]</color> ${message}`);
       await audit(req, "broadcast", { message });
       res.json({ ok: true, result: result ?? "" });
     } catch (error) {

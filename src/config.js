@@ -120,7 +120,47 @@ function parseRconEndpoint() {
 
 const rconEndpoint = parseRconEndpoint();
 
+const saasMock = parseBool("SAAS_MOCK", false);
+const saasEnabled = parseBool("SAAS_MODE", false) || saasMock;
+const saasConfig = {
+  enabled: saasEnabled,
+  mock: saasMock,
+  supabaseUrl: optional("SUPABASE_URL") || null,
+  supabaseServiceKey: optional("SUPABASE_SERVICE_ROLE_KEY") || null,
+  supabaseAnonKey: optional("SUPABASE_ANON_KEY") || null,
+  rconEncryptionKey: optional("RCON_ENCRYPTION_KEY") || null,
+  stripeSecretKey: optional("STRIPE_SECRET_KEY") || null,
+  stripeWebhookSecret: optional("STRIPE_WEBHOOK_SECRET") || null,
+  stripePriceBasic: optional("STRIPE_PRICE_BASIC") || null,
+  stripePricePro: optional("STRIPE_PRICE_PRO") || null,
+  stripePriceNetwork: optional("STRIPE_PRICE_NETWORK") || null,
+  discordOAuthClientId:
+    optional("DISCORD_OAUTH_CLIENT_ID") || optional("DISCORD_CLIENT_ID") || null,
+  discordOAuthClientSecret: optional("DISCORD_OAUTH_CLIENT_SECRET") || null,
+  publicUrl: optional("ADMIN_PANEL_URL") || "http://localhost:3847",
+  // Root domain for per-org panels (<slug>.usely.dev). Local default: localhost
+  // so <slug>.localhost:3847 works in every modern browser.
+  baseDomain: optional("SAAS_BASE_DOMAIN") || null,
+  resendApiKey: optional("RESEND_API_KEY") || null,
+  emailFrom: optional("EMAIL_FROM") || "Usely <onboarding@usely.dev>",
+};
+
+if (saasEnabled && !saasMock) {
+  const missing = [];
+  if (!saasConfig.supabaseUrl) missing.push("SUPABASE_URL");
+  if (!saasConfig.supabaseServiceKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!saasConfig.supabaseAnonKey) missing.push("SUPABASE_ANON_KEY");
+  if (!saasConfig.rconEncryptionKey) missing.push("RCON_ENCRYPTION_KEY");
+  if (!saasConfig.discordOAuthClientSecret) missing.push("DISCORD_OAUTH_CLIENT_SECRET");
+  if (missing.length) {
+    throw new Error(
+      `SAAS_MODE=true requires: ${missing.join(", ")}. See .env.example.`,
+    );
+  }
+}
+
 export const config = {
+  saas: saasConfig,
   discord: {
     token: required("DISCORD_TOKEN"),
     clientId: required("DISCORD_CLIENT_ID"),
@@ -167,7 +207,7 @@ export const config = {
     minJoinHours: Number(optional("MIN_JOIN_HOURS", "0")),
     linkAllowlist: parseWordList("LINK_ALLOWLIST").length
       ? parseWordList("LINK_ALLOWLIST")
-      : ["acesrust.com", "tip4serv.com"],
+      : ["usely.dev", "tip4serv.com"],
     allowInvites: parseBool("ALLOW_DISCORD_INVITES"),
     wordBlocklist: parseWordList("WORD_FILTER"),
     raidJoinThreshold: Number(optional("RAID_JOIN_THRESHOLD", "8")),
@@ -240,10 +280,12 @@ export const config = {
       "change-me",
     // Dedicated HMAC secret for session cookies (falls back to password if unset)
     sessionSecret: optional("ADMIN_SESSION_SECRET") || null,
-    // Public URL for logs / bookmarks, e.g. https://admin.astralrce.com
+    // Public URL for logs / bookmarks, e.g. https://admin.usely.dev
     publicUrl: optional("ADMIN_PANEL_URL") || null,
   },
   brand: {
+    name: "Usely",
+    url: optional("BRAND_URL", "https://usely.dev") || "https://usely.dev",
     // Logo for Discord panels (thumbnail/footer). Falls back to server icon.
     logoUrl: optional("BRAND_LOGO_URL") || null,
   },

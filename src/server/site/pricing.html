@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pricing — Usely</title>
+  <meta name="description" content="Usely pricing for Rust Console Discord + WebRCON admin: Basic $20, Pro $49, Network $99." />
+  <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #050506;
+      --bg2: #0c0d10;
+      --bg3: #12141a;
+      --line: rgba(255,255,255,.07);
+      --line2: rgba(255,255,255,.14);
+      --text: #f0f2f5;
+      --muted: #9aa0ab;
+      --faint: #5e646f;
+      --chrome: #d7dde6;
+      --chrome-dim: #8a93a0;
+      --accent: #e8edf4;
+      --radius: 4px;
+      --font: "Space Grotesk", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 80% -15%, rgba(215,221,230,.05), transparent 55%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1120px, calc(100% - 2.5rem)); margin: 0 auto; }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 0; gap: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: .7rem; font-weight: 700; letter-spacing: .14em; font-size: .9rem; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-links { display: flex; gap: 1rem; align-items: center; color: var(--muted); font-size: .9rem; }
+    .nav-links a:hover { color: var(--text); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid transparent; padding: .7rem 1.15rem; font: inherit; font-weight: 600;
+      cursor: pointer; border-radius: var(--radius);
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: var(--accent); color: #0b0c0e; }
+    .btn-primary:hover { background: #fff; }
+    .btn-ghost { background: transparent; border-color: var(--line2); color: var(--text); }
+    .btn-ghost:hover { border-color: var(--chrome-dim); }
+    .hero { padding: 3rem 0 2rem; max-width: 38rem; }
+    .kicker {
+      color: var(--chrome-dim);
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      margin-bottom: .75rem;
+    }
+    .hero h1 {
+      margin: 0 0 .75rem;
+      font-weight: 700;
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      line-height: 1.02;
+      letter-spacing: -.02em;
+      background: linear-gradient(180deg, #fff, #9aa3af);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero p { margin: 0; color: var(--muted); line-height: 1.55; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding-bottom: 3rem;
+    }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.25rem;
+      background: var(--bg2);
+      display: grid;
+      gap: .9rem;
+      align-content: start;
+    }
+    .card:hover { border-color: var(--line2); }
+    .card.featured {
+      border-color: var(--chrome-dim);
+      background: linear-gradient(180deg, var(--bg3), var(--bg2));
+    }
+    .card h2 {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--chrome);
+    }
+    .amt { font-size: 2.8rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+    .amt span { font-size: .9rem; color: var(--muted); font-weight: 500; }
+    ul { margin: 0; padding: 0; list-style: none; display: grid; gap: .5rem; color: var(--muted); font-size: .9rem; }
+    li::before { content: "·"; color: var(--chrome); margin-right: .45rem; font-weight: 700; }
+    .note {
+      border-top: 1px solid var(--line);
+      padding: 1.5rem 0 2.5rem;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.55;
+      max-width: 42rem;
+    }
+    .note strong { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="nav">
+      <a class="brand" href="/"><img src="/logo.svg" alt="" />USELY</a>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <a class="btn btn-ghost" href="/admin">Sign in</a>
+        <a class="btn btn-primary" href="/signup">Get started</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="kicker">Per-workspace subscription</div>
+      <h1>Pricing</h1>
+      <p>Pay for the number of live Rust Console servers you connect. Discord bot, panel, and role maps are included on every plan.</p>
+    </section>
+
+    <div class="grid">
+      <article class="card">
+        <h2>Basic</h2>
+        <div class="amt">$20 <span>/ month</span></div>
+        <ul>
+          <li>1 connected server</li>
+          <li>Shared Discord bot</li>
+          <li>Staff role → permissions</li>
+          <li>Live player panel + RCON tools</li>
+        </ul>
+        <a class="btn btn-ghost" href="/signup?plan=basic">Choose Basic</a>
+      </article>
+      <article class="card featured">
+        <h2>Pro</h2>
+        <div class="amt">$49 <span>/ month</span></div>
+        <ul>
+          <li>Up to 5 servers</li>
+          <li>Header server switcher</li>
+          <li>Everything in Basic</li>
+          <li>Best for dual wipe / test + live</li>
+        </ul>
+        <a class="btn btn-primary" href="/signup?plan=pro">Choose Pro</a>
+      </article>
+      <article class="card">
+        <h2>Network</h2>
+        <div class="amt">$99 <span>/ month</span></div>
+        <ul>
+          <li>Up to 15 servers</li>
+          <li>Multi-community hosts</li>
+          <li>Everything in Pro</li>
+          <li>Priority setup help</li>
+        </ul>
+        <a class="btn btn-ghost" href="/signup?plan=network">Choose Network</a>
+      </article>
+    </div>
+
+    <p class="note">
+      After checkout we email you a setup link: pick your panel address
+      (<strong>yourname.usely.dev</strong>), set a password, then add servers under
+      <strong>Workspace → Servers</strong> (Nitrado WebRCON host / port / password).
+      Staff sign in to your panel with Discord — no extra seats to pay for.
+    </p>
+  </div>
+</body>
+</html>

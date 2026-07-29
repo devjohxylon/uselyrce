@@ -255,13 +255,13 @@ export const RANK_PRESETS = [
   {
     id: "owner",
     label: "Owner",
-    grant: (ign) => `ownerid "${ign}" "Astral panel"`,
+    grant: (ign) => `ownerid "${ign}" "Usely panel"`,
     revoke: (ign) => `removeowner "${ign}"`,
   },
   {
     id: "moderator",
     label: "Moderator",
-    grant: (ign) => `moderatorid "${ign}" "Astral panel"`,
+    grant: (ign) => `moderatorid "${ign}" "Usely panel"`,
     revoke: (ign) => `removemoderator "${ign}"`,
   },
 ];

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Usely — Rust Console server admin</title>
+  <meta name="description" content="Usely connects Discord and Nitrado WebRCON so Rust Console communities can manage players, kits, and multiple servers from one panel." />
+  <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #050506;
+      --bg2: #0c0d10;
+      --bg3: #12141a;
+      --bg-elev: #181b22;
+      --line: rgba(255,255,255,.07);
+      --line2: rgba(255,255,255,.14);
+      --text: #f0f2f5;
+      --muted: #9aa0ab;
+      --faint: #5e646f;
+      --chrome: #d7dde6;
+      --chrome-dim: #8a93a0;
+      --accent: #e8edf4;
+      --ok: #5ed9a0;
+      --warn: #e8c06a;
+      --radius: 4px;
+      --font: "Space Grotesk", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(1100px 600px at 15% -10%, rgba(215,221,230,.06), transparent 55%),
+        radial-gradient(800px 500px at 90% 5%, rgba(215,221,230,.04), transparent 50%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1120px, calc(100% - 2.5rem)); margin: 0 auto; }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 0;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      font-size: .9rem;
+    }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-links { display: flex; gap: 1.15rem; align-items: center; color: var(--muted); font-size: .9rem; }
+    .nav-links a:hover { color: var(--text); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .45rem;
+      border: 1px solid transparent;
+      padding: .7rem 1.15rem;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: var(--accent); color: #0b0c0e; }
+    .btn-primary:hover { background: #fff; }
+    .btn-ghost { background: transparent; border-color: var(--line2); color: var(--text); }
+    .btn-ghost:hover { border-color: var(--chrome-dim); }
+    .hero {
+      padding: clamp(3rem, 10vh, 6rem) 0 3.5rem;
+      display: grid;
+      gap: 1.4rem;
+      max-width: 42rem;
+    }
+    .kicker {
+      color: var(--chrome-dim);
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      margin: 0;
+      font-weight: 700;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      line-height: 1.02;
+      letter-spacing: -.02em;
+    }
+    .hero h1 span {
+      background: linear-gradient(180deg, #fff, #9aa3af);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 36rem;
+    }
+    .cta-row { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .4rem; }
+    .stage {
+      margin: .5rem 0 4rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--bg2), var(--bg));
+      min-height: 260px;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(ellipse at 75% 35%, #000 15%, transparent 70%);
+      z-index: -1;
+    }
+    .stage-inner {
+      padding: clamp(1.5rem, 4vw, 2.5rem);
+      display: grid;
+      gap: 1rem;
+      max-width: 30rem;
+    }
+    .stage h2 {
+      margin: 0;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -.01em;
+    }
+    .stage ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: .6rem;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+    .stage li::before {
+      content: "";
+      display: inline-block;
+      width: .42rem;
+      height: .42rem;
+      margin-right: .6rem;
+      background: var(--chrome);
+      vertical-align: .12rem;
+    }
+    section.block { padding: 3.5rem 0; border-top: 1px solid var(--line); }
+    section.block h2 {
+      margin: 0 0 .6rem;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 600;
+      letter-spacing: -.01em;
+    }
+    section.block > p {
+      margin: 0 0 1.75rem;
+      color: var(--muted);
+      max-width: 36rem;
+      line-height: 1.55;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 860px) {
+      .grid3 { grid-template-columns: 1fr; }
+      .nav-links .hide-sm { display: none; }
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.35rem 1.25rem 1.4rem;
+      background: var(--bg2);
+      display: grid;
+      gap: .85rem;
+      align-content: start;
+    }
+    .card:hover { border-color: var(--line2); }
+    .card.featured {
+      border-color: var(--chrome-dim);
+      background: linear-gradient(180deg, var(--bg3), var(--bg2));
+    }
+    .card h3 {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--chrome);
+    }
+    .card p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.5; }
+    .amt { font-size: 2.4rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+    .amt span { font-size: .9rem; color: var(--muted); font-weight: 500; }
+    .card ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: .45rem;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+    .card li::before {
+      content: "·";
+      color: var(--chrome);
+      margin-right: .45rem;
+      font-weight: 700;
+    }
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 1.5rem 0 2.5rem;
+      color: var(--faint);
+      font-size: .85rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="nav">
+      <a class="brand" href="/"><img src="/logo.svg" alt="" />USELY</a>
+      <nav class="nav-links">
+        <a class="hide-sm" href="/#how">How it works</a>
+        <a href="/pricing">Pricing</a>
+        <a class="btn btn-ghost" href="/admin">Sign in</a>
+        <a class="btn btn-primary" href="/signup">Get started</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="kicker">Rust Console Edition · Discord + WebRCON</div>
+      <h1><span>Admin for every Rust Console server.</span></h1>
+      <p>Usely is the shared Discord + WebRCON control plane. Subscribe, get your own panel at <b>yourname.usely.dev</b>, invite the bot, add Nitrado servers, and map staff roles — one product, many servers.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/signup">Create workspace</a>
+        <a class="btn btn-ghost" href="/pricing">See pricing</a>
+      </div>
+    </section>
+
+    <div class="stage">
+      <div class="stage-inner">
+        <div class="kicker">Built for console hosts</div>
+        <h2>Discord staff. Live RCON. Multiple machines.</h2>
+        <ul>
+          <li>Log in with Discord — no shared passwords</li>
+          <li>Add one or many Nitrado WebRCON endpoints</li>
+          <li>Map Discord roles to kick / ban / kits / RCON</li>
+          <li>Same bot across every guild you manage</li>
+        </ul>
+      </div>
+    </div>
+
+    <section class="block" id="how">
+      <h2>How communities get set up</h2>
+      <p>Three steps from checkout to live panel.</p>
+      <div class="grid3">
+        <div class="card">
+          <h3>1 · Subscribe</h3>
+          <p>Pick a plan and pay. We email you a setup link to choose your panel address — like <b>astral.usely.dev</b> — and your password.</p>
+        </div>
+        <div class="card">
+          <h3>2 · Servers</h3>
+          <p>Paste Nitrado WebRCON host, port, and password. Switch servers from the panel header.</p>
+        </div>
+        <div class="card">
+          <h3>3 · Staff roles</h3>
+          <p>Invite the bot, then map Discord roles to permissions. Staff sign in to your panel with Discord.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="pricing-preview">
+      <h2>Simple plans</h2>
+      <p>Start on Basic for one live server. Upgrade when you run a network.</p>
+      <div class="grid3">
+        <div class="card">
+          <h3>Basic</h3>
+          <div class="amt">$20 <span>/ mo</span></div>
+          <ul>
+            <li>1 Rust Console server</li>
+            <li>Discord bot + panel</li>
+            <li>Role → permission maps</li>
+          </ul>
+          <a class="btn btn-ghost" href="/signup?plan=basic">Get Basic</a>
+        </div>
+        <div class="card featured">
+          <h3>Pro</h3>
+          <div class="amt">$49 <span>/ mo</span></div>
+          <ul>
+            <li>Up to 5 servers</li>
+            <li>Server switcher</li>
+            <li>Everything in Basic</li>
+          </ul>
+          <a class="btn btn-primary" href="/signup?plan=pro">Get Pro</a>
+        </div>
+        <div class="card">
+          <h3>Network</h3>
+          <div class="amt">$99 <span>/ mo</span></div>
+          <ul>
+            <li>Up to 15 servers</li>
+            <li>For multi-wipe hosts</li>
+            <li>Priority onboarding</li>
+          </ul>
+          <a class="btn btn-ghost" href="/signup?plan=network">Get Network</a>
+        </div>
+      </div>
+      <p style="margin-top:1.25rem"><a href="/pricing" style="color:var(--chrome)">Full pricing details →</a></p>
+    </section>
+
+    <footer>
+      <span>© Usely · usely.dev</span>
+      <span><a href="/admin">Admin panel</a> · <a href="/pricing">Pricing</a></span>
+    </footer>
+  </div>
+</body>
+</html>

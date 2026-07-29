@@ -115,7 +115,7 @@ export async function clearMapImage(seed, size) {
 
 async function downloadToCache(url, seed, size) {
   const res = await fetch(url, {
-    headers: { "User-Agent": "AstralBot/1.0" },
+    headers: { "User-Agent": "Usely/1.0" },
     signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new Error(`Image download failed (${res.status})`);

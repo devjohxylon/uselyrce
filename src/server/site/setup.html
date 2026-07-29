@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Set up your workspace — Usely</title>
+  <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #050506; --bg2: #0c0d10; --bg3: #12141a;
+      --line: rgba(255,255,255,.07); --line2: rgba(255,255,255,.14);
+      --text: #f0f2f5; --muted: #9aa0ab; --faint: #5e646f;
+      --chrome: #d7dde6; --chrome-dim: #8a93a0; --accent: #e8edf4;
+      --ok: #5ed9a0; --bad: #ff6b73; --radius: 4px;
+      --font: "Space Grotesk", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: var(--font); color: var(--text);
+      background: radial-gradient(900px 500px at 50% -15%, rgba(215,221,230,.05), transparent 55%), var(--bg);
+      min-height: 100vh; display: grid; place-items: center; padding: 2rem 1rem;
+    }
+    a { color: inherit; text-decoration: none; }
+    .card {
+      width: min(30rem, 100%); border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--bg2); padding: 2rem 1.75rem; display: grid; gap: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: .65rem; font-weight: 700; letter-spacing: .14em; font-size: .85rem; }
+    .brand img { width: 28px; height: 28px; border-radius: 7px; }
+    h1 { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; }
+    p.sub { margin: -0.4rem 0 0; color: var(--muted); font-size: .92rem; line-height: 1.5; }
+    label { font-size: .82rem; color: var(--muted); display: grid; gap: .35rem; }
+    input {
+      width: 100%; font: inherit; color: var(--text); background: var(--bg3);
+      border: 1px solid var(--line2); border-radius: var(--radius); padding: .72rem .85rem; outline: none;
+    }
+    input:focus { border-color: var(--chrome-dim); }
+    .slugrow { display: flex; align-items: center; gap: .5rem; }
+    .slugrow input { flex: 1; }
+    .slugrow .dom { font-family: var(--mono); color: var(--faint); font-size: .85rem; white-space: nowrap; }
+    .hint { font-size: .78rem; min-height: 1rem; }
+    .hint.ok { color: var(--ok); }
+    .hint.bad { color: var(--bad); }
+    button {
+      font: inherit; font-weight: 600; cursor: pointer; border: none; border-radius: var(--radius);
+      background: var(--accent); color: #0b0c0e; padding: .85rem 1rem;
+    }
+    button:hover { background: #fff; }
+    button:disabled { opacity: .55; cursor: default; }
+    .err { color: var(--bad); font-size: .85rem; display: none; }
+    .invalid { display: none; color: var(--muted); line-height: 1.55; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a class="brand" href="/"><img src="/logo.svg" alt="" />USELY</a>
+    <div id="form" style="display:none;gap:1rem">
+      <h1>Set up your workspace</h1>
+      <p class="sub">Signed up as <b id="email"></b> · <span id="plan"></span> plan</p>
+      <label>Community / workspace name
+        <input id="orgName" placeholder="Astral Rust" maxlength="48" />
+      </label>
+      <label>Panel address
+        <div class="slugrow">
+          <input id="slug" placeholder="astral" maxlength="32" autocapitalize="off" spellcheck="false" />
+          <span class="dom" id="domainSuffix">.usely.dev</span>
+        </div>
+        <span class="hint" id="slugHint"></span>
+      </label>
+      <div id="pwFields" style="display:grid;gap:1rem">
+        <label>Password
+          <input id="pw" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+        </label>
+        <label>Confirm password
+          <input id="pw2" type="password" autocomplete="new-password" />
+        </label>
+      </div>
+      <div class="err" id="err"></div>
+      <button id="go">Create my panel</button>
+    </div>
+    <div class="invalid" id="invalid">
+      <h1>Link expired or already used</h1>
+      <p>This setup link is no longer valid. If you already finished setup, <a href="/admin" style="color:var(--chrome)">sign in here</a>. Otherwise contact support.</p>
+    </div>
+  </div>
+  <script>
+    const token = new URLSearchParams(location.search).get("token") || "";
+    let slugOk = false;
+    let checkTimer = null;
+
+    async function boot() {
+      const r = await fetch("/api/setup/info?token=" + encodeURIComponent(token)).then((r) => r.json());
+      if (!r.ok) { document.getElementById("invalid").style.display = "grid"; return; }
+      document.getElementById("form").style.display = "grid";
+      document.getElementById("email").textContent = r.email;
+      document.getElementById("plan").textContent = r.plan;
+      document.getElementById("domainSuffix").textContent = "." + r.baseDomain;
+      if (r.hasPassword) document.getElementById("pwFields").style.display = "none";
+      const suggested = r.email.split("@")[0].toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
+      document.getElementById("slug").value = suggested;
+      checkSlug();
+    }
+
+    function checkSlug() {
+      clearTimeout(checkTimer);
+      checkTimer = setTimeout(async () => {
+        const slug = document.getElementById("slug").value.trim().toLowerCase();
+        const hint = document.getElementById("slugHint");
+        slugOk = false;
+        if (!slug) { hint.textContent = ""; return; }
+        const r = await fetch("/api/setup/slug?slug=" + encodeURIComponent(slug)).then((r) => r.json());
+        if (r.available) {
+          slugOk = true;
+          hint.className = "hint ok";
+          hint.textContent = slug + "." + r.baseDomain + " is available";
+        } else {
+          hint.className = "hint bad";
+          hint.textContent = r.reason || "That address is taken.";
+        }
+      }, 250);
+    }
+    document.getElementById("slug").addEventListener("input", checkSlug);
+
+    document.getElementById("go").addEventListener("click", async () => {
+      const err = document.getElementById("err");
+      err.style.display = "none";
+      const orgName = document.getElementById("orgName").value.trim();
+      const slug = document.getElementById("slug").value.trim().toLowerCase();
+      const needsPw = document.getElementById("pwFields").style.display !== "none";
+      const pw = document.getElementById("pw").value;
+      const pw2 = document.getElementById("pw2").value;
+      function fail(msg) { err.textContent = msg; err.style.display = "block"; }
+      if (!orgName) return fail("Enter a workspace name.");
+      if (!slugOk) return fail("Pick an available panel address.");
+      if (needsPw) {
+        if (pw.length < 8) return fail("Password must be at least 8 characters.");
+        if (pw !== pw2) return fail("Passwords don't match.");
+      }
+      const btn = document.getElementById("go");
+      btn.disabled = true;
+      btn.textContent = "Creating…";
+      try {
+        const r = await fetch("/api/setup/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, orgName, slug, password: needsPw ? pw : undefined }),
+        }).then((r) => r.json());
+        if (!r.ok) throw new Error(r.error || "Setup failed");
+        location.href = r.redirect;
+      } catch (e) {
+        fail(e.message);
+        btn.disabled = false;
+        btn.textContent = "Create my panel";
+      }
+    });
+
+    boot();
+  </script>
+</body>
+</html>

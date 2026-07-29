@@ -97,7 +97,7 @@ export function wipeEmbed({ title, content, wipeAt, map, fields = [] }) {
     content,
     color: 0x3498db,
     fields: embedFields,
-    footer: "Astral RCE",
+    footer: "Usely",
   });
 }
 
@@ -121,6 +121,6 @@ export function eventEmbed({ title, content, startsAt, location, fields = [] }) 
     content,
     color: 0x9b59b6,
     fields: embedFields,
-    footer: "Astral RCE",
+    footer: "Usely",
   });
 }

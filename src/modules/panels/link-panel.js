@@ -21,10 +21,10 @@ const BUTTON_STATUS = "link:status";
 const MODAL_ID = "link:modal";
 const IGN_FIELD = "ign";
 
-const LOGO_NAME = "astral-logo.png";
+const LOGO_NAME = "usely-logo.png";
 const LOGO_PATH = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../../assets/astral-logo.png",
+  "../../../assets/usely-logo.png",
 );
 
 // Uploading the logo with the message keeps the embed working even when the

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/build-site.js",
+  "outputDirectory": "public",
+  "installCommand": "echo skip",
+  "cleanUrls": true,
+  "redirects": [
+    { "source": "/signup", "destination": "https://app.usely.dev/signup" },
+    { "source": "/setup", "destination": "https://app.usely.dev/setup" },
+    { "source": "/admin", "destination": "https://app.usely.dev/admin" },
+    { "source": "/admin/:path*", "destination": "https://app.usely.dev/admin/:path*" },
+    { "source": "/api/:path*", "destination": "https://app.usely.dev/api/:path*" }
+  ]
+}

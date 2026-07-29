@@ -7,11 +7,15 @@ import { publishFromWebsite, getBotStatus } from "../services/discordPublish.js"
 import { backfillChannel, syncLatestLeaderboard } from "../services/website.js";
 import { attachAdminPanel } from "./admin/api.js";
 import { createWebSocketServer } from "./websocket.js";
+import { attachMarketingSite } from "./site/routes.js";
 
-const LOGO_PATH = path.resolve(
+const ASSETS_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../assets/astral-logo.png",
+  "../../assets",
 );
+const LOGO_SVG = path.join(ASSETS_DIR, "usely-mark.svg");
+const LOGO_PNG = path.join(ASSETS_DIR, "usely-logo.png");
+
 
 function authorize(req, res, next) {
   const header = req.get("authorization") ?? "";
@@ -26,12 +30,54 @@ function authorize(req, res, next) {
 
 export async function createWebhookServer(client) {
   const app = express();
+
+  // Stripe needs the raw body — mount before express.json
+  app.post(
+    "/billing/stripe/webhook",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+      if (!config.saas?.enabled) {
+        return res.status(404).json({ error: "SaaS mode disabled" });
+      }
+      try {
+        const { handleStripeWebhook } = await import("../saas/billing/stripe.js");
+        const result = await handleStripeWebhook(
+          req.body,
+          req.get("stripe-signature"),
+        );
+        res.json(result);
+      } catch (error) {
+        console.error("Stripe webhook failed:", error.message);
+        res.status(400).json({ error: error.message });
+      }
+    },
+  );
+
   app.use(express.json({ limit: "10mb" }));
 
+  // Per-org subdomain tenancy: astral.usely.dev serves that org's panel.
+  if (config.saas?.enabled) {
+    const { resolveOrgFromHost } = await import("../saas/tenancy.js");
+    app.use(async (req, _res, next) => {
+      try {
+        req.orgFromHost = await resolveOrgFromHost(req.headers.host);
+      } catch {
+        req.orgFromHost = null;
+      }
+      next();
+    });
+    const { attachSignupRoutes } = await import("../saas/signup/routes.js");
+    attachSignupRoutes(app);
+  }
+
+  app.get("/logo.svg", (_req, res) => {
+    res.type("image/svg+xml").sendFile(LOGO_SVG);
+  });
   app.get(["/logo.png", "/favicon.ico"], (_req, res) => {
-    res.type("image/png").sendFile(LOGO_PATH);
+    res.type("image/png").sendFile(LOGO_PNG);
   });
 
+  attachMarketingSite(app);
   await attachAdminPanel(app, client);
 
   app.get("/health", (_req, res) => {
