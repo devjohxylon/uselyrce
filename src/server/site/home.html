@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Usely — Rust Console server admin</title>
-  <meta name="description" content="Usely connects Discord and Nitrado WebRCON so Rust Console communities can manage players, kits, and multiple servers from one panel." />
+  <title>Usely — Rust Console admin</title>
+  <meta name="description" content="Kick, ban, kits, and RCON for Rust Console. Your panel at you.usely.dev." />
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg: #050506;
@@ -24,7 +24,6 @@
       --chrome-dim: #8a93a0;
       --accent: #e8edf4;
       --ok: #5ed9a0;
-      --warn: #e8c06a;
       --radius: 4px;
       --font: "Space Grotesk", system-ui, sans-serif;
       --mono: "JetBrains Mono", ui-monospace, monospace;
@@ -35,203 +34,286 @@
       margin: 0;
       font-family: var(--font);
       color: var(--text);
-      background:
-        radial-gradient(1100px 600px at 15% -10%, rgba(215,221,230,.06), transparent 55%),
-        radial-gradient(800px 500px at 90% 5%, rgba(215,221,230,.04), transparent 50%),
-        var(--bg);
+      background: var(--bg);
       min-height: 100vh;
     }
     a { color: inherit; text-decoration: none; }
     .wrap { width: min(1120px, calc(100% - 2.5rem)); margin: 0 auto; }
+
     .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1.25rem 0;
+      padding: 1.15rem 0;
       gap: 1rem;
+      position: relative;
+      z-index: 2;
     }
     .brand {
       display: flex;
       align-items: center;
-      gap: .7rem;
+      gap: .65rem;
       font-weight: 700;
-      letter-spacing: .14em;
-      font-size: .9rem;
+      letter-spacing: .16em;
+      font-size: .85rem;
     }
-    .brand img { width: 32px; height: 32px; border-radius: 8px; }
-    .nav-links { display: flex; gap: 1.15rem; align-items: center; color: var(--muted); font-size: .9rem; }
+    .brand img { width: 28px; height: 28px; border-radius: 6px; }
+    .nav-links {
+      display: flex;
+      gap: .85rem;
+      align-items: center;
+      color: var(--muted);
+      font-size: .88rem;
+    }
     .nav-links a:hover { color: var(--text); }
+
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: .45rem;
       border: 1px solid transparent;
-      padding: .7rem 1.15rem;
+      padding: .65rem 1.05rem;
       font: inherit;
       font-weight: 600;
+      font-size: .9rem;
       cursor: pointer;
       border-radius: var(--radius);
-      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
     }
-    .btn:hover { transform: translateY(-1px); }
     .btn-primary { background: var(--accent); color: #0b0c0e; }
     .btn-primary:hover { background: #fff; }
     .btn-ghost { background: transparent; border-color: var(--line2); color: var(--text); }
     .btn-ghost:hover { border-color: var(--chrome-dim); }
+
+    /* ——— Hero: one composition ——— */
     .hero {
-      padding: clamp(3rem, 10vh, 6rem) 0 3.5rem;
+      min-height: calc(100vh - 4.5rem);
       display: grid;
-      gap: 1.4rem;
-      max-width: 42rem;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 2.5rem;
+      align-items: center;
+      padding: 1.5rem 0 3rem;
     }
-    .kicker {
-      color: var(--chrome-dim);
-      font-family: var(--mono);
-      font-size: .72rem;
-      letter-spacing: .18em;
-      text-transform: uppercase;
+    .hero-copy {
+      display: grid;
+      gap: 1.15rem;
+      max-width: 28rem;
+      opacity: 0;
+      animation: rise .7s ease .1s forwards;
+    }
+    .hero-brand {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+    }
+    .hero-brand img {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+    }
+    .hero-brand .name {
+      font-size: clamp(2.6rem, 5.5vw, 3.6rem);
+      font-weight: 700;
+      letter-spacing: .12em;
+      line-height: 1;
     }
     .hero h1 {
       margin: 0;
-      font-weight: 700;
-      font-size: clamp(2.4rem, 6vw, 4rem);
-      line-height: 1.02;
-      letter-spacing: -.02em;
-    }
-    .hero h1 span {
-      background: linear-gradient(180deg, #fff, #9aa3af);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: -.01em;
+      color: var(--chrome);
     }
     .hero p {
       margin: 0;
       color: var(--muted);
-      font-size: 1.05rem;
-      line-height: 1.6;
-      max-width: 36rem;
-    }
-    .cta-row { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .4rem; }
-    .stage {
-      margin: .5rem 0 4rem;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, var(--bg2), var(--bg));
-      min-height: 260px;
-      position: relative;
-      overflow: hidden;
-      isolation: isolate;
-    }
-    .stage::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(var(--line) 1px, transparent 1px),
-        linear-gradient(90deg, var(--line) 1px, transparent 1px);
-      background-size: 44px 44px;
-      mask-image: radial-gradient(ellipse at 75% 35%, #000 15%, transparent 70%);
-      z-index: -1;
-    }
-    .stage-inner {
-      padding: clamp(1.5rem, 4vw, 2.5rem);
-      display: grid;
-      gap: 1rem;
-      max-width: 30rem;
-    }
-    .stage h2 {
-      margin: 0;
-      font-size: clamp(1.5rem, 3vw, 2rem);
-      font-weight: 600;
-      line-height: 1.15;
-      letter-spacing: -.01em;
-    }
-    .stage ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: grid;
-      gap: .6rem;
-      color: var(--muted);
-      font-size: .95rem;
-    }
-    .stage li::before {
-      content: "";
-      display: inline-block;
-      width: .42rem;
-      height: .42rem;
-      margin-right: .6rem;
-      background: var(--chrome);
-      vertical-align: .12rem;
-    }
-    section.block { padding: 3.5rem 0; border-top: 1px solid var(--line); }
-    section.block h2 {
-      margin: 0 0 .6rem;
-      font-size: clamp(1.6rem, 3vw, 2.2rem);
-      font-weight: 600;
-      letter-spacing: -.01em;
-    }
-    section.block > p {
-      margin: 0 0 1.75rem;
-      color: var(--muted);
-      max-width: 36rem;
+      font-size: 1rem;
       line-height: 1.55;
     }
-    .grid3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-    }
-    @media (max-width: 860px) {
-      .grid3 { grid-template-columns: 1fr; }
-      .nav-links .hide-sm { display: none; }
-    }
-    .card {
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 1.35rem 1.25rem 1.4rem;
-      background: var(--bg2);
-      display: grid;
-      gap: .85rem;
-      align-content: start;
-    }
-    .card:hover { border-color: var(--line2); }
-    .card.featured {
-      border-color: var(--chrome-dim);
-      background: linear-gradient(180deg, var(--bg3), var(--bg2));
-    }
-    .card h3 {
-      margin: 0;
+    .hero p code {
       font-family: var(--mono);
-      font-size: .72rem;
-      letter-spacing: .14em;
-      text-transform: uppercase;
+      font-size: .86em;
       color: var(--chrome);
+      background: var(--bg3);
+      border: 1px solid var(--line);
+      padding: .12rem .4rem;
+      border-radius: 3px;
     }
-    .card p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.5; }
-    .amt { font-size: 2.4rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
-    .amt span { font-size: .9rem; color: var(--muted); font-weight: 500; }
-    .card ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
+    .cta-row { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .2rem; }
+
+    .hero-visual {
+      opacity: 0;
+      animation: rise .8s ease .22s forwards;
+      position: relative;
+    }
+    .panel-mock {
+      border: 1px solid var(--line2);
+      border-radius: var(--radius);
+      background: var(--bg2);
+      overflow: hidden;
+      box-shadow: 0 28px 80px rgba(0,0,0,.55);
+      display: grid;
+      grid-template-columns: 9.5rem 1fr;
+      min-height: 320px;
+    }
+    .pm-side {
+      border-right: 1px solid var(--line);
+      background: var(--bg);
+      padding: 1rem .85rem;
       display: grid;
       gap: .45rem;
-      color: var(--muted);
-      font-size: .88rem;
+      align-content: start;
     }
-    .card li::before {
-      content: "·";
-      color: var(--chrome);
-      margin-right: .45rem;
+    .pm-side .mark {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      font-size: .65rem;
       font-weight: 700;
+      letter-spacing: .14em;
+      margin-bottom: .6rem;
+      color: var(--chrome);
     }
+    .pm-side .mark img { width: 18px; height: 18px; border-radius: 4px; }
+    .pm-nav {
+      font-size: .72rem;
+      color: var(--faint);
+      padding: .35rem .45rem;
+      border-radius: 3px;
+    }
+    .pm-nav.on {
+      background: var(--bg3);
+      color: var(--text);
+    }
+    .pm-main { padding: 1rem 1.1rem; display: grid; gap: .85rem; align-content: start; }
+    .pm-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .pm-top h2 {
+      margin: 0;
+      font-size: .95rem;
+      font-weight: 600;
+    }
+    .pm-top span {
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--ok);
+      letter-spacing: .04em;
+    }
+    .pm-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .5rem;
+    }
+    .pm-stat {
+      border: 1px solid var(--line);
+      background: var(--bg3);
+      padding: .65rem .7rem;
+      border-radius: var(--radius);
+    }
+    .pm-stat .l {
+      font-family: var(--mono);
+      font-size: .58rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+    .pm-stat .v {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-top: .2rem;
+    }
+    .pm-list {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .pm-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 1rem;
+      padding: .5rem .75rem;
+      font-size: .78rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .pm-row:first-child { border-top: 0; color: var(--faint); font-family: var(--mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; }
+    .pm-row b { color: var(--text); font-weight: 500; }
+
+    /* ——— Sections ——— */
+    section.block {
+      padding: 3.25rem 0;
+      border-top: 1px solid var(--line);
+    }
+    section.block h2 {
+      margin: 0 0 1.5rem;
+      font-size: .72rem;
+      font-family: var(--mono);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--chrome-dim);
+      font-weight: 500;
+    }
+    .gets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem 1.5rem;
+    }
+    .gets h3 {
+      margin: 0 0 .4rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .gets p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.5;
+    }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .plan {
+      background: var(--bg2);
+      padding: 1.35rem 1.25rem;
+      display: grid;
+      gap: .55rem;
+      align-content: start;
+    }
+    .plan.hot { background: var(--bg3); }
+    .plan .nm {
+      font-family: var(--mono);
+      font-size: .68rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--chrome-dim);
+    }
+    .plan .pr {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      line-height: 1;
+    }
+    .plan .pr span { font-size: .85rem; color: var(--muted); font-weight: 500; }
+    .plan .desc { color: var(--muted); font-size: .88rem; margin: 0 0 .4rem; }
+    .plan a { justify-self: start; margin-top: .35rem; }
+
     footer {
       border-top: 1px solid var(--line);
-      padding: 1.5rem 0 2.5rem;
+      padding: 1.4rem 0 2.2rem;
       color: var(--faint);
-      font-size: .85rem;
+      font-size: .82rem;
       display: flex;
       justify-content: space-between;
       gap: 1rem;
@@ -239,6 +321,25 @@
     }
     footer a { color: var(--muted); }
     footer a:hover { color: var(--text); }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding: 2rem 0 2.5rem;
+        gap: 2rem;
+      }
+      .hero-visual { order: -1; }
+      .gets, .plans { grid-template-columns: 1fr; }
+      .panel-mock { grid-template-columns: 1fr; }
+      .pm-side { display: none; }
+      .nav-links .hide-sm { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -246,96 +347,102 @@
     <header class="nav">
       <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
       <nav class="nav-links">
-        <a class="hide-sm" href="/#how">How it works</a>
-        <a href="/pricing">Pricing</a>
+        <a class="hide-sm" href="/#pricing">Pricing</a>
         <a class="btn btn-ghost" href="/admin">Sign in</a>
         <a class="btn btn-primary" href="/signup">Get started</a>
       </nav>
     </header>
 
     <section class="hero">
-      <div class="kicker">Rust Console Edition · Discord + WebRCON</div>
-      <h1><span>Admin for every Rust Console server.</span></h1>
-      <p>Usely is the shared Discord + WebRCON control plane. Subscribe, get your own panel at <b>yourname.usely.dev</b>, invite the bot, add Nitrado servers, and map staff roles — one product, many servers.</p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="/signup">Create workspace</a>
-        <a class="btn btn-ghost" href="/pricing">See pricing</a>
+      <div class="hero-copy">
+        <div class="hero-brand">
+          <img src="/logo.png" alt="" />
+          <div class="name">USELY</div>
+        </div>
+        <h1>Run your Rust Console servers from Discord.</h1>
+        <p>Kick, ban, kits, RCON. Your panel lives at <code>you.usely.dev</code>.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="/signup">Get started</a>
+          <a class="btn btn-ghost" href="/pricing">Pricing</a>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <div class="panel-mock">
+          <aside class="pm-side">
+            <div class="mark"><img src="/logo.png" alt="" />USELY</div>
+            <div class="pm-nav on">Home</div>
+            <div class="pm-nav">Players</div>
+            <div class="pm-nav">Kits</div>
+            <div class="pm-nav">Workspace</div>
+            <div class="pm-nav">RCON</div>
+          </aside>
+          <div class="pm-main">
+            <div class="pm-top">
+              <h2>Astral Main</h2>
+              <span>● CONNECTED</span>
+            </div>
+            <div class="pm-stats">
+              <div class="pm-stat"><div class="l">Online</div><div class="v">42</div></div>
+              <div class="pm-stat"><div class="l">FPS</div><div class="v">58</div></div>
+              <div class="pm-stat"><div class="l">Queue</div><div class="v">0</div></div>
+            </div>
+            <div class="pm-list">
+              <div class="pm-row"><span>Player</span><span>Action</span><span></span></div>
+              <div class="pm-row"><b>Penumbra</b><span>Kick</span><span>Ban</span></div>
+              <div class="pm-row"><b>RustyNail</b><span>Kick</span><span>Ban</span></div>
+              <div class="pm-row"><b>Kiwi</b><span>Kick</span><span>Ban</span></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <div class="stage">
-      <div class="stage-inner">
-        <div class="kicker">Built for console hosts</div>
-        <h2>Discord staff. Live RCON. Multiple machines.</h2>
-        <ul>
-          <li>Log in with Discord — no shared passwords</li>
-          <li>Add one or many Nitrado WebRCON endpoints</li>
-          <li>Map Discord roles to kick / ban / kits / RCON</li>
-          <li>Same bot across every guild you manage</li>
-        </ul>
-      </div>
-    </div>
-
-    <section class="block" id="how">
-      <h2>How communities get set up</h2>
-      <p>Three steps from checkout to live panel.</p>
-      <div class="grid3">
-        <div class="card">
-          <h3>1 · Subscribe</h3>
-          <p>Pick a plan and pay. We email you a setup link to choose your panel address — like <b>astral.usely.dev</b> — and your password.</p>
+    <section class="block">
+      <h2>What you get</h2>
+      <div class="gets">
+        <div>
+          <h3>Live panel</h3>
+          <p>Players, kits, broadcasts, and RCON in one place. Switch servers from the header.</p>
         </div>
-        <div class="card">
-          <h3>2 · Servers</h3>
-          <p>Paste Nitrado WebRCON host, port, and password. Switch servers from the panel header.</p>
+        <div>
+          <h3>Discord staff</h3>
+          <p>Map roles to permissions. Mods sign in with Discord — no shared passwords.</p>
         </div>
-        <div class="card">
-          <h3>3 · Staff roles</h3>
-          <p>Invite the bot, then map Discord roles to permissions. Staff sign in to your panel with Discord.</p>
+        <div>
+          <h3>Your URL</h3>
+          <p>Every workspace gets its own address. Staff bookmark <code style="font-family:var(--mono);font-size:.86em;color:var(--chrome)">astral.usely.dev</code>.</p>
         </div>
       </div>
     </section>
 
-    <section class="block" id="pricing-preview">
-      <h2>Simple plans</h2>
-      <p>Start on Basic for one live server. Upgrade when you run a network.</p>
-      <div class="grid3">
-        <div class="card">
-          <h3>Basic</h3>
-          <div class="amt">$20 <span>/ mo</span></div>
-          <ul>
-            <li>1 Rust Console server</li>
-            <li>Discord bot + panel</li>
-            <li>Role → permission maps</li>
-          </ul>
-          <a class="btn btn-ghost" href="/signup?plan=basic">Get Basic</a>
+    <section class="block" id="pricing">
+      <h2>Pricing</h2>
+      <div class="plans">
+        <div class="plan">
+          <div class="nm">Basic</div>
+          <div class="pr">$20 <span>/ mo</span></div>
+          <p class="desc">1 server</p>
+          <a class="btn btn-ghost" href="/signup?plan=basic">Choose Basic</a>
         </div>
-        <div class="card featured">
-          <h3>Pro</h3>
-          <div class="amt">$49 <span>/ mo</span></div>
-          <ul>
-            <li>Up to 5 servers</li>
-            <li>Server switcher</li>
-            <li>Everything in Basic</li>
-          </ul>
-          <a class="btn btn-primary" href="/signup?plan=pro">Get Pro</a>
+        <div class="plan hot">
+          <div class="nm">Pro</div>
+          <div class="pr">$49 <span>/ mo</span></div>
+          <p class="desc">Up to 5 servers</p>
+          <a class="btn btn-primary" href="/signup?plan=pro">Choose Pro</a>
         </div>
-        <div class="card">
-          <h3>Network</h3>
-          <div class="amt">$99 <span>/ mo</span></div>
-          <ul>
-            <li>Up to 15 servers</li>
-            <li>For multi-wipe hosts</li>
-            <li>Priority onboarding</li>
-          </ul>
-          <a class="btn btn-ghost" href="/signup?plan=network">Get Network</a>
+        <div class="plan">
+          <div class="nm">Network</div>
+          <div class="pr">$99 <span>/ mo</span></div>
+          <p class="desc">Up to 15 servers</p>
+          <a class="btn btn-ghost" href="/signup?plan=network">Choose Network</a>
         </div>
       </div>
-      <p style="margin-top:1.25rem"><a href="/pricing" style="color:var(--chrome)">Full pricing details →</a></p>
     </section>
 
     <footer>
-      <span>© Usely · usely.dev</span>
-      <span><a href="/admin">Admin panel</a> · <a href="/pricing">Pricing</a></span>
+      <span>Usely</span>
+      <span><a href="/admin">Sign in</a> · <a href="/pricing">Full pricing</a></span>
     </footer>
   </div>
 </body>
