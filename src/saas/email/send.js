@@ -17,9 +17,9 @@ async function writeToOutbox(message) {
   await fs.writeFile(OUTBOX, JSON.stringify(box, null, 2), "utf8");
 }
 
-export async function sendEmail({ to, subject, html, text }) {
+export async function sendEmail({ to, subject, html, text, replyTo }) {
   if (config.saas.mock || !config.saas.resendApiKey) {
-    await writeToOutbox({ to, subject, html, text });
+    await writeToOutbox({ to, subject, html, text, replyTo });
     console.log(`MOCK EMAIL → ${to} | ${subject}`);
     if (text) console.log(`  ${text}`);
     return { mock: true };
@@ -31,7 +31,14 @@ export async function sendEmail({ to, subject, html, text }) {
       Authorization: `Bearer ${config.saas.resendApiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: config.saas.emailFrom, to: [to], subject, html, text }),
+    body: JSON.stringify({
+      from: config.saas.emailFrom,
+      to: [to],
+      subject,
+      html,
+      text,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    }),
   });
   if (!res.ok) {
     const body = await res.text();

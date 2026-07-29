@@ -161,6 +161,9 @@ if (saasEnabled && !saasMock) {
 
 export const config = {
   saas: saasConfig,
+  site: {
+    supportEmail: optional("SUPPORT_EMAIL") || "support@usely.dev",
+  },
   discord: {
     token: required("DISCORD_TOKEN"),
     clientId: required("DISCORD_CLIENT_ID"),

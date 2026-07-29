@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact — Usely</title>
+  <meta name="description" content="Get in touch with the Usely team about setup, billing, or anything else." />
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <style>
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 19rem;
+      gap: 2.5rem;
+      padding-bottom: clamp(3rem, 7vh, 4rem);
+      align-items: start;
+      animation: rise .55s ease .05s both;
+    }
+
+    form { display: grid; gap: 1.1rem; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+    .field { display: grid; gap: .45rem; }
+    .field > label {
+      font-family: var(--mono);
+      font-size: .68rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--chrome-dim);
+    }
+    input, select, textarea {
+      font: inherit;
+      font-size: .95rem;
+      color: var(--text);
+      background: var(--bg2);
+      border: 1px solid var(--line2);
+      border-radius: var(--radius);
+      padding: .7rem .8rem;
+      width: 100%;
+      transition: border-color .15s ease;
+    }
+    textarea { min-height: 9.5rem; resize: vertical; line-height: 1.6; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--chrome-dim);
+    }
+    select {
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--chrome-dim) 50%),
+                        linear-gradient(135deg, var(--chrome-dim) 50%, transparent 50%);
+      background-position: calc(100% - 1.1rem) 1.15rem, calc(100% - .8rem) 1.15rem;
+      background-size: .3rem .3rem, .3rem .3rem;
+      background-repeat: no-repeat;
+    }
+    .actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .msg { font-size: .9rem; line-height: 1.5; margin: 0; }
+    .msg.err { color: #f0a3a3; }
+    .msg.ok { color: var(--chrome); }
+
+    aside { display: grid; gap: 1.25rem; align-content: start; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg2);
+      padding: 1.2rem 1.25rem;
+    }
+    .card h2 {
+      margin: 0 0 .4rem;
+      font-size: .92rem;
+      font-weight: 600;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.6;
+    }
+    .card a { color: var(--chrome); text-decoration: underline; }
+
+    .sent {
+      display: none;
+      border: 1px solid var(--line2);
+      border-radius: var(--radius);
+      background: var(--bg3);
+      padding: 2rem 1.75rem;
+      max-width: 34rem;
+    }
+    .sent h2 { margin: 0 0 .5rem; font-size: 1.15rem; font-weight: 600; }
+    .sent p { margin: 0 0 1.25rem; color: var(--muted); line-height: 1.65; font-size: .975rem; }
+
+    @media (max-width: 860px) {
+      .cols { grid-template-columns: 1fr; gap: 2rem; }
+      .pair { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="nav">
+      <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
+      <nav class="nav-links">
+        <a href="/pricing">Pricing</a>
+        <a href="/faq">FAQ</a>
+        <a class="btn btn-ghost" href="/admin">Sign in</a>
+        <a class="btn btn-primary" href="/signup">Get started</a>
+      </nav>
+    </header>
+
+    <section class="page-hero">
+      <p class="label">Contact</p>
+      <h1>Get in touch</h1>
+      <p>Questions about setup, WebRCON, billing, or whether Usely fits your community — send a message and we'll reply by email.</p>
+    </section>
+
+    <div class="cols">
+      <div>
+        <form id="contactForm" novalidate>
+          <div class="pair">
+            <div class="field">
+              <label for="name">Name</label>
+              <input id="name" name="name" autocomplete="name" maxlength="80" required />
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" maxlength="160" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="topic">Topic</label>
+            <select id="topic" name="topic">
+              <option value="Presales question">Presales question</option>
+              <option value="Setup help">Setup help</option>
+              <option value="Billing">Billing</option>
+              <option value="Bug report">Bug report</option>
+              <option value="Something else">Something else</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" maxlength="4000" required placeholder="Tell us what you need. If it's a setup issue, include your host and panel address."></textarea>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary btn-lg" type="submit" id="submitBtn">Send message</button>
+            <p class="msg" id="msg" role="status"></p>
+          </div>
+        </form>
+
+        <div class="sent" id="sent">
+          <h2>Message sent</h2>
+          <p>Thanks — we have your message and will reply to the email address you gave us. Most questions get an answer within one business day.</p>
+          <a class="btn btn-ghost" href="/">Back to usely.dev</a>
+        </div>
+      </div>
+
+      <aside>
+        <div class="card">
+          <h2>Email us directly</h2>
+          <p><a href="mailto:support@usely.dev">support@usely.dev</a> — good for anything you'd rather send with attachments or logs.</p>
+        </div>
+        <div class="card">
+          <h2>Already a customer?</h2>
+          <p>Include your panel address (for example <code>astral.usely.dev</code>) so we can find your workspace quickly.</p>
+        </div>
+        <div class="card">
+          <h2>Check the FAQ first</h2>
+          <p>Setup, WebRCON, staff permissions, and billing are covered on the <a href="/faq">FAQ page</a>.</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      <span>Usely</span>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/faq">FAQ</a>
+        <a href="/changelog">Changelog</a>
+        <a href="/admin">Sign in</a>
+      </nav>
+    </footer>
+  </div>
+
+  <script>
+    // The static marketing site lives on usely.dev; the API runs on the app host.
+    const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ||
+      location.hostname.endsWith(".localhost");
+    const API = LOCAL || location.hostname === "app.usely.dev" ? "" : "https://app.usely.dev";
+
+    const form = document.getElementById("contactForm");
+    const btn = document.getElementById("submitBtn");
+    const msg = document.getElementById("msg");
+    const sent = document.getElementById("sent");
+
+    function fail(text) {
+      msg.textContent = text;
+      msg.className = "msg err";
+    }
+
+    /** If the API can't be reached, hand the message off to their mail client. */
+    function failWithMailto(text, data) {
+      const subject = `[${data.get("topic")}] ${data.get("name")}`;
+      const body = `${data.get("message")}\n\n— ${data.get("name")} <${data.get("email")}>`;
+      const href = `mailto:support@usely.dev?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      msg.className = "msg err";
+      msg.innerHTML = `${text} <a href="${href}" style="color:var(--chrome)">Send it by email instead</a>.`;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const email = String(data.get("email") || "").trim();
+
+      if (!String(data.get("name") || "").trim()) return fail("Add your name.");
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Enter a valid email address.");
+      if (String(data.get("message") || "").trim().length < 10) {
+        return fail("Add a bit more detail so we can help.");
+      }
+
+      btn.disabled = true;
+      msg.textContent = "Sending…";
+      msg.className = "msg";
+
+      try {
+        // urlencoded keeps this a simple cross-origin POST (no preflight).
+        const res = await fetch(API + "/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams(data),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.ok) throw new Error(body.error || "Could not send your message.");
+        form.style.display = "none";
+        sent.style.display = "block";
+      } catch (error) {
+        btn.disabled = false;
+        failWithMailto(error.message, data);
+      }
+    });
+  </script>
+</body>
+</html>

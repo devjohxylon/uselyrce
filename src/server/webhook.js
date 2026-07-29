@@ -54,6 +54,8 @@ export async function createWebhookServer(client) {
   );
 
   app.use(express.json({ limit: "10mb" }));
+  // The contact form posts urlencoded so it stays a simple cross-origin request.
+  app.use(express.urlencoded({ extended: false, limit: "64kb" }));
 
   // Per-org subdomain tenancy: astral.usely.dev serves that org's panel.
   if (config.saas?.enabled) {

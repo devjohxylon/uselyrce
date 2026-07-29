@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Changelog — Usely</title>
+  <meta name="description" content="What's new in Usely — new features, changes, and fixes to the Rust Console admin panel and Discord bot." />
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <style>
+    .log { animation: rise .55s ease .05s both; padding-bottom: 1rem; }
+    .entry {
+      display: grid;
+      grid-template-columns: 13rem 1fr;
+      gap: 2rem;
+      padding: 1.9rem 0;
+      border-top: 1px solid var(--line);
+    }
+    .entry:first-child { border-top: 0; padding-top: 0; }
+    .when time {
+      font-family: var(--mono);
+      font-size: .74rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--chrome-dim);
+      white-space: nowrap;
+    }
+    .what h2 {
+      margin: 0 0 1rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -.015em;
+    }
+    .what ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: .7rem;
+    }
+    .what li {
+      display: grid;
+      grid-template-columns: 4.6rem 1fr;
+      gap: .9rem;
+      align-items: start;
+      color: var(--muted);
+      font-size: .975rem;
+      line-height: 1.6;
+      max-width: 72ch;
+    }
+    .tag {
+      font-family: var(--mono);
+      font-size: .6rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: .3rem 0;
+      border: 1px solid var(--line2);
+      border-radius: 3px;
+      color: var(--chrome-dim);
+      margin-top: .12rem;
+    }
+    .tag.added { color: #0b0c0e; background: var(--accent); border-color: var(--accent); }
+    .tag.changed { color: var(--chrome); }
+
+    .subscribe {
+      margin: clamp(2rem, 5vh, 3rem) 0 3rem;
+      border-top: 1px solid var(--line);
+      padding-top: 1.75rem;
+      color: var(--muted);
+      font-size: .95rem;
+      line-height: 1.65;
+      max-width: 62ch;
+    }
+    .subscribe a { color: var(--chrome); text-decoration: underline; }
+
+    @media (max-width: 820px) {
+      .entry { grid-template-columns: 1fr; gap: .85rem; padding: 1.6rem 0; }
+      .what li { grid-template-columns: 4.6rem 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="nav">
+      <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
+      <nav class="nav-links">
+        <a href="/pricing">Pricing</a>
+        <a href="/faq">FAQ</a>
+        <a class="btn btn-ghost" href="/admin">Sign in</a>
+        <a class="btn btn-primary" href="/signup">Get started</a>
+      </nav>
+    </header>
+
+    <section class="page-hero">
+      <p class="label">Changelog</p>
+      <h1>What's new</h1>
+      <p>Every user-visible change to the panel, the Discord bot, and this site.</p>
+    </section>
+
+    <div class="log">
+<!--ENTRIES-->
+    </div>
+
+    <p class="subscribe">
+      Found a bug or want something added? <a href="/contact">Tell us</a> — most of this list came from customer requests.
+    </p>
+
+    <footer>
+      <span>Usely</span>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/faq">FAQ</a>
+        <a href="/contact">Contact</a>
+        <a href="/admin">Sign in</a>
+      </nav>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+---
+description: Keep the public changelog updated whenever user-visible changes ship
+alwaysApply: true
+---
+
+# Public changelog
+
+`src/server/site/changelog.js` is the single source of truth for the changelog at
+`/changelog`. It renders on both the Vercel build and the Express route.
+
+## When to update it
+
+Add an entry for anything a customer would notice: new panel features, Discord bot
+capabilities, pricing or plan changes, marketing pages, and user-facing bug fixes.
+
+Skip it for refactors, dependency bumps, internal tooling, and comment or test-only
+changes.
+
+## How to update it
+
+Add to the **top** of `entries`. Reuse today's entry if one already exists for the
+same date and it hasn't shipped yet; otherwise start a new one.
+
+```js
+{
+  date: "2026-08-04",              // ISO, renders as "August 4, 2026"
+  title: "Scheduled broadcasts",   // short, sentence case, no version numbers
+  changes: [
+    { type: "added", text: "Queue broadcasts to send on a repeating timer." },
+    { type: "fixed", text: "Ban list paging skipped the last page." },
+  ],
+}
+```
+
+- `type` is only `added`, `changed`, or `fixed`.
+- Write `text` for a server owner, not a developer: describe the capability, not the
+  implementation. Say "Staff can now be limited to kick-only" rather than "refactored
+  the permission resolver".
+- One sentence per change, ending in a period. Inline HTML like `<code>` is allowed.
+
+Do this in the same change as the feature, before committing.

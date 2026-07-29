@@ -4,119 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pricing — Usely</title>
-  <meta name="description" content="Usely pricing: Basic $20 (1 server), Pro $49 (2 servers), Network $99 (2+). Panel + Discord bot on every plan." />
+  <meta name="description" content="Usely pricing. Every plan includes the admin panel and Discord bot; you pay for the number of Rust Console servers you connect." />
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
   <style>
-    :root {
-      --bg: #050506;
-      --bg2: #0c0d10;
-      --bg3: #12141a;
-      --bg-elev: #181b22;
-      --line: rgba(255,255,255,.07);
-      --line2: rgba(255,255,255,.14);
-      --text: #f0f2f5;
-      --muted: #a3aab6;
-      --faint: #5e646f;
-      --chrome: #d7dde6;
-      --chrome-dim: #8a93a0;
-      --accent: #e8edf4;
-      --ok: #5ed9a0;
-      --radius: 4px;
-      --font: "Space Grotesk", system-ui, sans-serif;
-      --mono: "JetBrains Mono", ui-monospace, monospace;
-    }
-    * { box-sizing: border-box; }
-    html { -webkit-font-smoothing: antialiased; }
-    body {
-      margin: 0;
-      font-family: var(--font);
-      color: var(--text);
-      background:
-        radial-gradient(1000px 620px at 78% -10%, rgba(215,221,230,.075), transparent 60%),
-        radial-gradient(720px 420px at 0% 30%, rgba(215,221,230,.028), transparent 55%),
-        var(--bg);
-      background-attachment: fixed;
-    }
-    a { color: inherit; text-decoration: none; }
-    .wrap { width: min(1060px, calc(100% - 3rem)); margin: 0 auto; }
-
-    .nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      height: 4.25rem;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-      font-weight: 700;
-      letter-spacing: .18em;
-      font-size: .8rem;
-    }
-    .brand img { width: 24px; height: 24px; border-radius: 5px; }
-    .nav-links {
-      display: flex;
-      gap: 1.25rem;
-      align-items: center;
-      font-size: .875rem;
-    }
-    .nav-links > a:not(.btn) { color: var(--muted); }
-    .nav-links > a:not(.btn):hover { color: var(--text); }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid transparent;
-      padding: .6rem 1.1rem;
-      font: inherit;
-      font-weight: 600;
-      font-size: .875rem;
-      line-height: 1;
-      cursor: pointer;
-      border-radius: var(--radius);
-      white-space: nowrap;
-      transition: background .15s ease, border-color .15s ease;
-      width: 100%;
-    }
-    .btn-primary { background: var(--accent); color: #0b0c0e; }
-    .btn-primary:hover { background: #fff; }
-    .btn-ghost { background: transparent; border-color: var(--line2); color: var(--text); }
-    .btn-ghost:hover { border-color: var(--chrome-dim); background: rgba(255,255,255,.03); }
-    .nav .btn { width: auto; }
-
-    .hero {
-      padding: clamp(3.5rem, 9vh, 5.5rem) 0 clamp(2.5rem, 5vh, 3.5rem);
-      animation: rise .5s ease both;
-    }
-    .hero .label {
-      margin: 0 0 1.1rem;
-      font-family: var(--mono);
-      font-size: .72rem;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: var(--chrome-dim);
-    }
-    .hero h1 {
-      margin: 0 0 1.1rem;
-      font-size: clamp(2.35rem, 5.4vw, 3.6rem);
-      font-weight: 700;
-      letter-spacing: -.028em;
-      line-height: 1.06;
-    }
-    .hero p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1.0625rem;
-      line-height: 1.65;
-      max-width: 52ch;
-    }
-
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -124,7 +18,6 @@
       align-items: stretch;
       animation: rise .55s ease .05s both;
     }
-
     .plan {
       position: relative;
       display: grid;
@@ -210,9 +103,10 @@
       background: var(--chrome);
       border-radius: 1px;
     }
+    .plan .btn { width: 100%; }
 
     .included {
-      margin: clamp(2.5rem, 6vh, 3.5rem) 0 clamp(2.5rem, 6vh, 3.5rem);
+      margin: clamp(2.5rem, 6vh, 3.5rem) 0;
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background: var(--bg2);
@@ -228,11 +122,7 @@
       flex-wrap: wrap;
       align-items: baseline;
     }
-    .included .head h2 {
-      margin: 0;
-      font-size: .95rem;
-      font-weight: 600;
-    }
+    .included .head h2 { margin: 0; font-size: .95rem; font-weight: 600; }
     .included .head span {
       font-family: var(--mono);
       font-size: .68rem;
@@ -240,17 +130,13 @@
       text-transform: uppercase;
       color: var(--chrome-dim);
     }
-    .included .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-    }
+    .included .row { display: grid; grid-template-columns: 1fr 1fr; }
     .included .item {
       padding: 1.1rem 1.35rem;
       border-top: 1px solid var(--line);
       color: var(--muted);
       font-size: .9rem;
-      line-height: 1.45;
+      line-height: 1.5;
     }
     .included .item:nth-child(odd) { border-right: 1px solid var(--line); }
     .included .item strong {
@@ -269,41 +155,12 @@
       line-height: 1.65;
       max-width: 62ch;
     }
-    .note code {
-      font-family: var(--mono);
-      font-size: .86em;
-      color: var(--chrome);
-    }
 
-    footer {
-      border-top: 1px solid var(--line);
-      padding: 1.4rem 0 2.2rem;
-      color: var(--faint);
-      font-size: .82rem;
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    footer a { color: var(--muted); }
-    footer a:hover { color: var(--text); }
-
-    @keyframes rise {
-      from { transform: translateY(10px); opacity: .85; }
-      to { transform: none; opacity: 1; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .hero, .grid, .included { animation: none; opacity: 1; }
-      .plan.hot { transform: none; }
-    }
     @media (max-width: 860px) {
-      .wrap { width: calc(100% - 2.25rem); }
       .grid { grid-template-columns: 1fr; gap: 1.6rem; }
       .plan.hot { transform: none; box-shadow: none; }
       .included .row { grid-template-columns: 1fr; }
       .included .item:nth-child(odd) { border-right: none; }
-      .nav-links { gap: .65rem; }
-      .nav-links > a:not(.btn) { display: none; }
     }
   </style>
 </head>
@@ -312,13 +169,14 @@
     <header class="nav">
       <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
       <nav class="nav-links">
-        <a href="/">Home</a>
+        <a href="/pricing" aria-current="page">Pricing</a>
+        <a href="/faq">FAQ</a>
         <a class="btn btn-ghost" href="/admin">Sign in</a>
         <a class="btn btn-primary" href="/signup">Get started</a>
       </nav>
     </header>
 
-    <section class="hero">
+    <section class="page-hero">
       <p class="label">Plans</p>
       <h1>Pricing</h1>
       <p>Every plan includes the admin panel and the Discord bot. You only pay for the number of servers you connect.</p>
@@ -395,12 +253,18 @@
     </div>
 
     <p class="note">
-      After checkout, you receive a setup email. Choose your panel address (for example <code>astral.usely.dev</code>), create a password, and add your WebRCON details. Staff sign in with Discord.
+      After checkout, you receive a setup email. Choose your panel address (for example <code>astral.usely.dev</code>), create a password, and add your WebRCON details. Staff sign in with Discord. Questions before you buy? <a href="/contact" style="color:var(--chrome);text-decoration:underline">Contact us</a>.
     </p>
 
     <footer>
       <span>Usely</span>
-      <span><a href="/">Home</a> · <a href="/admin">Sign in</a></span>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/faq">FAQ</a>
+        <a href="/changelog">Changelog</a>
+        <a href="/contact">Contact</a>
+        <a href="/admin">Sign in</a>
+      </nav>
     </footer>
   </div>
 </body>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FAQ — Usely</title>
+  <meta name="description" content="Answers to common questions about Usely: setup, WebRCON, Discord staff access, billing, and multi-server support." />
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <style>
+    .faq-group { animation: rise .55s ease .05s both; }
+    .faq-group + .faq-group { margin-top: clamp(2.5rem, 6vh, 3.5rem); }
+    .faq-group > .label { margin-bottom: 1rem; }
+
+    details {
+      border-top: 1px solid var(--line);
+    }
+    details:last-of-type { border-bottom: 1px solid var(--line); }
+    summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 1.15rem 0;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      list-style: none;
+      transition: color .15s ease;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary:hover { color: var(--chrome); }
+    summary::after {
+      content: "+";
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--chrome-dim);
+      flex: none;
+      transition: transform .2s ease;
+    }
+    details[open] > summary::after { content: "−"; }
+    details p {
+      margin: 0;
+      padding: 0 0 1.35rem;
+      color: var(--muted);
+      font-size: .975rem;
+      line-height: 1.7;
+      max-width: 68ch;
+    }
+    details p + p { padding-top: .9rem; margin-top: -.45rem; }
+    details a { color: var(--chrome); text-decoration: underline; }
+
+    .still-stuck {
+      margin: clamp(2.5rem, 6vh, 3.5rem) 0 3rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg2);
+      padding: 1.5rem 1.5rem 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .still-stuck h2 { margin: 0 0 .3rem; font-size: 1rem; font-weight: 600; }
+    .still-stuck p { margin: 0; color: var(--muted); font-size: .95rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="nav">
+      <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
+      <nav class="nav-links">
+        <a href="/pricing">Pricing</a>
+        <a href="/faq" aria-current="page">FAQ</a>
+        <a class="btn btn-ghost" href="/admin">Sign in</a>
+        <a class="btn btn-primary" href="/signup">Get started</a>
+      </nav>
+    </header>
+
+    <section class="page-hero">
+      <p class="label">Support</p>
+      <h1>Questions</h1>
+      <p>What Usely does, how to connect a server, and how billing and staff access work.</p>
+    </section>
+
+    <div class="faq-group">
+      <p class="label">Getting started</p>
+
+      <details open>
+        <summary>What is Usely?</summary>
+        <p>Usely is a hosted admin panel and Discord bot for Rust Console Edition servers. You connect your server's WebRCON details once, then manage players, kits, bans, and broadcasts from your browser instead of typing raw console commands.</p>
+      </details>
+
+      <details>
+        <summary>How do I get set up?</summary>
+        <p>Pick a plan and pay. We email you a setup link where you choose your panel address, create a password, and enter your WebRCON host, port, and password. Once the connection is live, the panel starts showing your players.</p>
+      </details>
+
+      <details>
+        <summary>What do I need from my host?</summary>
+        <p>Your server's WebRCON IP, port, and password. Any host that exposes WebRCON for Rust Console Edition works — we connect over the same interface the game console uses.</p>
+      </details>
+
+      <details>
+        <summary>Do I need to install anything on my server?</summary>
+        <p>No. There are no plugins, mods, or files to upload. Usely connects to your existing WebRCON endpoint from our side, so nothing changes on the server itself.</p>
+      </details>
+    </div>
+
+    <div class="faq-group">
+      <p class="label">Using the panel</p>
+
+      <details>
+        <summary>What can I do from the panel?</summary>
+        <p>See who is online, kick and ban players, review your ban list, send server broadcasts, check which players have linked Discord accounts, build kits, and run any RCON command directly.</p>
+      </details>
+
+      <details>
+        <summary>How does the kit builder work?</summary>
+        <p>Select items from the Rust Console item list to assemble a kit, then save it. Players claim kits in-game through the quick chat phrases you configure in the panel — you never edit JSON by hand.</p>
+      </details>
+
+      <details>
+        <summary>What does the Discord bot do?</summary>
+        <p>It runs the Discord side of your community: live population channels, kill feeds, and the other standard RCE bot tooling. It also lets your staff sign into the panel with Discord instead of a shared password.</p>
+      </details>
+
+      <details>
+        <summary>Can I give my moderators access without sharing my login?</summary>
+        <p>Yes. Staff sign in with Discord, and you map Discord roles to permissions — so a role can be allowed to kick and ban but blocked from RCON or billing. You keep the owner account to yourself.</p>
+      </details>
+
+      <details>
+        <summary>Can I manage more than one server?</summary>
+        <p>Pro supports two connected servers and Network supports more. Each server is a separate WebRCON connection, and you switch which one you're managing from the panel header.</p>
+      </details>
+    </div>
+
+    <div class="faq-group">
+      <p class="label">Accounts and billing</p>
+
+      <details>
+        <summary>What is my panel address?</summary>
+        <p>Every workspace gets its own subdomain, like <code>astral.usely.dev</code>, which you choose during setup. That address is where you and your staff sign in.</p>
+      </details>
+
+      <details>
+        <summary>Why do owners use email and staff use Discord?</summary>
+        <p>The owner account controls billing and server credentials, so it isn't tied to a Discord account that could be lost or compromised. Staff access is meant to be quick to grant and revoke, which is exactly what Discord roles are good at.</p>
+      </details>
+
+      <details>
+        <summary>Can I change plans or cancel?</summary>
+        <p>Yes. Plans are monthly with no contract — upgrade, downgrade, or cancel whenever you want. If you downgrade below your current server count, disconnect the extra servers first.</p>
+      </details>
+
+      <details>
+        <summary>Is my RCON password safe?</summary>
+        <p>Server credentials are encrypted before they're stored, and each workspace's data is isolated from every other workspace. Only your own account and the staff you authorize can reach your servers.</p>
+      </details>
+    </div>
+
+    <div class="still-stuck">
+      <div>
+        <h2>Still have a question?</h2>
+        <p>Send it over and we'll get back to you.</p>
+      </div>
+      <a class="btn btn-primary" href="/contact">Contact us</a>
+    </div>
+
+    <footer>
+      <span>Usely</span>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/changelog">Changelog</a>
+        <a href="/contact">Contact</a>
+        <a href="/admin">Sign in</a>
+      </nav>
+    </footer>
+  </div>
+</body>
+</html>
