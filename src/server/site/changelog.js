@@ -8,6 +8,13 @@
 export const entries = [
   {
     date: "2026-07-29",
+    title: "Homepage panel preview",
+    changes: [
+      { type: "added", text: "Mock admin panel preview on the homepage so you can see the Home view before signing up." },
+    ],
+  },
+  {
+    date: "2026-07-29",
     title: "Admin panel catch-up",
     changes: [
       { type: "added", text: "Live map with player positions and calibration." },
