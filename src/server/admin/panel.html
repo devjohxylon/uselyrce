@@ -2794,7 +2794,8 @@ async function renderWarps() {
 
 async function renderLinks() {
   const data = await api("/links");
-  const rows = data.links.map((l) => {
+  const links = Array.isArray(data.links) ? data.links : [];
+  const rows = links.map((l) => {
     const name = l.discordName || l.discordUsername;
     const userLabel = name
       ? `@${String(name).replace(/^@/, "")}`

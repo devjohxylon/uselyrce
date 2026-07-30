@@ -181,14 +181,14 @@ export async function buildDemoFixtures() {
     stats: {
       ok: true,
       category: "kills",
-      wipe: "July 2026",
-      entries: [
-        { name: "GhostNova", kills: 214, deaths: 88, kd: 2.43, playtime: 92000 },
-        { name: "Kayce", kills: 190, deaths: 71, kd: 2.68, playtime: 87000 },
-        { name: "IronWarden", kills: 156, deaths: 102, kd: 1.53, playtime: 61000 },
-        { name: "RustedCrown", kills: 134, deaths: 95, kd: 1.41, playtime: 54000 },
-        { name: "SaltMine42", kills: 98, deaths: 120, kd: 0.82, playtime: 43000 },
+      rows: [
+        { rank: 1, name: "GhostNova", value: "214" },
+        { rank: 2, name: "Kayce", value: "190" },
+        { rank: 3, name: "IronWarden", value: "156" },
+        { rank: 4, name: "RustedCrown", value: "134" },
+        { rank: 5, name: "SaltMine42", value: "98" },
       ],
+      summary: { wipe: "July 2026", totalKills: 1842 },
     },
     links: {
       ok: true,
@@ -282,18 +282,22 @@ export async function buildDemoFixtures() {
     },
     reports: {
       ok: true,
+      groupMax: 3,
       combat: [
         {
           at: new Date().toISOString(),
           killer: "GhostNova",
           victim: "SaltMine42",
           weapon: "Assault Rifle",
+          headshot: true,
         },
       ],
       groups: [
         {
           id: "g1",
+          teamId: "4821",
           size: 4,
+          max: 3,
           members: ["Alpha", "Bravo", "Charlie", "Delta"],
           at: new Date().toISOString(),
         },
