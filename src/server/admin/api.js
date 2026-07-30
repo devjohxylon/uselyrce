@@ -120,8 +120,23 @@ import {
   listAllProfiles,
 } from "../../modules/profiles/manager.js";
 
+import { buildDemoFixtures, profileFixture } from "./demo-fixtures.js";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PANEL_HTML = readFileSync(path.join(__dirname, "panel.html"), "utf8");
+
+let demoFixturesCache = null;
+async function getDemoPayload() {
+  if (!demoFixturesCache) {
+    const data = await buildDemoFixtures();
+    const profilesByIgn = {};
+    for (const p of data.players.online) {
+      profilesByIgn[p.ign.toLowerCase()] = profileFixture(p.ign);
+    }
+    demoFixturesCache = { ...data, profilesByIgn };
+  }
+  return demoFixturesCache;
+}
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 5;
@@ -217,16 +232,23 @@ export async function attachAdminPanel(app, client) {
 
   app.get("/admin/", (_req, res) => res.redirect("/admin"));
 
-  // Interactive product demo — same panel UI, client-side mock data only.
-  app.get("/demo", (_req, res) => {
-    const html = PANEL_HTML
-      .replace("<title>Usely</title>", "<title>Usely Demo</title>")
-      .replace(
-        "<script>\nconst state = {",
-        "<script>\nwindow.USELY_DEMO = true;\nconst state = {",
-      );
-    res.setHeader("X-Robots-Tag", "noindex, nofollow");
-    res.type("html").send(html);
+  // Interactive product demo — same panel UI, fixtures match real API shapes.
+  app.get("/demo", async (_req, res) => {
+    try {
+      const fixtures = await getDemoPayload();
+      const payload = JSON.stringify(fixtures).replace(/</g, "\\u003c");
+      const html = PANEL_HTML
+        .replace("<title>Usely</title>", "<title>Usely Demo</title>")
+        .replace(
+          "<script>\nconst state = {",
+          `<script>\nwindow.USELY_DEMO = true;\nwindow.USELY_DEMO_DATA = ${payload};\nconst state = {`,
+        );
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      res.type("html").send(html);
+    } catch (error) {
+      console.error("Demo fixtures failed:", error);
+      res.status(500).type("html").send(`<!DOCTYPE html><html><body style="font-family:system-ui;background:#050506;color:#f0f2f5;padding:2rem"><h1>Demo unavailable</h1><p>${String(error.message || error)}</p></body></html>`);
+    }
   });
   app.get("/demo/", (_req, res) => res.redirect(302, "/demo"));
 
