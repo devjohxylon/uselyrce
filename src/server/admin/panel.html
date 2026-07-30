@@ -1690,7 +1690,7 @@ button { transition: all .15s ease; }
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12H4M8 8l-4 4 4 4M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>Log out</button>
     <div class="dev-banner" title="Usely is under active development">
       <strong>In development</strong>
-      <span>usely.dev · ALPHA</span>
+      <span id="devBannerSub">usely.dev · ALPHA</span>
     </div>
     <div class="nav-foot" id="navMeta">—</div>
   </aside>
@@ -1987,6 +1987,7 @@ function setNavOpen(open) {
 }
 
 async function api(path, opts = {}) {
+  if (window.USELY_DEMO) return demoApi(path, opts);
   const res = await fetch(`/admin/api${path}`, {
     credentials: "include",
     headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
@@ -1996,6 +1997,352 @@ async function api(path, opts = {}) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || res.statusText);
   return data;
+}
+
+const DEMO =
+  window.USELY_DEMO
+    ? {
+        perms: {
+          overview: true, players: true, kick: true, ban: true, teleport: true,
+          broadcast: true, rcon: true, stats: true, statsReset: true, warps: true,
+          links: true, automessages: true, schedule: true, kits: true,
+          serverCommands: true, reports: true, keys: true, logs: true,
+          servers: true, billing: true,
+        },
+        players: [
+          { ign: "GhostNova", platform: "Xbox", ping: 42 },
+          { ign: "IronWarden", platform: "PlayStation", ping: 67 },
+          { ign: "SaltMine42", platform: "Xbox", ping: 91 },
+          { ign: "Kayce", platform: "PlayStation", ping: 38 },
+          { ign: "RustedCrown", platform: "Xbox", ping: 55 },
+        ],
+      }
+    : null;
+
+async function demoApi(path, opts = {}) {
+  const method = String(opts.method || "GET").toUpperCase();
+  const [rawPath, qs] = String(path).split("?");
+  const q = new URLSearchParams(qs || "");
+  await new Promise((r) => setTimeout(r, 40 + Math.random() * 80));
+
+  if (method !== "GET") {
+    const msg = "Demo only — nothing was saved.";
+    setTimeout(() => { try { toast(msg); } catch {} }, 0);
+    return { ok: true, demo: true, message: msg };
+  }
+
+  if (rawPath === "/session") {
+    return {
+      ok: true,
+      authed: true,
+      saas: true,
+      role: "owner",
+      label: "Demo Owner",
+      permissions: DEMO.perms,
+      orgId: "demo-org",
+      org: {
+        id: "demo-org",
+        name: "Astral Vanilla+",
+        plan: "pro",
+        planStatus: "active",
+        guildId: null,
+        maxServers: 2,
+      },
+      serverId: "demo-server-1",
+      servers: [
+        { id: "demo-server-1", name: "Astral Main", rcon_host: "203.0.113.10", rcon_port: 28016, enabled: true },
+        { id: "demo-server-2", name: "Astral Softcore", rcon_host: "203.0.113.11", rcon_port: 28016, enabled: true },
+      ],
+      staffPermissionDefaults: DEMO.perms,
+    };
+  }
+
+  if (rawPath === "/overview") {
+    const wipeAt = new Date(Date.now() + 3 * 86400000).toISOString();
+    return {
+      ok: true,
+      server: {
+        hostname: "Astral Vanilla+ | Trio | Monthly",
+        players: DEMO.players.length,
+        maxPlayers: 100,
+        queued: 2,
+        joining: 1,
+        fps: 58,
+        uptime: 148320,
+        map: "Procedural Map",
+        gameTime: "14:32",
+        entities: 18420,
+        restarting: false,
+      },
+      onlinePlayers: DEMO.players,
+      stats: { totalKills: 1842, wipe: "July 2026" },
+      bot: { ready: true, uptimeSeconds: 902400 },
+      wipe: { wipeAt, localInput: wipeAt.slice(0, 16) },
+      rcon: {
+        enabled: true,
+        connected: true,
+        host: "203.0.113.10",
+        port: 28016,
+        connectedAt: new Date(Date.now() - 3600000).toISOString(),
+      },
+      health: [
+        { id: "rcon", label: "RCON", status: "ok", detail: "Connected" },
+        { id: "discord", label: "Discord", status: "ok", detail: "Ready" },
+        { id: "volume", label: "Data", status: "ok", detail: "Persisted" },
+      ],
+    };
+  }
+
+  if (rawPath === "/players") return { ok: true, players: DEMO.players };
+  if (rawPath === "/players/search") {
+    const needle = (q.get("q") || "").toLowerCase();
+    return {
+      ok: true,
+      players: DEMO.players.filter((p) => p.ign.toLowerCase().includes(needle)),
+    };
+  }
+
+  if (rawPath === "/stats") {
+    const category = q.get("category") || "kills";
+    const rows = [
+      { name: "GhostNova", kills: 214, deaths: 88, kd: 2.43, playtime: 92000 },
+      { name: "Kayce", kills: 190, deaths: 71, kd: 2.68, playtime: 87000 },
+      { name: "IronWarden", kills: 156, deaths: 102, kd: 1.53, playtime: 61000 },
+      { name: "RustedCrown", kills: 134, deaths: 95, kd: 1.41, playtime: 54000 },
+      { name: "SaltMine42", kills: 98, deaths: 120, kd: 0.82, playtime: 43000 },
+    ];
+    return { ok: true, category, entries: rows, wipe: "July 2026" };
+  }
+
+  if (rawPath.startsWith("/stats/")) {
+    const name = decodeURIComponent(rawPath.slice("/stats/".length));
+    return { ok: true, name, kills: 214, deaths: 88, kd: 2.43, playtime: 92000 };
+  }
+
+  if (rawPath === "/links") {
+    return {
+      ok: true,
+      links: [
+        { discordId: "100000000000000001", ign: "GhostNova", username: "ghostnova" },
+        { discordId: "100000000000000002", ign: "Kayce", username: "kayce" },
+      ],
+    };
+  }
+
+  if (rawPath === "/warps") {
+    return {
+      ok: true,
+      warps: {
+        outpost: { x: 120, y: 12, z: -40 },
+        bandit: { x: -80, y: 8, z: 210 },
+      },
+    };
+  }
+
+  if (rawPath === "/automessages") {
+    return {
+      ok: true,
+      messages: [
+        { id: "m1", text: "Welcome to Astral — link Discord in #links", intervalMinutes: 30, enabled: true },
+        { id: "m2", text: "Wipe Thursday 6pm UTC. Kits reset at wipe.", intervalMinutes: 60, enabled: true },
+      ],
+    };
+  }
+
+  if (rawPath === "/schedule") {
+    return {
+      ok: true,
+      jobs: [
+        { id: "j1", label: "Night restart", command: "restart 300", cron: "0 6 * * *", enabled: true, lastRun: null },
+      ],
+    };
+  }
+
+  if (rawPath === "/channels" || rawPath === "/server-commands") {
+    return {
+      ok: true,
+      channels: {
+        killfeed: "111",
+        gameChat: "112",
+        joinLeave: "113",
+        leaderboard: "114",
+      },
+      feeds: { killfeed: true, chat: true, joinLeave: true },
+      commands: { kits: true, home: true, tpr: true },
+      statusDisplays: { pop: true, wipe: true },
+      vip: { kitId: "vip", roleId: null },
+      ranks: [],
+      events: [],
+    };
+  }
+
+  if (rawPath === "/kits") {
+    return {
+      ok: true,
+      kits: [
+        { id: "starter", label: "Starter", cooldownMinutes: 60, items: [{ item: "rock", amount: 1 }, { item: "torch", amount: 1 }] },
+        { id: "vip", label: "VIP", cooldownMinutes: 120, items: [{ item: "metal.facemask", amount: 1 }] },
+      ],
+      serverKits: [],
+    };
+  }
+
+  if (rawPath === "/items") {
+    return {
+      ok: true,
+      items: [
+        { shortname: "rock", displayName: "Rock", category: "Tools" },
+        { shortname: "torch", displayName: "Torch", category: "Tools" },
+        { shortname: "metal.facemask", displayName: "Metal Facemask", category: "Attire" },
+        { shortname: "rifle.ak", displayName: "Assault Rifle", category: "Weapon" },
+      ],
+    };
+  }
+
+  if (rawPath === "/keys") {
+    return {
+      ok: true,
+      keys: [
+        { id: "k1", label: "Mods", enabled: true, permissions: DEMO.perms, createdAt: new Date().toISOString(), lastUsedAt: null },
+      ],
+    };
+  }
+
+  if (rawPath === "/reports") {
+    return {
+      ok: true,
+      combat: [
+        { at: new Date().toISOString(), killer: "GhostNova", victim: "SaltMine42", weapon: "Assault Rifle" },
+      ],
+      groups: [
+        { id: "g1", size: 4, members: ["A", "B", "C", "D"], at: new Date().toISOString() },
+      ],
+    };
+  }
+
+  if (rawPath === "/logs" || rawPath === "/audit") {
+    return {
+      ok: true,
+      entries: [
+        { at: new Date().toISOString(), action: "broadcast", by: "Demo Owner", detail: { message: "Welcome" } },
+        { at: new Date(Date.now() - 600000).toISOString(), action: "login", by: "Demo Owner", detail: {} },
+      ],
+    };
+  }
+
+  if (rawPath === "/bans") {
+    return {
+      ok: true,
+      bans: [
+        { ign: "CheaterX", reason: "Esp", bannedAt: new Date(Date.now() - 86400000).toISOString() },
+      ],
+    };
+  }
+
+  if (rawPath === "/events") {
+    return {
+      ok: true,
+      events: [
+        { id: "e1", label: "Airdrop", command: "event.run airdrop", enabled: true },
+      ],
+    };
+  }
+
+  if (rawPath === "/analytics") {
+    return {
+      ok: true,
+      peakPlayers: 67,
+      avgPop: 28,
+      killsToday: 412,
+      series: [],
+    };
+  }
+
+  if (rawPath === "/wipe" || rawPath === "/wipe/automation") {
+    const wipeAt = new Date(Date.now() + 3 * 86400000).toISOString();
+    return {
+      ok: true,
+      wipeAt,
+      enabled: true,
+      steps: ["resetStats", "clearHomes", "clearTpCooldowns"],
+      announceHours: [24, 6, 1],
+    };
+  }
+
+  if (rawPath === "/map") {
+    return {
+      ok: true,
+      seed: 12345,
+      size: 4250,
+      imageUrl: null,
+      players: DEMO.players.map((p, i) => ({
+        ign: p.ign,
+        x: -800 + i * 350,
+        z: 200 - i * 180,
+      })),
+    };
+  }
+
+  if (rawPath === "/profiles") {
+    return {
+      ok: true,
+      profiles: DEMO.players.map((p) => ({
+        ign: p.ign,
+        tags: p.ign === "IronWarden" ? ["vip"] : [],
+        notes: [],
+        warnings: 0,
+      })),
+    };
+  }
+
+  if (rawPath.startsWith("/profiles/")) {
+    const ign = decodeURIComponent(rawPath.split("/")[2] || "");
+    return {
+      ok: true,
+      ign,
+      tags: ign === "IronWarden" ? ["vip"] : [],
+      notes: [{ id: "n1", text: "Trusted regular", at: new Date().toISOString(), by: "Demo Owner" }],
+      warnings: [],
+      stats: { kills: 214, deaths: 88 },
+      linked: { discordId: "100000000000000001", username: "ghostnova" },
+    };
+  }
+
+  return { ok: true, demo: true };
+}
+
+async function demoSaasFetch(path, opts = {}) {
+  const method = String(opts.method || "GET").toUpperCase();
+  await new Promise((r) => setTimeout(r, 40));
+  if (method !== "GET") {
+    return { ok: true, demo: true, message: "Demo only — nothing was saved." };
+  }
+  if (path === "/servers" || path.startsWith("/servers")) {
+    return {
+      ok: true,
+      servers: [
+        { id: "demo-server-1", name: "Astral Main", rcon_host: "203.0.113.10", rcon_port: 28016, enabled: true },
+        { id: "demo-server-2", name: "Astral Softcore", rcon_host: "203.0.113.11", rcon_port: 28016, enabled: true },
+      ],
+    };
+  }
+  if (path === "/roles" || path.startsWith("/roles")) {
+    return {
+      ok: true,
+      roles: [
+        { id: "r1", discord_role_id: "200000000000000001", label: "Mod", permissions: DEMO.perms },
+      ],
+    };
+  }
+  if (path === "/billing" || path.startsWith("/billing")) {
+    return {
+      ok: true,
+      plan: "pro",
+      planStatus: "active",
+      portalUrl: null,
+    };
+  }
+  return { ok: true, demo: true };
 }
 
 function toast(msg, bad = false) {
@@ -2043,6 +2390,11 @@ async function boot() {
   if (session.authed) {
     stopLoginScene();
     state.session = session;
+    if (window.USELY_DEMO) {
+      const sub = document.getElementById("devBannerSub");
+      if (sub) sub.textContent = "DEMO · mock data";
+      document.title = "Usely Demo";
+    }
     renderSaasContext(session);
     applyNavPermissions();
     setAdvancedOpen(localStorage.getItem("advancedNavOpen") === "true");
@@ -2124,6 +2476,7 @@ function softRefreshLiveTab() {
 }
 
 function connectWebSocket() {
+  if (window.USELY_DEMO) return;
   if (state.socket) return;
   
   state.socket = io({
@@ -4633,6 +4986,10 @@ function renderSaasContext(session) {
 
 
 async function switchSaasContext() {
+  if (window.USELY_DEMO) {
+    toast("Demo only — server switch is simulated");
+    return;
+  }
   const orgId = document.getElementById("orgSelect")?.value;
   const serverId = document.getElementById("serverSelect")?.value || null;
   await fetch("/admin/api/saas/context", {
@@ -4654,6 +5011,7 @@ function saasDisabledCard(title) {
 
 
 async function saasFetch(path, opts = {}) {
+  if (window.USELY_DEMO) return demoSaasFetch(path, opts);
   const res = await fetch(`/admin/api/saas${path}`, {
     credentials: "include",
     headers: {
@@ -6094,6 +6452,10 @@ document.getElementById("password").onkeydown = (e) => {
   if (e.key === "Enter") document.getElementById("loginBtn").click();
 };
 document.getElementById("logoutBtn").onclick = async () => {
+  if (window.USELY_DEMO) {
+    location.href = "https://www.usely.dev/";
+    return;
+  }
   await api("/logout", { method: "POST", body: {} });
   location.reload();
 };
@@ -6182,6 +6544,11 @@ boot().catch((e) => {
 
 (async () => {
   try {
+    if (window.USELY_DEMO) {
+      document.getElementById("legacyLogin")?.classList.add("hidden");
+      document.getElementById("saasLogin")?.classList.remove("hidden");
+      return;
+    }
     const s = await fetch("/admin/api/session", { credentials: "include" }).then((r) => r.json());
     if (s?.saas || s?.session?.saas || s?.authModes?.includes?.("email")) {
       document.getElementById("legacyLogin")?.classList.add("hidden");

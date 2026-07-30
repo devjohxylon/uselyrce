@@ -4,7 +4,7 @@
 <!--HEAD:home-->
   <style>
     .hero {
-      padding: clamp(3.5rem, 10vh, 6rem) 0 clamp(2rem, 5vh, 3rem);
+      padding: clamp(3.5rem, 10vh, 6rem) 0 clamp(3rem, 7vh, 4.5rem);
       animation: rise .5s ease both;
     }
     .eyebrow {
@@ -53,235 +53,6 @@
       color: var(--faint);
     }
 
-    /* ——— panel preview (mock) ——— */
-    .preview {
-      padding: 0 0 clamp(3rem, 7vh, 4.5rem);
-      animation: rise .55s ease .08s both;
-    }
-    .preview-label {
-      margin: 0 0 .85rem;
-      font-family: var(--mono);
-      font-size: .66rem;
-      font-weight: 500;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: var(--chrome-dim);
-    }
-    .preview-shell {
-      border: 1px solid var(--line2);
-      border-radius: 6px;
-      overflow: hidden;
-      background: #050506;
-      box-shadow: 0 24px 60px rgba(0,0,0,.35);
-    }
-    .preview-chrome {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: .75rem;
-      padding: .55rem .85rem;
-      border-bottom: 1px solid var(--line);
-      background: #0c0d10;
-      font-family: var(--mono);
-      font-size: .72rem;
-      color: var(--faint);
-    }
-    .preview-chrome .url {
-      display: flex;
-      align-items: center;
-      gap: .45rem;
-      color: var(--muted);
-      min-width: 0;
-    }
-    .preview-chrome .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #6ee7b7;
-      flex: none;
-      box-shadow: 0 0 0 3px rgba(110,231,183,.12);
-    }
-    .preview-chrome .alpha {
-      flex: none;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--chrome-dim);
-      border: 1px solid var(--line2);
-      padding: .15rem .4rem;
-      border-radius: 3px;
-      font-size: .62rem;
-    }
-    .preview-body {
-      display: grid;
-      grid-template-columns: 11.5rem 1fr;
-      min-height: 22rem;
-    }
-    .preview-nav {
-      border-right: 1px solid var(--line);
-      background: #07080a;
-      padding: .85rem .55rem;
-      display: flex;
-      flex-direction: column;
-      gap: .15rem;
-    }
-    .preview-brand {
-      display: flex;
-      align-items: center;
-      gap: .45rem;
-      padding: .25rem .5rem .85rem;
-      font-weight: 700;
-      font-size: .72rem;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-    }
-    .preview-brand img { width: 18px; height: 18px; border-radius: 4px; }
-    .preview-nav span {
-      display: block;
-      padding: .42rem .55rem;
-      border-radius: 3px;
-      font-size: .8rem;
-      color: var(--faint);
-    }
-    .preview-nav span.on {
-      color: var(--text);
-      background: rgba(255,255,255,.05);
-      border: 1px solid var(--line);
-    }
-    .preview-nav .grp {
-      margin: .65rem .55rem .25rem;
-      font-family: var(--mono);
-      font-size: .58rem;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      color: var(--faint);
-      padding: 0;
-      background: none;
-      border: 0;
-    }
-    .preview-main {
-      padding: 1rem 1.15rem 1.25rem;
-      display: grid;
-      gap: 1rem;
-      align-content: start;
-      background:
-        radial-gradient(520px 280px at 100% 0%, rgba(215,221,230,.05), transparent 55%),
-        #050506;
-    }
-    .preview-top {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: .75rem 1rem;
-    }
-    .preview-top h3 {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
-      letter-spacing: -.02em;
-    }
-    .preview-top p {
-      margin: .2rem 0 0;
-      color: var(--faint);
-      font-size: .8rem;
-    }
-    .pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .4rem;
-    }
-    .pill {
-      font-family: var(--mono);
-      font-size: .65rem;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      padding: .28rem .5rem;
-      border-radius: 3px;
-      border: 1px solid var(--line2);
-      color: var(--muted);
-      background: #0c0d10;
-    }
-    .pill.ok { color: #6ee7b7; border-color: rgba(110,231,183,.3); }
-    .preview-grid {
-      display: grid;
-      grid-template-columns: 1.35fr .9fr;
-      gap: .85rem;
-    }
-    .preview-pane {
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: #0c0d10;
-      overflow: hidden;
-    }
-    .preview-pane header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: .5rem;
-      padding: .55rem .75rem;
-      border-bottom: 1px solid var(--line);
-      font-size: .78rem;
-      font-weight: 600;
-    }
-    .preview-pane header small {
-      font-family: var(--mono);
-      font-size: .65rem;
-      font-weight: 500;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: var(--faint);
-    }
-    .player-row {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: .65rem;
-      align-items: center;
-      padding: .55rem .75rem;
-      border-bottom: 1px solid var(--line);
-      font-size: .82rem;
-    }
-    .player-row:last-child { border-bottom: 0; }
-    .player-row .name { font-weight: 500; }
-    .player-row .meta { color: var(--faint); font-size: .75rem; }
-    .player-row .tag {
-      font-family: var(--mono);
-      font-size: .62rem;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      color: var(--chrome-dim);
-    }
-    .stat-list { display: grid; }
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      gap: .75rem;
-      padding: .6rem .75rem;
-      border-bottom: 1px solid var(--line);
-      font-size: .82rem;
-    }
-    .stat-row:last-child { border-bottom: 0; }
-    .stat-row span:last-child {
-      font-family: var(--mono);
-      font-size: .78rem;
-      color: var(--chrome);
-      font-variant-numeric: tabular-nums;
-    }
-    .stat-row span:first-child { color: var(--muted); }
-    .preview-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .45rem;
-    }
-    .preview-actions span {
-      font-size: .75rem;
-      padding: .4rem .7rem;
-      border-radius: 3px;
-      border: 1px solid var(--line2);
-      color: var(--muted);
-      background: rgba(255,255,255,.02);
-      opacity: .85;
-    }
-
     .features { display: grid; }
     .feat {
       display: grid;
@@ -312,13 +83,6 @@
         gap: .45rem;
         padding: 1.35rem 0;
       }
-      .preview-body { grid-template-columns: 1fr; }
-      .preview-nav { display: none; }
-      .preview-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .preview { animation: none; }
     }
   </style>
 </head>
@@ -335,7 +99,7 @@
       <p class="sub">Manage players, kits, and RCON from your browser. Discord handles population channels, kill feeds, and staff access.</p>
       <div class="cta-row">
         <a class="btn btn-primary btn-lg" href="/signup">Get started</a>
-        <a class="btn btn-ghost btn-lg" href="/pricing">View pricing</a>
+        <a class="btn btn-ghost btn-lg" href="https://app.usely.dev/demo" target="_blank" rel="noopener">Preview the panel</a>
       </div>
       <p class="meta">
         <span>WebRCON</span>
@@ -344,114 +108,12 @@
       </p>
     </section>
 
-    <section class="preview" aria-label="Admin panel preview">
-      <p class="preview-label">Panel preview · mock data</p>
-      <div class="preview-shell">
-        <div class="preview-chrome">
-          <div class="url">
-            <span class="dot" aria-hidden="true"></span>
-            <span>astral.usely.dev/admin</span>
-          </div>
-          <span class="alpha">Alpha</span>
-        </div>
-        <div class="preview-body">
-          <aside class="preview-nav" aria-hidden="true">
-            <div class="preview-brand">
-              <img src="/logo.png" alt="" />
-              Usely
-            </div>
-            <span class="on">Home</span>
-            <span>Players</span>
-            <span>Kits</span>
-            <span>Community</span>
-            <span class="grp">Server</span>
-            <span>Status</span>
-            <span>Wipe</span>
-            <span class="grp">More</span>
-            <span>Actions</span>
-            <span>Discord</span>
-          </aside>
-          <div class="preview-main">
-            <div class="preview-top">
-              <div>
-                <h3>Home</h3>
-                <p>Server health and quick controls</p>
-              </div>
-              <div class="pills">
-                <span class="pill ok">RCON · live</span>
-                <span class="pill ok">Discord · online</span>
-                <span class="pill">Pop · 23/100</span>
-              </div>
-            </div>
-            <div class="preview-grid">
-              <div class="preview-pane">
-                <header>
-                  Online now
-                  <small>23 players</small>
-                </header>
-                <div class="player-row">
-                  <div>
-                    <div class="name">GhostNova</div>
-                    <div class="meta">Linked · Discord</div>
-                  </div>
-                  <span class="tag">2h 14m</span>
-                  <span class="tag">Trio</span>
-                </div>
-                <div class="player-row">
-                  <div>
-                    <div class="name">IronWarden</div>
-                    <div class="meta">VIP</div>
-                  </div>
-                  <span class="tag">58m</span>
-                  <span class="tag">Solo</span>
-                </div>
-                <div class="player-row">
-                  <div>
-                    <div class="name">SaltMine42</div>
-                    <div class="meta">Unlinked</div>
-                  </div>
-                  <span class="tag">12m</span>
-                  <span class="tag">Duo</span>
-                </div>
-                <div class="player-row">
-                  <div>
-                    <div class="name">Kayce</div>
-                    <div class="meta">Linked · Discord</div>
-                  </div>
-                  <span class="tag">4h 02m</span>
-                  <span class="tag">Trio</span>
-                </div>
-              </div>
-              <div class="preview-pane">
-                <header>
-                  Snapshot
-                  <small>This wipe</small>
-                </header>
-                <div class="stat-list">
-                  <div class="stat-row"><span>Kills logged</span><span>1,842</span></div>
-                  <div class="stat-row"><span>Kits claimed</span><span>316</span></div>
-                  <div class="stat-row"><span>Bans</span><span>4</span></div>
-                  <div class="stat-row"><span>Next wipe</span><span>Thu 18:00</span></div>
-                </div>
-              </div>
-            </div>
-            <div class="preview-actions" aria-hidden="true">
-              <span>Broadcast</span>
-              <span>Kick</span>
-              <span>Ban</span>
-              <span>RCON</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="block">
       <p class="label">Features</p>
       <div class="features">
         <div class="feat">
           <h2>Admin panel</h2>
-          <p>See who is online, kick or ban players, send broadcasts, check Discord-linked accounts, and run RCON commands from your browser.</p>
+          <p>See who is online, kick or ban players, send broadcasts, check Discord-linked accounts, and run RCON commands from your browser. <a href="https://app.usely.dev/demo" style="color:var(--chrome);text-decoration:underline">Open the interactive demo</a> — real UI, mock data.</p>
         </div>
         <div class="feat">
           <h2>Kit builder</h2>

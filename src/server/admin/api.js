@@ -217,6 +217,19 @@ export async function attachAdminPanel(app, client) {
 
   app.get("/admin/", (_req, res) => res.redirect("/admin"));
 
+  // Interactive product demo — same panel UI, client-side mock data only.
+  app.get("/demo", (_req, res) => {
+    const html = PANEL_HTML
+      .replace("<title>Usely</title>", "<title>Usely Demo</title>")
+      .replace(
+        "<script>\nconst state = {",
+        "<script>\nwindow.USELY_DEMO = true;\nconst state = {",
+      );
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    res.type("html").send(html);
+  });
+  app.get("/demo/", (_req, res) => res.redirect(302, "/demo"));
+
   app.post("/admin/api/login", async (req, res) => {
     if (config.saas.enabled) {
       return res.status(400).json({

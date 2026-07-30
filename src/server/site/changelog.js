@@ -8,9 +8,10 @@
 export const entries = [
   {
     date: "2026-07-29",
-    title: "Homepage panel preview",
+    title: "Interactive panel demo",
     changes: [
-      { type: "added", text: "Mock admin panel preview on the homepage so you can see the Home view before signing up." },
+      { type: "added", text: "Preview the real admin panel with mock data at <code>app.usely.dev/demo</code> — nothing is saved." },
+      { type: "changed", text: "Homepage CTA opens the interactive demo so you can click through the real UI before signing up." },
     ],
   },
   {

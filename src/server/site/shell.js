@@ -119,7 +119,7 @@ const NAV_LINKS = [
 
 const FOOTER_GROUPS = [
   ["Product", [["/pricing", "Pricing"], ["/docs", "Docs"], ["/changelog", "Changelog"]]],
-  ["Support", [["/faq", "FAQ"], ["/contact", "Contact"], ["/status", "Status"], ["/admin", "Sign in"]]],
+  ["Support", [["/faq", "FAQ"], ["/contact", "Contact"], ["/status", "Status"], ["/admin", "Sign in"], [`${APP_URL}/demo`, "Panel demo"]]],
   ["Legal", [["/terms", "Terms"], ["/privacy", "Privacy"]]],
 ];
 

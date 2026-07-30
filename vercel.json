@@ -9,6 +9,7 @@
     { "source": "/setup", "destination": "https://app.usely.dev/setup" },
     { "source": "/admin", "destination": "https://app.usely.dev/admin" },
     { "source": "/admin/:path*", "destination": "https://app.usely.dev/admin/:path*" },
+    { "source": "/demo", "destination": "https://app.usely.dev/demo" },
     { "source": "/api/:path*", "destination": "https://app.usely.dev/api/:path*" }
   ]
 }
