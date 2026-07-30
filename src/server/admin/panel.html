@@ -1590,7 +1590,7 @@ button { transition: all .15s ease; }
 </style>
 </head>
 <body>
-<div id="login" class="hidden">
+<div id="login">
   <div class="login-stage">
     <div class="login-header">
       <img class="login-mark" src="/logo.png" alt="Usely" />
@@ -2025,13 +2025,6 @@ function initLoginScene() {
   const root = document.getElementById("login");
   if (!root || root.classList.contains("hidden")) return;
   state.loginFx = { cleanups: [] };
-}
-
-function stopLoginScene() {
-  if (state.loginFx?.cleanups) {
-    state.loginFx.cleanups.forEach((fn) => fn());
-  }
-  state.loginFx = null;
 }
 
 async function boot() {
@@ -6121,7 +6114,8 @@ document.getElementById("advancedToggle")?.addEventListener("click", () => {
 document.getElementById("navToggle")?.addEventListener("click", () => setNavOpen(true));
 document.getElementById("navClose")?.addEventListener("click", () => setNavOpen(false));
 document.getElementById("navBackdrop")?.addEventListener("click", () => setNavOpen(false));
-document.getElementById("logoutBtnMobile")?.addEventListener("click", () => 
+document.getElementById("logoutBtnMobile")?.addEventListener("click", () =>
+  document.getElementById("logoutBtn")?.click());
 document.getElementById("saasEmailLoginBtn")?.addEventListener("click", async () => {
   const errorEl = document.getElementById("loginError");
   errorEl.classList.add("hidden");
@@ -6146,7 +6140,6 @@ document.getElementById("saasPassword")?.addEventListener("keydown", (e) => {
 });
 document.getElementById("orgSelect")?.addEventListener("change", () => switchSaasContext());
 document.getElementById("serverSelect")?.addEventListener("change", () => switchSaasContext());
-document.getElementById("logoutBtn")?.click());
 window.addEventListener("keydown", (e) => { if (e.key === "Escape") setNavOpen(false); });
 
 // Mobile swipe gestures for sidebar
