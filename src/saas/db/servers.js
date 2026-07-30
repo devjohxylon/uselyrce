@@ -114,7 +114,8 @@ export async function listAllEnabledForPool() {
   const db = getServiceClient();
   const { data, error } = await db
     .from("servers")
-    .select("*, orgs!inner(id, plan_status, plan)")
+    // Disambiguate: orgs↔servers has two FKs (servers.org_id and orgs.default_server_id).
+    .select("*, orgs!servers_org_id_fkey!inner(id, plan_status, plan)")
     .eq("enabled", true);
   if (error) throw error;
 
