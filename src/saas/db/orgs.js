@@ -149,5 +149,36 @@ export async function listOrgsOwnedByAccount(accountId) {
   return data || [];
 }
 
+/**
+ * Platform ops: all orgs with owner email + server count.
+ * Never includes RCON credentials or encryption material.
+ */
+export async function listAllOrgsForOps() {
+  if (useMock()) return mockdb.listAllOrgsForOps();
+  const db = getServiceClient();
+  const { data, error } = await db
+    .from("orgs")
+    .select(
+      "id, name, slug, plan, plan_status, created_at, owner_account_id, accounts(email), servers(count)",
+    )
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return (data || []).map((row) => {
+    const account = Array.isArray(row.accounts) ? row.accounts[0] : row.accounts;
+    const serverCountRaw = Array.isArray(row.servers) ? row.servers[0]?.count : 0;
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      plan: row.plan,
+      plan_status: row.plan_status,
+      created_at: row.created_at,
+      owner_email: account?.email || null,
+      server_count: Number(serverCountRaw) || 0,
+    };
+  });
+}
+
 /** Generic field update (updateStripe already accepts arbitrary fields). */
 export { updateStripe as updateOrgFields };

@@ -10,7 +10,10 @@ import {
   getMapMetadata,
   clearMapMetadataCache,
 } from "../../modules/rcon/client.js";
-import { getPlayersWithPositions } from "../../modules/rcon/live-map.js";
+import {
+  fetchPlayerPosition,
+  getPlayersWithPositions,
+} from "../../modules/rcon/live-map.js";
 import {
   ensureMapPreview,
   hasCachedMapImage,
@@ -57,11 +60,33 @@ import {
 } from "../../modules/rcon/kits.js";
 import { getWipeAt, setWipeAt, syncWipeStatus } from "../../modules/rcon/wipe.js";
 import {
+  getWipeAutomationConfig,
+  saveWipeAutomationConfig,
+  runWipeAutomation,
+  WIPE_STEPS,
+} from "../../modules/rcon/wipe-runner.js";
+import {
   EVENT_PRESETS,
   RANK_PRESETS,
   getChannelConfig,
   saveChannelConfig,
 } from "../../modules/admin/channel-settings.js";
+import {
+  getFeedSettingsForPanel,
+  saveFeedSettings,
+} from "../../modules/admin/feed-settings.js";
+import {
+  getCommandSettingsForPanel,
+  saveCommandSettings,
+} from "../../modules/admin/command-settings.js";
+import {
+  getStatusSettingsForPanel,
+  saveStatusSettings,
+} from "../../modules/admin/status-settings.js";
+import {
+  getVipSettingsForPanel,
+  saveVipSettings,
+} from "../../modules/admin/vip-settings.js";
 import { listReports, scanAllTeams, searchCombat } from "../../modules/rcon/reports.js";
 import {
   STAFF_PERMISSIONS,
@@ -368,6 +393,70 @@ export async function attachAdminPanel(app, client) {
     res.json({ ok: true, online, links });
   });
 
+  app.get("/admin/api/players/search", requireAuth, requirePerm("players"), async (req, res) => {
+    try {
+      const q = String(req.query.q ?? "").trim().toLowerCase();
+      if (!q) return res.json({ ok: true, results: [] });
+
+      const links = await listLinks();
+      const online = getOnlinePlayers();
+      const profiles = await searchPlayers(q);
+      const byIgn = new Map();
+
+      const touch = (ign, patch = {}) => {
+        const key = String(ign || "").toLowerCase();
+        if (!key) return;
+        const cur = byIgn.get(key) || {
+          ign: String(ign).trim(),
+          online: false,
+          linked: false,
+          discordId: null,
+          ping: null,
+          platform: null,
+          tags: [],
+          noteCount: 0,
+          warningCount: 0,
+        };
+        Object.assign(cur, patch);
+        if (patch.ign) cur.ign = patch.ign;
+        byIgn.set(key, cur);
+      };
+
+      for (const p of online) {
+        if (p.ign.toLowerCase().includes(q)) {
+          touch(p.ign, {
+            ign: p.ign,
+            online: true,
+            ping: p.ping ?? null,
+            platform: p.platform ?? null,
+          });
+        }
+      }
+      for (const l of links) {
+        const id = String(l.discordId || "");
+        if (l.ign.toLowerCase().includes(q) || id.includes(q)) {
+          touch(l.ign, { ign: l.ign, linked: true, discordId: l.discordId });
+        }
+      }
+      for (const p of profiles) {
+        touch(p.ign, {
+          ign: p.ign,
+          tags: p.tags || [],
+          noteCount: p.noteCount || 0,
+          warningCount: p.warningCount || 0,
+        });
+      }
+
+      const results = [...byIgn.values()]
+        .sort((a, b) => Number(b.online) - Number(a.online) || a.ign.localeCompare(b.ign))
+        .slice(0, 50);
+
+      res.json({ ok: true, results, query: q });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
   app.post("/admin/api/rcon", requireAuth, requirePerm("rcon"), async (req, res) => {
     try {
       const command = String(req.body?.command ?? "").trim();
@@ -475,6 +564,23 @@ export async function attachAdminPanel(app, client) {
       await clearMapImage(mapMetadata.seed, mapMetadata.size);
       await audit(req, "map_image_clear", { seed: mapMetadata.seed, size: mapMetadata.size });
       res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/map/position", requireAuth, requirePerm("overview"), async (req, res) => {
+    try {
+      const ign = String(req.body?.ign ?? "").trim();
+      if (!ign) return res.status(400).json({ ok: false, error: "Missing player IGN" });
+      const coords = await fetchPlayerPosition(ign);
+      if (!coords) {
+        return res.status(404).json({
+          ok: false,
+          error: `No position for ${ign} — are they online?`,
+        });
+      }
+      res.json({ ok: true, ign, coords, players: getPlayersWithPositions() });
     } catch (error) {
       res.status(500).json({ ok: false, error: error.message });
     }
@@ -812,6 +918,161 @@ export async function attachAdminPanel(app, client) {
     await syncWipeStatus(client, { force: true }).catch(() => {});
     await audit(req, "wipe_set", { wipeAt: result.wipeAt });
     res.json(result);
+  });
+
+  app.get("/admin/api/wipe/automation", requireAuth, requirePerm("overview"), async (_req, res) => {
+    try {
+      const data = await getWipeAutomationConfig();
+      res.json({ ok: true, ...data, stepDefs: WIPE_STEPS });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/wipe/automation", requireAuth, requirePerm("statsReset"), async (req, res) => {
+    try {
+      const { enabled, autoRunOnSchedule, checklist } = req.body ?? {};
+      const data = await saveWipeAutomationConfig({
+        enabled,
+        autoRunOnSchedule,
+        checklist,
+      });
+      await audit(req, "wipe_automation_save", {
+        autoRunOnSchedule: data.autoRunOnSchedule,
+      });
+      res.json({ ok: true, ...data });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/wipe/run", requireAuth, requirePerm("statsReset"), async (req, res) => {
+    try {
+      const { steps, wipeLabel } = req.body ?? {};
+      const result = await runWipeAutomation({
+        steps,
+        wipeLabel,
+        client,
+        fromSchedule: false,
+      });
+      await audit(req, "wipe_run", {
+        wipeLabel: result.wipeLabel,
+        ok: result.ok,
+        steps: (result.results || []).map((r) => r.id),
+      });
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  // ——— Discord channels + Server Commands (kits / ranks / events) ———
+  async function loadDiscordChannelPicker() {
+    const { config: cfg } = await import("../../config.js");
+    const guild = cfg.discord.guildId
+      ? await client.guilds.fetch(cfg.discord.guildId).catch(() => null)
+      : client.guilds.cache.first() || null;
+
+    let discordChannels = [];
+    let discordRoles = [];
+    if (guild) {
+      const chans = await guild.channels.fetch().catch(() => null);
+      if (chans) {
+        discordChannels = [...chans.values()]
+          .filter((c) => c && typeof c.isTextBased === "function" && (c.isTextBased() || c.isVoiceBased?.()))
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            type: c.isVoiceBased?.() ? "voice" : "text",
+            parent: c.parent?.name || null,
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+      const roles = await guild.roles.fetch().catch(() => null);
+      if (roles) {
+        discordRoles = [...roles.values()]
+          .filter((r) => r && !r.managed && r.id !== guild.id)
+          .map((r) => ({ id: r.id, name: r.name, color: r.hexColor }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+    }
+    return {
+      channels: await getChannelConfig(),
+      discordChannels,
+      discordRoles,
+      ...(await getFeedSettingsForPanel()),
+      ...(await getCommandSettingsForPanel()),
+      ...(await getStatusSettingsForPanel()),
+      ...(await getVipSettingsForPanel()),
+    };
+  }
+
+  app.get("/admin/api/channels", requireAuth, requirePerm("serverCommands"), async (_req, res) => {
+    try {
+      res.json({ ok: true, ...(await loadDiscordChannelPicker()) });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/feeds", requireAuth, requirePerm("serverCommands"), async (req, res) => {
+    const patch = req.body?.feeds ?? req.body ?? {};
+    if (!patch || typeof patch !== "object") {
+      return res.status(400).json({ ok: false, error: "Missing feeds object" });
+    }
+    try {
+      const result = await saveFeedSettings(patch);
+      if (!result.ok) return res.status(400).json(result);
+      await audit(req, "feeds_save", { keys: Object.keys(patch) });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/commands", requireAuth, requirePerm("serverCommands"), async (req, res) => {
+    const patch = req.body?.commands ?? req.body ?? {};
+    if (!patch || typeof patch !== "object") {
+      return res.status(400).json({ ok: false, error: "Missing commands object" });
+    }
+    try {
+      const result = await saveCommandSettings(patch);
+      if (!result.ok) return res.status(400).json(result);
+      await audit(req, "commands_save", { keys: Object.keys(patch) });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/status-displays", requireAuth, requirePerm("serverCommands"), async (req, res) => {
+    const patch = req.body?.statusDisplays ?? req.body ?? {};
+    if (!patch || typeof patch !== "object") {
+      return res.status(400).json({ ok: false, error: "Missing statusDisplays object" });
+    }
+    try {
+      const result = await saveStatusSettings(patch);
+      if (!result.ok) return res.status(400).json(result);
+      await audit(req, "status_displays_save", { keys: Object.keys(patch) });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/vip-settings", requireAuth, requirePerm("serverCommands"), async (req, res) => {
+    const patch = req.body?.vip ?? req.body ?? {};
+    if (!patch || typeof patch !== "object") {
+      return res.status(400).json({ ok: false, error: "Missing vip settings object" });
+    }
+    try {
+      const result = await saveVipSettings(patch);
+      if (!result.ok) return res.status(400).json(result);
+      await audit(req, "vip_settings_save", { keys: Object.keys(patch) });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
   });
 
   // ——— Server Commands: channels / ranks / events ———

@@ -70,6 +70,8 @@ export async function createWebhookServer(client) {
     });
     const { attachSignupRoutes } = await import("../saas/signup/routes.js");
     attachSignupRoutes(app);
+    const { attachOpsRoutes } = await import("../saas/ops/routes.js");
+    attachOpsRoutes(app);
   }
 
   app.get("/logo.svg", (_req, res) => {

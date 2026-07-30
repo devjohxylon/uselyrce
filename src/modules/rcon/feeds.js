@@ -80,6 +80,11 @@ function clean(name) {
 }
 
 const killStreaks = new Map(); // ign -> count
+
+export function clearKillStreaks() {
+  killStreaks.clear();
+}
+
 const STREAK_MILESTONES = new Set([3, 5, 10, 15, 20]);
 
 export function feedKill(data) {

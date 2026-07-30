@@ -3,7 +3,7 @@ import { getOrgBySlug } from "./db/orgs.js";
 
 const RESERVED_SLUGS = new Set([
   "www", "admin", "app", "api", "mail", "smtp", "dev", "staging", "status",
-  "docs", "blog", "cdn", "assets", "help", "support", "billing", "usely",
+  "docs", "blog", "cdn", "assets", "help", "support", "billing", "usely", "ops",
 ]);
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])?$/;

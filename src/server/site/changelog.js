@@ -8,6 +8,18 @@
 export const entries = [
   {
     date: "2026-07-29",
+    title: "Admin panel catch-up",
+    changes: [
+      { type: "added", text: "Live map with player positions and calibration." },
+      { type: "added", text: "Player profiles tab with linked Discord and stats history." },
+      { type: "added", text: "Discord settings for feeds, VIP, status displays, and command channels." },
+      { type: "added", text: "Actions tab for kits, ranks, and events from the panel." },
+      { type: "added", text: "Server status, wipe automation, and analytics views." },
+      { type: "changed", text: "Panel navigation reorganized around Home, Players, Kits, Community, Server, Actions, and Discord." },
+    ],
+  },
+  {
+    date: "2026-07-29",
     title: "Docs, FAQ, contact, and changelog",
     changes: [
       { type: "added", text: "Documentation covering setup, WebRCON, kits, the Discord bot, staff permissions, and troubleshooting." },

@@ -36,13 +36,22 @@ const FULL_STAFF_PERMS = {
 
 function seedData() {
   const now = new Date().toISOString();
+  const ownerAccount = {
+    id: "mock-acct-owner",
+    email: "owner@example.com",
+    password_hash: null,
+    created_at: now,
+  };
   return {
+    accounts: [ownerAccount],
+    setupTokens: [],
     orgs: [
       {
         id: "mock-org-1",
         name: "Astral Vanilla+",
         slug: "astral",
         owner_discord_id: MOCK_USER.discordUserId,
+        owner_account_id: ownerAccount.id,
         discord_guild_id: null,
         default_server_id: "mock-server-1",
         stripe_customer_id: null,
@@ -169,6 +178,28 @@ export async function getOrgBySlug(slug) {
 export async function listOrgsOwnedByAccount(accountId) {
   const db = await load();
   return db.orgs.filter((o) => o.owner_account_id === accountId);
+}
+
+export async function listAllOrgsForOps() {
+  const db = await load();
+  return db.orgs
+    .slice()
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+    .map((org) => {
+      const account = org.owner_account_id
+        ? db.accounts.find((a) => a.id === org.owner_account_id)
+        : null;
+      return {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        plan: org.plan,
+        plan_status: org.plan_status,
+        created_at: org.created_at,
+        owner_email: account?.email || null,
+        server_count: db.servers.filter((s) => s.org_id === org.id).length,
+      };
+    });
 }
 
 // ——— accounts + setup tokens ———
