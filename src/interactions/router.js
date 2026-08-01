@@ -1,5 +1,4 @@
 import {
-  handleAstralCommands,
   handleCommunityCommands,
   handleGiveawayCommand,
   handleModerationCommands,
@@ -37,8 +36,6 @@ const MOD_COMMANDS = new Set([
   "case",
 ]);
 
-const ASTRAL_COMMANDS = new Set(["astral-status", "astral-leaderboard", "astral-sync"]);
-
 const PLAYER_COMMANDS = {
   link: handleLinkCommand,
   home: handleHomeCommand,
@@ -62,7 +59,6 @@ export function attachInteractionRouter(client) {
         if (name === "rcon") return await handleRconCommand(interaction);
         if (PLAYER_COMMANDS[name]) return await PLAYER_COMMANDS[name](interaction);
 
-        if (ASTRAL_COMMANDS.has(name)) return await handleAstralCommands(interaction, client);
         if (MOD_COMMANDS.has(name)) return await handleModerationCommands(interaction);
         if (name === "giveaway") return await handleGiveawayCommand(interaction, client);
         if (name === "ticket") return await handleTicketCommand(interaction);

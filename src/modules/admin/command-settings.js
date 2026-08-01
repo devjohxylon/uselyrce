@@ -136,32 +136,6 @@ export const COMMAND_SETTING_DEFS = [
     fields: [toggle("enabled", "Enabled", true)],
   },
 
-  // ——— Website ———
-  {
-    group: "Website",
-    key: "astral-status",
-    name: "/astral-status",
-    description: "Show Astral bot status",
-    access: "staff",
-    fields: [toggle("enabled", "Enabled", true)],
-  },
-  {
-    group: "Website",
-    key: "astral-leaderboard",
-    name: "/astral-leaderboard",
-    description: "Sync KAOS leaderboard to the website",
-    access: "staff",
-    fields: [toggle("enabled", "Enabled", true)],
-  },
-  {
-    group: "Website",
-    key: "astral-sync",
-    name: "/astral-sync",
-    description: "Backfill a watched channel to the website",
-    access: "staff",
-    fields: [toggle("enabled", "Enabled", true)],
-  },
-
   // ——— Moderation ———
   {
     group: "Moderation",

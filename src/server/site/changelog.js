@@ -8,6 +8,13 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Discord slash commands cleanup",
+    changes: [
+      { type: "changed", text: "Removed legacy Astral website slash commands (<code>/astral-status</code>, <code>/astral-leaderboard</code>, <code>/astral-sync</code>). Rust, linking, and staff commands stay." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Setup includes Discord and WebRCON",
     changes: [
       { type: "changed", text: "After checkout, setup walks you through panel address, inviting the Discord bot, and connecting your first WebRCON server before opening the panel." },

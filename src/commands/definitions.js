@@ -6,30 +6,6 @@ import {
 const staff = PermissionFlagsBits.ModerateMembers;
 
 export const commandDefinitions = [
-  // ——— Website / Astral ———
-  // Visible to everyone so the bot always shows / commands; handlers still check staff where needed
-  new SlashCommandBuilder()
-    .setName("astral-status")
-    .setDescription("Show Astral bot status"),
-  new SlashCommandBuilder()
-    .setName("astral-leaderboard")
-    .setDescription("Sync KAOS leaderboard to the website")
-    .setDefaultMemberPermissions(staff),
-  new SlashCommandBuilder()
-    .setName("astral-sync")
-    .setDescription("Backfill a channel to your website")
-    .setDefaultMemberPermissions(staff)
-    .addStringOption((o) =>
-      o
-        .setName("channel")
-        .setDescription("Which watched channel to sync")
-        .addChoices(
-          { name: "Leaderboard", value: "leaderboard" },
-          { name: "KAOS activity", value: "kaos_activity" },
-          { name: "Announcements", value: "announcements" },
-        ),
-    ),
-
   // ——— Rust server (RCON) ———
   new SlashCommandBuilder()
     .setName("server")

@@ -1,6 +1,4 @@
 import { EmbedBuilder } from "discord.js";
-import { getBotStatus } from "../services/discordPublish.js";
-import { backfillChannel, syncLatestLeaderboard } from "../services/website.js";
 import { config } from "../config.js";
 import { requireStaff } from "../lib/permissions.js";
 import { getCasesForUser } from "../data/store.js";
@@ -23,49 +21,6 @@ import {
   closeTicket,
   findTicketByChannel,
 } from "../modules/tickets/manager.js";
-
-export async function handleAstralCommands(interaction, client) {
-  if (!(await requireStaff(interaction))) return;
-
-  if (interaction.commandName === "astral-status") {
-    const status = await getBotStatus(client);
-    return interaction.reply({
-      ephemeral: true,
-      content: [
-        `**Bot:** ${status.user}`,
-        `**Uptime:** ${status.uptimeSeconds}s`,
-        `**Watching:** ${status.watchedChannels.length} channel(s)`,
-        `**Website:** ${status.websiteIngestUrl}`,
-        `**Auto-mod:** ${config.automod.enabled ? "on" : "off"}`,
-      ].join("\n"),
-    });
-  }
-
-  if (interaction.commandName === "astral-leaderboard") {
-    await interaction.deferReply({ ephemeral: true });
-    try {
-      const ids = await syncLatestLeaderboard(client, { force: true });
-      return interaction.editReply(`Synced leaderboard (\`${ids[0]}\`).`);
-    } catch (error) {
-      return interaction.editReply(`Failed: ${error.message}`);
-    }
-  }
-
-  if (interaction.commandName === "astral-sync") {
-    await interaction.deferReply({ ephemeral: true });
-    const key = interaction.options.getString("channel") ?? "leaderboard";
-    const map = {
-      leaderboard: config.channels.leaderboard,
-      kaos_activity: config.channels.kaosActivity,
-      announcements: config.channels.announcements,
-    };
-    const channelId = map[key];
-    const channel = client.channels.cache.get(channelId);
-    if (!channel?.isTextBased()) return interaction.editReply("Channel not configured.");
-    const ids = await backfillChannel(channel, 25);
-    return interaction.editReply(`Synced ${ids.length} message(s).`);
-  }
-}
 
 export async function handleModerationCommands(interaction) {
   if (!(await requireStaff(interaction))) return;
