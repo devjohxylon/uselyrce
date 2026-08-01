@@ -20,8 +20,8 @@ export async function syncGuildSlashCommands(guildId, { clientId, token } = {}) 
 
 /**
  * Push slash commands.
- * SaaS: global (propagates slowly) + every current guild (instant).
- * Legacy: home GUILD_ID only when set.
+ * SaaS: guild-only (instant, no duplicates). Clears global commands once.
+ * Legacy: home GUILD_ID when set, otherwise global.
  */
 export async function syncSlashCommands({ clientId, token, guildIds = [] } = {}) {
   const id = clientId || config.discord.clientId;
@@ -32,8 +32,9 @@ export async function syncSlashCommands({ clientId, token, guildIds = [] } = {})
   const body = commandDefinitions;
   const guilds = [...new Set(guildIds.map(String).filter(Boolean))];
 
-  if (config.saas.enabled || !config.discord.guildId) {
-    await rest.put(Routes.applicationCommands(id), { body });
+  if (config.saas.enabled) {
+    // Drop globals so Discord doesn't show two of every command (global + guild).
+    await rest.put(Routes.applicationCommands(id), { body: [] });
     const guildResults = [];
     for (const guildId of guilds) {
       try {
@@ -45,11 +46,17 @@ export async function syncSlashCommands({ clientId, token, guildIds = [] } = {})
       }
     }
     return {
-      scope: "global+guilds",
+      scope: "guilds",
       count: body.length,
       clientId: id,
       guilds: guildResults,
+      clearedGlobal: true,
     };
+  }
+
+  if (!config.discord.guildId) {
+    await rest.put(Routes.applicationCommands(id), { body });
+    return { scope: "global", count: body.length, clientId: id };
   }
 
   await rest.put(Routes.applicationGuildCommands(id, config.discord.guildId), { body });

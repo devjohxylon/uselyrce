@@ -38,11 +38,13 @@ export function createBotClient() {
       const result = await syncSlashCommands({ clientId: appId, guildIds });
       if (result.scope === "guild") {
         console.log(`Slash commands: ${result.count} on guild ${result.guildId}`);
-      } else {
+      } else if (result.scope === "guilds") {
         const ok = (result.guilds || []).filter((g) => g.ok).length;
         console.log(
-          `Slash commands: ${result.count} global + ${ok}/${guildIds.length} guild(s) (app ${result.clientId})`,
+          `Slash commands: ${result.count} × ${ok}/${guildIds.length} guild(s) (globals cleared, app ${result.clientId})`,
         );
+      } else {
+        console.log(`Slash commands: ${result.count} global (app ${result.clientId})`);
       }
     } catch (error) {
       console.error("Slash command sync failed:", error.message);
