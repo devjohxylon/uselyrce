@@ -1,12 +1,12 @@
 /**
- * Launch checklist helper: set ops email, verify Stripe webhook + Resend + volume-ish vars.
+ * Launch checklist helper: ensure ops access code, verify Stripe webhook + Resend + volume-ish vars.
  * Never prints secret values.
  */
 import { spawnSync } from "child_process";
+import crypto from "crypto";
 import Stripe from "stripe";
 
 const SERVICE = "app";
-const OPS_EMAIL = "captjohn.lohse@gmail.com";
 const WEBHOOK_URL = "https://app.usely.dev/billing/stripe/webhook";
 
 function railwayKv() {
@@ -55,17 +55,13 @@ async function main() {
   const vars = railwayKv();
   const report = {};
 
-  // Ops emails
-  const currentOps = (vars.USELY_OPS_EMAILS || "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  if (!currentOps.includes(OPS_EMAIL.toLowerCase())) {
-    const next = [...new Set([...currentOps, OPS_EMAIL.toLowerCase()])].join(",");
-    setVar("USELY_OPS_EMAILS", next, { skipDeploys: false });
-    report.ops = `set → ${next}`;
+  // Ops access code (platform customer console — not game admin)
+  if (!vars.USELY_OPS_CODE?.trim()) {
+    const code = crypto.randomBytes(18).toString("base64url");
+    setVar("USELY_OPS_CODE", code, { skipDeploys: false });
+    report.ops = `USELY_OPS_CODE set (len=${code.length}) — copy from Railway vars`;
   } else {
-    report.ops = `already set (${currentOps.length} email(s))`;
+    report.ops = `USELY_OPS_CODE already set (len=${vars.USELY_OPS_CODE.length})`;
   }
 
   // Core config sanity

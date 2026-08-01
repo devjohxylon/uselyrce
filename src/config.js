@@ -143,13 +143,8 @@ const saasConfig = {
   baseDomain: optional("SAAS_BASE_DOMAIN") || null,
   resendApiKey: optional("RESEND_API_KEY") || null,
   emailFrom: optional("EMAIL_FROM") || "Usely <onboarding@usely.dev>",
-  // Comma-separated owner emails allowed to open /ops (platform dashboard).
-  opsEmails: new Set(
-    optional("USELY_OPS_EMAILS")
-      .split(",")
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean),
-  ),
+  // Shared access code for https://app.usely.dev/ops (platform customer list).
+  opsAccessCode: optional("USELY_OPS_CODE") || null,
 };
 
 if (saasEnabled && !saasMock) {

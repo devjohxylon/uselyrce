@@ -1,7 +1,7 @@
+import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 import { config } from "../../config.js";
-import { readSaasCookie } from "../auth/discord-session.js";
 import { listAllOrgsForOps } from "../db/orgs.js";
 import { orgPanelUrl } from "../tenancy.js";
 
@@ -10,95 +10,166 @@ const OPS_HTML = path.resolve(
   "ops.html",
 );
 
-function isOpsEmail(email) {
-  if (!email || !config.saas.opsEmails.size) return false;
-  return config.saas.opsEmails.has(String(email).toLowerCase().trim());
+const COOKIE = "usely_ops";
+const TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
+function configuredCode() {
+  return String(config.saas.opsAccessCode || "").trim();
 }
 
-function gatePage({ title, body, href, cta }) {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
-<meta name="robots" content="noindex"/><title>${title} — Usely Ops</title>
+function signingSecret() {
+  return (
+    configuredCode() ||
+    config.adminPanel.sessionSecret ||
+    "usely-ops"
+  );
+}
+
+function sign(payload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = crypto.createHmac("sha256", signingSecret()).update(body).digest("base64url");
+  return `${body}.${sig}`;
+}
+
+function verify(token) {
+  if (!token || !token.includes(".")) return null;
+  const [body, sig] = token.split(".");
+  const expected = crypto.createHmac("sha256", signingSecret()).update(body).digest("base64url");
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    if (!payload?.ops || !payload?.exp || Date.now() > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function parseCookies(req) {
+  const header = req.get?.("cookie") ?? req.headers?.cookie ?? "";
+  return Object.fromEntries(
+    header
+      .split(";")
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => {
+        const i = p.indexOf("=");
+        return i === -1 ? [p, ""] : [p.slice(0, i), decodeURIComponent(p.slice(i + 1))];
+      }),
+  );
+}
+
+function cookieAttrs() {
+  const secure =
+    process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === "production"
+      ? "; Secure"
+      : "";
+  return `${secure}; HttpOnly; SameSite=Lax; Path=/`;
+}
+
+function setOpsCookie(res) {
+  const token = sign({ ops: true, exp: Date.now() + TTL_MS });
+  res.setHeader(
+    "Set-Cookie",
+    `${COOKIE}=${token}; Max-Age=${Math.floor(TTL_MS / 1000)}${cookieAttrs()}`,
+  );
+}
+
+function clearOpsCookie(res) {
+  res.setHeader("Set-Cookie", `${COOKIE}=; Max-Age=0${cookieAttrs()}`);
+}
+
+function readOpsCookie(req) {
+  return verify(parseCookies(req)[COOKIE]);
+}
+
+function codesMatch(input) {
+  const expected = configuredCode();
+  if (!expected) return false;
+  const a = Buffer.from(String(input || ""));
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function gateHtml({ error = "" } = {}) {
+  const err = error ? `<p class="err">${escapeHtml(error)}</p>` : "";
+  const configured = Boolean(configuredCode());
+  return `<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>Usely Ops</title>
+<link rel="icon" href="/logo.png" type="image/png"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;
-background:#050506;color:#f0f2f5;padding:1.5rem}
-.card{max-width:26rem;border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:1.75rem;background:#0c0d10}
-h1{font-size:1.25rem;margin:0 0 .75rem;font-weight:600}
-p{color:#9aa0ab;line-height:1.55;margin:0 0 1.25rem}
-a{display:inline-block;background:#e8edf4;color:#0b0c0e;font-weight:600;text-decoration:none;
-padding:.7rem 1rem;border-radius:4px}
-code{color:#d7dde6}
-</style></head><body><div class="card">
-<h1>${title}</h1><p>${body}</p>
-<a href="${href}">${cta}</a>
-</div></body></html>`;
+:root{--bg:#07080a;--bg2:#10131a;--line:rgba(255,255,255,.08);--text:#f3f1ec;--muted:#9aa3b2;--accent:#f0c674;--bad:#f87171;--font:"Space Grotesk",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:var(--font);color:var(--text);
+background:radial-gradient(700px 400px at 50% -10%,rgba(240,198,116,.08),transparent 55%),var(--bg);padding:1.5rem}
+.card{width:min(22rem,100%);border:1px solid var(--line);border-radius:6px;background:var(--bg2);padding:1.75rem}
+.eyebrow{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 .75rem;font-weight:600}
+h1{margin:0 0 .5rem;font-size:1.35rem;font-weight:600}
+p{color:var(--muted);line-height:1.5;margin:0 0 1.25rem;font-size:.9rem}
+label{display:grid;gap:.35rem;font-size:.8rem;color:var(--muted);margin-bottom:1rem}
+input{width:100%;font:inherit;padding:.75rem .85rem;border-radius:4px;border:1px solid var(--line);background:#0a0c10;color:var(--text)}
+button{width:100%;font:inherit;font-weight:600;border:0;border-radius:4px;padding:.85rem;cursor:pointer;background:var(--accent);color:#14110b}
+.err{color:var(--bad);font-size:.85rem;margin:0 0 .85rem}
+.note{font-size:.75rem;color:var(--muted);margin:1rem 0 0}
+code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.85em}
+</style></head><body>
+<form class="card" method="POST" action="/ops/login">
+  <p class="eyebrow">Platform console</p>
+  <h1>Usely ops</h1>
+  <p>Customer workspaces across the platform — not a game server admin panel.</p>
+  ${configured ? "" : `<p class="err">Set USELY_OPS_CODE on Railway, then redeploy.</p>`}
+  ${err}
+  <label>Access code
+    <input type="password" name="code" autocomplete="current-password" autofocus ${configured ? "required" : "disabled"} />
+  </label>
+  <button type="submit" ${configured ? "" : "disabled"}>Unlock</button>
+  <p class="note">Bookmark <code>/ops</code>. Code lives in Railway env <code>USELY_OPS_CODE</code>.</p>
+</form>
+</body></html>`;
 }
 
 /**
- * @returns {object|null} cookie when authorized; otherwise response already sent
+ * @returns {boolean} true when authorized
  */
 function requireOps(req, res, { html = false } = {}) {
   if (!config.saas.enabled) {
     if (html) {
-      res
-        .status(503)
-        .type("html")
-        .send(gatePage({
-          title: "Ops unavailable",
-          body: "SaaS mode is not enabled on this deployment.",
-          href: "/",
-          cta: "← Home",
-        }));
+      res.status(503).type("html").send(gateHtml({ error: "SaaS mode is off on this deployment." }));
     } else {
       res.status(404).end();
     }
-    return null;
+    return false;
   }
-
-  if (!config.saas.opsEmails.size) {
+  if (!configuredCode()) {
     if (html) {
-      res
-        .status(503)
-        .type("html")
-        .send(gatePage({
-          title: "Ops not configured",
-          body: "Set <code>USELY_OPS_EMAILS</code> on Railway to your owner email, then redeploy.",
-          href: "/admin",
-          cta: "Open panel login",
-        }));
+      res.status(503).type("html").send(gateHtml());
     } else {
-      res.status(404).end();
+      res.status(503).json({ ok: false, error: "Ops code not configured" });
     }
-    return null;
+    return false;
   }
-
-  const cookie = readSaasCookie(req);
-  if (!cookie?.email) {
+  if (!readOpsCookie(req)) {
     if (html) {
-      res.redirect(302, "/admin?next=%2Fops");
+      res.status(401).type("html").send(gateHtml());
     } else {
-      res.status(401).json({ ok: false, error: "Sign in required" });
+      res.status(401).json({ ok: false, error: "Unlock required" });
     }
-    return null;
+    return false;
   }
-
-  if (!isOpsEmail(cookie.email)) {
-    if (html) {
-      res
-        .status(403)
-        .type("html")
-        .send(gatePage({
-          title: "Not an ops account",
-          body: `Signed in as <code>${String(cookie.email).replace(/[<>&]/g, "")}</code>, which is not in <code>USELY_OPS_EMAILS</code>. Sign in with your ops email instead.`,
-          href: "/admin?next=%2Fops",
-          cta: "Switch account",
-        }));
-    } else {
-      res.status(403).json({ ok: false, error: "Forbidden" });
-    }
-    return null;
-  }
-
-  return cookie;
+  return true;
 }
 
 function summarize(orgs) {
@@ -116,6 +187,20 @@ export function attachOpsRoutes(app) {
   app.get("/ops", (req, res) => {
     if (!requireOps(req, res, { html: true })) return;
     res.type("html").sendFile(OPS_HTML);
+  });
+
+  app.post("/ops/login", (req, res) => {
+    const code = req.body?.code ?? req.body?.accessCode ?? "";
+    if (!codesMatch(code)) {
+      return res.status(401).type("html").send(gateHtml({ error: "Wrong access code." }));
+    }
+    setOpsCookie(res);
+    res.redirect(302, "/ops");
+  });
+
+  app.post("/ops/logout", (_req, res) => {
+    clearOpsCookie(res);
+    res.redirect(302, "/ops");
   });
 
   app.get("/api/ops/summary", async (req, res) => {

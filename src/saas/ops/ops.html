@@ -19,7 +19,7 @@
       --text: #f0f2f5;
       --muted: #a3aab6;
       --faint: #5e646f;
-      --accent: #e8edf4;
+      --accent: #f0c674;
       --radius: 4px;
       --font: "Space Grotesk", system-ui, sans-serif;
       --mono: "JetBrains Mono", ui-monospace, monospace;
@@ -41,7 +41,7 @@
     .wrap { width: min(1100px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2rem 0 3.5rem; }
     header {
       display: flex;
-      align-items: baseline;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 1rem;
       margin-bottom: 2rem;
@@ -55,6 +55,7 @@
       letter-spacing: .16em;
       font-size: .78rem;
       text-transform: uppercase;
+      color: var(--accent);
     }
     .brand img { width: 22px; height: 22px; border-radius: 4px; }
     .brand span { color: var(--muted); letter-spacing: .08em; font-weight: 500; }
@@ -68,7 +69,20 @@
       margin: .35rem 0 0;
       color: var(--muted);
       font-size: .9rem;
+      max-width: 36rem;
     }
+    .logout {
+      font: inherit;
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--line2);
+      border-radius: var(--radius);
+      padding: .45rem .75rem;
+      cursor: pointer;
+    }
+    .logout:hover { color: var(--text); border-color: var(--muted); }
     .cards {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -185,11 +199,14 @@
       <div>
         <div class="brand">
           <img src="/logo.png" alt="" />
-          Usely <span>/ ops</span>
+          Usely <span>/ platform ops</span>
         </div>
-        <h1>Platform</h1>
-        <p class="sub">All customer workspaces. Credentials are never shown here.</p>
+        <h1>Customer workspaces</h1>
+        <p class="sub">Every org on Usely — plans, server counts, and panel links. This is not a game admin panel; open Panel to manage a specific server.</p>
       </div>
+      <form method="POST" action="/ops/logout">
+        <button class="logout" type="submit">Lock</button>
+      </form>
     </header>
 
     <div class="cards" id="cards">

@@ -59,8 +59,8 @@ STRIPE_WEBHOOK_SECRET=...
 STRIPE_PRICE_BASIC=price_...
 STRIPE_PRICE_PRO=price_...
 STRIPE_PRICE_NETWORK=price_...
-# Your email(s) for the platform ops dashboard at https://app.usely.dev/ops
-USELY_OPS_EMAILS=you@example.com
+# Access code for the platform ops console at https://app.usely.dev/ops
+USELY_OPS_CODE=your-long-secret-code
 ```
 
 Stripe keys aren't enforced at boot, but `/signup` can't take payment without
@@ -111,7 +111,7 @@ detects Railway without a volume on the data directory.
 - [ ] Bot online in Discord; org can add a server and see RCON connected
 - [ ] Stripe webhook deliveries succeed
 - [ ] Volume mounted on `.data` and `DATA_DIR` points at it
-- [ ] `USELY_OPS_EMAILS` set; `app.usely.dev/ops` loads after email login
+- [ ] `USELY_OPS_CODE` set; `app.usely.dev/ops` unlocks with that code
 - [ ] Google Search Console: submit `https://www.usely.dev/sitemap.xml`
 
 ## Local SaaS test
