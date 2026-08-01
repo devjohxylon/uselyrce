@@ -70,6 +70,7 @@ function serverOptions(server) {
 
 async function attachOne(server) {
   const m = ensureManager();
+  const prev = states.get(server.id);
   states.set(server.id, {
     host: server.host,
     port: server.port,
@@ -77,6 +78,8 @@ async function attachOne(server) {
     connectedAt: null,
     reattaching: false,
     reconnectAttempts: 0,
+    // Keep password for watchdog reconnect (was wiped before and broke recovery).
+    _password: server.password ?? prev?._password ?? null,
   });
   const added = await m.addServer(serverOptions(server)).catch((error) => {
     const st = states.get(server.id);
@@ -179,6 +182,28 @@ export function getPoolStatus(serverId) {
     host: st?.host ?? null,
     port: st?.port ?? null,
   };
+}
+
+/** Wait until the pool socket is open, or timeout with lastError. */
+export function waitForPoolConnection(serverId, { timeoutMs = 12_000 } = {}) {
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const tick = () => {
+      const status = getPoolStatus(serverId);
+      if (status.connected) {
+        return resolve({ ok: true, connected: true, lastError: null });
+      }
+      if (Date.now() - started >= timeoutMs) {
+        return resolve({
+          ok: false,
+          connected: false,
+          lastError: status.lastError || "Timed out waiting for WebRCON — check host, port, and password.",
+        });
+      }
+      setTimeout(tick, 400);
+    };
+    tick();
+  });
 }
 
 export function getPoolServer(serverId) {

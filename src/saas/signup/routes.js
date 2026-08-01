@@ -266,25 +266,26 @@ export function attachSignupRoutes(app, client = null) {
         return res.status(400).json({ ok: false, error: "Link your Discord guild first" });
       }
 
-      const name = String(req.body?.name || "").trim();
-      const host = String(req.body?.host || "").trim();
-      const port = Number(req.body?.port);
-      const password = String(req.body?.password || "");
-      if (!name || !host || !port || !password) {
-        return res.status(400).json({ ok: false, error: "Name, host, port, and password are required" });
-      }
+      const endpoint = (await import("../rcon/endpoint.js")).normalizeRconEndpoint({
+        name: req.body?.name,
+        host: req.body?.host,
+        port: req.body?.port,
+        password: req.body?.password,
+      });
 
-      const server = await createServer(org.id, { name, host, port, password });
+      const server = await createServer(org.id, endpoint);
+      let rcon = { connected: false, lastError: null };
       if (!config.saas.mock) {
         try {
-          const { attachSaasServer } = await import("../../modules/rcon/client.js");
+          const { attachSaasServerAndWait } = await import("../../modules/rcon/client.js");
           const raw = await getServerRaw(server.id);
-          await attachSaasServer(withCredentials(raw)).catch((e) =>
-            console.error("Setup RCON attach failed:", e.message),
-          );
+          rcon = await attachSaasServerAndWait(withCredentials(raw));
         } catch (e) {
           console.error("Setup RCON attach failed:", e.message);
+          rcon = { connected: false, lastError: e.message };
         }
+      } else {
+        rcon = { connected: true, lastError: null };
       }
 
       const nextServers = await listServers(org.id);
@@ -295,6 +296,11 @@ export function attachSignupRoutes(app, client = null) {
         servers: publicServers(nextServers),
         canAddMore: nextServers.length < max,
         maxServers: max,
+        connected: Boolean(rcon.connected),
+        warning: rcon.connected
+          ? null
+          : rcon.lastError ||
+            "Saved, but WebRCON did not connect yet. Double-check host/port/password — you can fix this in the panel under Workspace → Servers.",
         step: "review",
       });
     } catch (error) {

@@ -25,7 +25,7 @@ const W = 980;
 const H = 700;
 const PAD = 28;
 
-/** Astral Control HUD palette (matches admin panel) */
+/** Usely Control HUD palette (matches admin panel) */
 const T = {
   bg0: "#050506",
   bg1: "#07080a",
@@ -270,7 +270,7 @@ function drawSidePanel(ctx, x, y, w, h, { title, accent, valueLabel, rows, empty
 }
 
 /**
- * Renders the Astral wipe leaderboard card (kills + K/D + playtime).
+ * Renders the Usely wipe leaderboard card (kills + K/D + playtime).
  * @returns {Promise<Buffer>} PNG buffer
  */
 export async function renderLeaderboardCard() {

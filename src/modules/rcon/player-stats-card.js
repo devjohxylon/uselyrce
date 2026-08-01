@@ -84,7 +84,7 @@ function drawStatTile(ctx, x, y, w, h, { label, value, accent }) {
 }
 
 /**
- * Personal wipe stats card in the same Astral HUD style as the wipe leaderboard.
+ * Personal wipe stats card in the same Usely HUD style as the wipe leaderboard.
  * @param {object} card from getPlayerCard
  * @returns {Promise<Buffer>}
  */

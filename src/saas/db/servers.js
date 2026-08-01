@@ -4,6 +4,7 @@ import { assertCanAddServer, isPlanLive } from "../billing/plans.js";
 import * as mockdb from "../mock.js";
 import { getServiceClient } from "./client.js";
 import { getOrg } from "./orgs.js";
+import { normalizeRconEndpoint } from "../rcon/endpoint.js";
 
 const useMock = () => config.saas.mock;
 
@@ -48,21 +49,28 @@ export async function createServer(orgId, { name, host, port, password }) {
   const org = await getOrg(orgId);
   if (!org) throw new Error("Org not found");
 
+  const endpoint = normalizeRconEndpoint({ name, host, port, password });
+
   const existing = await listServers(orgId);
   assertCanAddServer(org, existing.length);
 
   if (useMock()) {
-    if (!password) throw new Error("RCON password required");
-    return publicServer(await mockdb.insertServer(orgId, { name, host, port }));
+    return publicServer(
+      await mockdb.insertServer(orgId, {
+        name: endpoint.name,
+        host: endpoint.host,
+        port: endpoint.port,
+      }),
+    );
   }
 
   const db = getServiceClient();
   const row = {
     org_id: orgId,
-    name: String(name).trim(),
-    rcon_host: String(host).trim(),
-    rcon_port: Number(port),
-    rcon_password_enc: encryptSecret(password),
+    name: endpoint.name,
+    rcon_host: endpoint.host,
+    rcon_port: endpoint.port,
+    rcon_password_enc: encryptSecret(endpoint.password),
     enabled: true,
   };
   const { data, error } = await db.from("servers").insert(row).select("*").single();

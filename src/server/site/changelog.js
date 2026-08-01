@@ -8,6 +8,15 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Hardened WebRCON setup",
+    changes: [
+      { type: "changed", text: "Setup and Workspace → Servers validate host/port/password, test the WebRCON connection, and warn if it doesn't come up — instead of silently saving bad credentials." },
+      { type: "fixed", text: "RCON reconnect after a drop keeps the stored password (watchdog no longer fails open with a blank password)." },
+      { type: "changed", text: "Marketing examples and demo labels use Usely naming instead of leftover Astral copy." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Clearer SaaS setup guidance",
     changes: [
       { type: "changed", text: "When WebRCON isn't connected, Discord and the panel now point you to <strong>Workspace → Servers</strong> (or your setup link) instead of asking for <code>.env</code> values." },

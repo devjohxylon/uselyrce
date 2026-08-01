@@ -1760,7 +1760,7 @@ const state = {
       transform: null,
     };
     try {
-      const raw = { ...defaults, ...JSON.parse(localStorage.getItem("astralMapCal") || "{}") };
+      const raw = { ...defaults, ...JSON.parse(localStorage.getItem("uselyMapCal") || localStorage.getItem("astralMapCal") || "{}") };
       // Legacy absolute-pixel samples / axis-only affine break after canvas resize
       const samples = Array.isArray(raw.samples) ? raw.samples : [];
       const legacy =
@@ -3596,7 +3596,8 @@ function drawProceduralTerrain(ctx, w, h, seed) {
 function saveMapCal() {
   const cal = { ...(state.mapCal || {}) };
   delete cal.affine;
-  localStorage.setItem("astralMapCal", JSON.stringify(cal));
+  localStorage.setItem("uselyMapCal", JSON.stringify(cal));
+  try { localStorage.removeItem("astralMapCal"); } catch {}
 }
 
 function fitContain(imgW, imgH, boxW, boxH) {
@@ -6148,18 +6149,24 @@ function bindView() {
         }
         if (a === "saasAddServer") {
           const name = document.getElementById("saasSrvName")?.value?.trim();
-          const host = document.getElementById("saasSrvHost")?.value?.trim();
-          const port = document.getElementById("saasSrvPort")?.value?.trim();
+          let host = document.getElementById("saasSrvHost")?.value?.trim();
+          let port = document.getElementById("saasSrvPort")?.value?.trim();
           const password = document.getElementById("saasSrvPass")?.value || "";
           if (!name || !host || !port || !password) {
             toast("Name, host, port, and password are required", true);
             return;
           }
-          await saasFetch("/servers", {
+          if (/^[^/\s]+:\d{1,5}$/.test(host)) {
+            const i = host.lastIndexOf(":");
+            if (!port) port = host.slice(i + 1);
+            host = host.slice(0, i);
+          }
+          const r = await saasFetch("/servers", {
             method: "POST",
             body: { name, host, port: Number(port), password },
           });
-          toast("Server added");
+          if (r.warning) toast(r.warning, true);
+          else toast(r.connected ? "Server added — WebRCON connected" : "Server added");
           location.reload();
           return;
         }

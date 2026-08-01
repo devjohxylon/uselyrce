@@ -82,7 +82,7 @@ export async function replyWithPlayerStats(interaction, ign) {
   }
 
   const png = await renderPlayerStatsCard(card);
-  const file = new AttachmentBuilder(png, { name: "astral-stats.png" });
+  const file = new AttachmentBuilder(png, { name: "usely-stats.png" });
   const payload = { content: null, files: [file] };
   if (interaction.deferred || interaction.replied) return interaction.editReply(payload);
   return interaction.reply({ ...payload, ephemeral: true });

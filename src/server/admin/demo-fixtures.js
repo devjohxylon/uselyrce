@@ -104,7 +104,7 @@ export async function buildDemoFixtures() {
     orgId: "demo-org",
     org: {
       id: "demo-org",
-      name: "Astral Vanilla+",
+      name: "Usely Demo",
       plan: "pro",
       planStatus: "active",
       guildId: null,
@@ -114,14 +114,14 @@ export async function buildDemoFixtures() {
     servers: [
       {
         id: "demo-server-1",
-        name: "Astral Main",
+        name: "Main",
         rcon_host: "203.0.113.10",
         rcon_port: 28016,
         enabled: true,
       },
       {
         id: "demo-server-2",
-        name: "Astral Softcore",
+        name: "Softcore",
         rcon_host: "203.0.113.11",
         rcon_port: 28016,
         enabled: true,
@@ -134,7 +134,7 @@ export async function buildDemoFixtures() {
   const overview = {
     ok: true,
     server: {
-      hostname: "Astral Vanilla+ | Trio | Monthly",
+      hostname: "Usely Demo | Trio | Monthly",
       players: online.length,
       maxPlayers: 100,
       queued: 2,
@@ -210,7 +210,7 @@ export async function buildDemoFixtures() {
       messages: [
         {
           id: "m1",
-          text: "Welcome to Astral — link Discord in #links",
+          text: "Welcome — link Discord in #links",
           intervalMinutes: 30,
           enabled: true,
         },

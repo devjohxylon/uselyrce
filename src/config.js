@@ -240,7 +240,7 @@ export const config = {
     host: rconEndpoint.host,
     port: rconEndpoint.port,
     password: optional("RCON_PASSWORD") || null,
-    identifier: optional("RCON_SERVER_NAME", "astral"),
+    identifier: optional("RCON_SERVER_NAME", "usely"),
     chatBridge: parseBool("RCON_CHAT_BRIDGE"),
     ingameKillfeed: parseBool("RCON_INGAME_KILLFEED"),
     statusUpdateMs: Number(optional("RCON_STATUS_UPDATE_MS", "300000")) || 300000,

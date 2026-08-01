@@ -32,7 +32,7 @@ export async function isSlugAvailable(slug) {
   return !existing;
 }
 
-/** astral.usely.dev -> "astral"; usely.dev / admin.usely.dev (reserved) -> null */
+/** myserver.usely.dev -> "myserver"; usely.dev / admin.usely.dev (reserved) -> null */
 export function orgSlugFromHost(hostHeader) {
   const host = String(hostHeader || "").toLowerCase().split(":")[0];
   const base = baseDomain();
@@ -48,7 +48,7 @@ export async function resolveOrgFromHost(hostHeader) {
   return getOrgBySlug(slug);
 }
 
-/** Full panel URL for an org, e.g. http://astral.localhost:3847/admin */
+/** Full panel URL for an org, e.g. http://myserver.localhost:3847/admin */
 export function orgPanelUrl(org) {
   const u = new URL(config.saas.publicUrl);
   const port = u.port ? `:${u.port}` : "";

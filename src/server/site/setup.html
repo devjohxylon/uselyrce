@@ -164,8 +164,9 @@
 
       <section class="step" id="step-review">
         <h1>You're ready</h1>
-        <p class="sub">Discord is linked and at least one server is connected. Open your panel to finish kits, roles, and channels.</p>
+        <p class="sub">Discord is linked and at least one WebRCON server is saved. Open your panel to finish kits, roles, and channels.</p>
         <ul class="server-list" id="serverList"></ul>
+        <p class="hint" id="rconHint" style="display:none"></p>
         <p class="hint" id="moreHint"></p>
         <div class="err" id="err-review"></div>
         <div class="actions">
@@ -339,29 +340,59 @@
     document.getElementById("goServer").addEventListener("click", async () => {
       showErr("err-server");
       const name = document.getElementById("srvName").value.trim();
-      const host = document.getElementById("srvHost").value.trim();
-      const port = document.getElementById("srvPort").value.trim();
+      let host = document.getElementById("srvHost").value.trim();
+      let port = document.getElementById("srvPort").value.trim();
       const password = document.getElementById("srvPass").value;
       if (!name || !host || !port || !password) {
         return showErr("err-server", "Name, host, port, and password are required.");
       }
+      if (/^https?:\/\//i.test(host) || host.includes("/")) {
+        return showErr("err-server", "Host must be an IP or hostname only — no http://.");
+      }
+      // Paste "ip:port" into host
+      if (/^[^/\s]+:\d{1,5}$/.test(host)) {
+        const i = host.lastIndexOf(":");
+        const maybe = host.slice(i + 1);
+        if (!port) port = maybe;
+        host = host.slice(0, i);
+        document.getElementById("srvHost").value = host;
+        document.getElementById("srvPort").value = port;
+      }
+      const portNum = Number(port);
+      if (!Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
+        return showErr("err-server", "Port must be between 1 and 65535 (WebRCON port, not the game port).");
+      }
       const btn = document.getElementById("goServer");
       btn.disabled = true;
+      btn.textContent = "Testing WebRCON…";
       try {
         const r = await fetch("/api/setup/server", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, name, host, port: Number(port), password }),
+          body: JSON.stringify({ token, name, host, port: portNum, password }),
         }).then((r) => r.json());
         if (!r.ok) throw new Error(r.error || "Could not add server");
         state.servers = r.servers || [];
         document.getElementById("srvPass").value = "";
+        const hint = document.getElementById("rconHint");
+        if (r.warning) {
+          hint.style.display = "block";
+          hint.className = "hint bad";
+          hint.textContent = r.warning;
+        } else if (r.connected) {
+          hint.style.display = "block";
+          hint.className = "hint ok";
+          hint.textContent = "WebRCON connected.";
+        } else {
+          hint.style.display = "none";
+        }
         renderServers();
         setStep("review");
       } catch (e) {
         showErr("err-server", e.message);
       } finally {
         btn.disabled = false;
+        btn.textContent = "Add server";
       }
     });
 

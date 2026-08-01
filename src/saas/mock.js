@@ -48,8 +48,8 @@ function seedData() {
     orgs: [
       {
         id: "mock-org-1",
-        name: "Astral Vanilla+",
-        slug: "astral",
+        name: "Usely Demo",
+        slug: "demo",
         owner_discord_id: MOCK_USER.discordUserId,
         owner_account_id: ownerAccount.id,
         discord_guild_id: null,
@@ -65,7 +65,7 @@ function seedData() {
       {
         id: "mock-server-1",
         org_id: "mock-org-1",
-        name: "Astral Main",
+        name: "Main",
         rcon_host: "203.0.113.10",
         rcon_port: 28016,
         rcon_password_enc: "mock",

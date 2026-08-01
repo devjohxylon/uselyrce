@@ -57,7 +57,7 @@ export async function createWebhookServer(client) {
   // The contact form posts urlencoded so it stays a simple cross-origin request.
   app.use(express.urlencoded({ extended: false, limit: "64kb" }));
 
-  // Per-org subdomain tenancy: astral.usely.dev serves that org's panel.
+  // Per-org subdomain tenancy: myserver.usely.dev serves that org's panel.
   if (config.saas?.enabled) {
     const { resolveOrgFromHost } = await import("../saas/tenancy.js");
     app.use(async (req, _res, next) => {

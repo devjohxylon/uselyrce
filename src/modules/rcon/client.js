@@ -15,6 +15,7 @@ import {
   runWithServer,
   getPoolManager,
   listAttachedServerIds,
+  waitForPoolConnection,
 } from "../../saas/rcon/pool.js";
 import { listAllEnabledForPool } from "../../saas/db/servers.js";
 
@@ -305,6 +306,20 @@ export async function broadcast(message, serverId) {
 
 export async function attachSaasServer(server) {
   return poolAttach(server);
+}
+
+/** Attach then wait briefly for the WebRCON socket (setup / panel feedback). */
+export async function attachSaasServerAndWait(server, { timeoutMs = 12_000 } = {}) {
+  const added = await poolAttach(server);
+  if (!added) {
+    const status = getPoolStatus(server.id);
+    return {
+      ok: false,
+      connected: false,
+      lastError: status.lastError || "Could not reach WebRCON — check host, port, and password.",
+    };
+  }
+  return waitForPoolConnection(server.id, { timeoutMs });
 }
 
 export function detachSaasServer(serverId) {

@@ -54,7 +54,7 @@ export const groups = [
     items: [
       {
         q: "What is my panel address?",
-        a: "Every workspace gets its own subdomain, like <code>astral.usely.dev</code>, which you choose during setup. That address is where you and your staff sign in.",
+        a: "Every workspace gets its own subdomain, like <code>myserver.usely.dev</code>, which you choose during setup. That address is where you and your staff sign in.",
       },
       {
         q: "Why do owners use email and staff use Discord?",

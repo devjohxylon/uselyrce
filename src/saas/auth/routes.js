@@ -286,19 +286,31 @@ export function attachSaasRoutes(app, client) {
       return res.status(403).json({ error: "Owner only" });
     }
     try {
-      const server = await createServer(session.orgId, {
+      const endpoint = (await import("../rcon/endpoint.js")).normalizeRconEndpoint({
         name: req.body?.name,
         host: req.body?.host,
         port: req.body?.port,
         password: req.body?.password,
       });
+      const server = await createServer(session.orgId, endpoint);
+      let rcon = { connected: config.saas.mock, lastError: null };
       if (!config.saas.mock) {
+        const { attachSaasServerAndWait } = await import("../../modules/rcon/client.js");
         const raw = await getServerRaw(server.id);
-        await attachSaasServer(withCredentials(raw)).catch((e) =>
-          console.error("Attach RCON failed:", e.message),
-        );
+        rcon = await attachSaasServerAndWait(withCredentials(raw)).catch((e) => ({
+          connected: false,
+          lastError: e.message,
+        }));
       }
-      res.json({ ok: true, server });
+      res.json({
+        ok: true,
+        server,
+        connected: Boolean(rcon.connected),
+        warning: rcon.connected
+          ? null
+          : rcon.lastError ||
+            "Saved, but WebRCON did not connect yet. Check host, port, and password.",
+      });
     } catch (error) {
       const status =
         error.code === "SERVER_LIMIT" || error.code === "PLAN_REQUIRED" ? 402 : 400;

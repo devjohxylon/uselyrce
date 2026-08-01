@@ -49,7 +49,7 @@ export async function buildWipePayload() {
   const countdown = formatWipeCountdown(wipeAt);
   return {
     type: "wipe_status",
-    source: "astral",
+    source: "usely",
     wipeAt,
     label: countdown.label,
     remainingMs: countdown.remainingMs,

@@ -3,7 +3,7 @@ import { config } from "../../config.js";
 import { getSettings, saveSettings } from "../../data/store.js";
 import { renderLeaderboardCard } from "./leaderboard-card.js";
 
-const LEADERBOARD_FILE = "astral-leaderboard.png";
+const LEADERBOARD_FILE = "usely-leaderboard.png";
 
 let discordClient = null;
 /** Serialize publishes so Ready + interval + panel push never race-post duplicates. */
