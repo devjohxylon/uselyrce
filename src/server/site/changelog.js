@@ -8,6 +8,13 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Setup includes Discord and WebRCON",
+    changes: [
+      { type: "changed", text: "After checkout, setup walks you through panel address, inviting the Discord bot, and connecting your first WebRCON server before opening the panel." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Invite the Discord bot from the panel",
     changes: [
       { type: "added", text: "Workspace Servers tab has a one-click <strong>Invite Discord bot</strong> button, plus guild linking that actually saves." },

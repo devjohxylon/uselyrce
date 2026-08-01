@@ -5,15 +5,24 @@ import { fileURLToPath } from "url";
 import { config } from "../../config.js";
 import {
   getAccount,
-  getAccountByEmail,
   getValidSetupToken,
   markSetupTokenUsed,
   setAccountPassword,
 } from "../db/accounts.js";
-import { getOrg, updateOrgFields } from "../db/orgs.js";
+import { getOrg, getOrgBySlug, setGuild, updateOrgFields } from "../db/orgs.js";
+import {
+  createServer,
+  listServers,
+  withCredentials,
+  getServerRaw,
+} from "../db/servers.js";
 import { hashPassword } from "../auth/passwords.js";
-import { setSaasSessionCookie } from "../auth/discord-session.js";
-import { baseDomain, isSlugAvailable, orgPanelUrl, slugProblem } from "../tenancy.js";
+import {
+  botInviteUrlSimple,
+  setSaasSessionCookie,
+} from "../auth/discord-session.js";
+import { baseDomain, orgPanelUrl, slugProblem } from "../tenancy.js";
+import { maxServersForPlan } from "../billing/plans.js";
 import { finalizeSignup } from "./finalize.js";
 
 const SITE_DIR = path.resolve(
@@ -23,9 +32,7 @@ const SITE_DIR = path.resolve(
 const SIGNUP_HTML = readFileSync(path.join(SITE_DIR, "signup.html"), "utf8");
 const SETUP_HTML = readFileSync(path.join(SITE_DIR, "setup.html"), "utf8");
 
-// One-time hop tokens so the session cookie gets set on the org's own
-// subdomain after setup (cookies don't cross hosts on localhost).
-const exchangeTokens = new Map(); // token -> { accountId, email, exp }
+const exchangeTokens = new Map();
 const EXCHANGE_TTL_MS = 5 * 60 * 1000;
 
 export function createExchangeToken({ accountId, email }) {
@@ -36,7 +43,41 @@ export function createExchangeToken({ accountId, email }) {
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-export function attachSignupRoutes(app) {
+/** createOrg assigns `name-xxxxxx` slugs; a chosen panel address replaces that. */
+function isAutoSlug(slug) {
+  return /^[a-z0-9-]+-[a-z0-9]{6}$/.test(String(slug || ""));
+}
+
+async function setupContext(token) {
+  const row = await getValidSetupToken(String(token || ""));
+  if (!row) return null;
+  const [account, org] = await Promise.all([
+    getAccount(row.account_id),
+    getOrg(row.org_id),
+  ]);
+  if (!account || !org) return null;
+  const servers = await listServers(org.id);
+  return { row, account, org, servers };
+}
+
+function inferStep(account, org, servers) {
+  const workspaceDone = Boolean(account.password_hash) && org.slug && !isAutoSlug(org.slug);
+  if (!workspaceDone) return "workspace";
+  if (!org.discord_guild_id) return "discord";
+  if (!servers.length) return "server";
+  return "review";
+}
+
+function publicServers(servers) {
+  return (servers || []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    host: s.rcon_host,
+    port: s.rcon_port,
+  }));
+}
+
+export function attachSignupRoutes(app, client = null) {
   if (!config.saas.enabled) return;
 
   app.get("/signup", (_req, res) => res.type("html").send(SIGNUP_HTML));
@@ -47,7 +88,7 @@ export function attachSignupRoutes(app) {
       <style>body{font-family:"Space Grotesk",system-ui,sans-serif;background:#050506;color:#f0f2f5;display:grid;place-items:center;min-height:100vh;margin:0}
       a{color:#d7dde6}</style></head><body><div style="max-width:26rem;padding:2rem;text-align:center">
       <h1 style="font-weight:600">Check your email</h1>
-      <p style="color:#9aa0ab;line-height:1.6">Payment received. We emailed you a setup link — open it to pick your panel address and password.</p>
+      <p style="color:#9aa0ab;line-height:1.6">Payment received. We emailed you a setup link — open it to pick your panel address, invite the Discord bot, and connect WebRCON.</p>
       <p><a href="/">← usely.dev</a></p></div></body></html>`);
   });
 
@@ -76,19 +117,22 @@ export function attachSignupRoutes(app) {
   });
 
   app.get("/api/setup/info", async (req, res) => {
-    const row = await getValidSetupToken(String(req.query.token || ""));
-    if (!row) return res.status(404).json({ ok: false, error: "Invalid or expired link" });
-    const [account, org] = await Promise.all([
-      getAccount(row.account_id),
-      getOrg(row.org_id),
-    ]);
-    if (!account || !org) return res.status(404).json({ ok: false, error: "Invalid link" });
+    const ctx = await setupContext(req.query.token);
+    if (!ctx) return res.status(404).json({ ok: false, error: "Invalid or expired link" });
+    const { account, org, servers } = ctx;
     res.json({
       ok: true,
       email: account.email,
       plan: org.plan,
       hasPassword: Boolean(account.password_hash),
       baseDomain: baseDomain(),
+      orgName: isAutoSlug(org.slug) ? "" : org.name,
+      slug: isAutoSlug(org.slug) ? "" : org.slug,
+      guildId: org.discord_guild_id || null,
+      servers: publicServers(servers),
+      maxServers: maxServersForPlan(org.plan),
+      botInviteUrl: botInviteUrlSimple(),
+      step: inferStep(account, org, servers),
     });
   });
 
@@ -96,7 +140,10 @@ export function attachSignupRoutes(app) {
     const slug = String(req.query.slug || "").toLowerCase().trim();
     const problem = slugProblem(slug);
     if (problem) return res.json({ available: false, reason: problem, baseDomain: baseDomain() });
-    const available = await isSlugAvailable(slug);
+    const token = String(req.query.token || "");
+    const ctx = token ? await setupContext(token) : null;
+    const existing = await getOrgBySlug(slug);
+    const available = !existing || (ctx && existing.id === ctx.org.id);
     res.json({
       available,
       reason: available ? null : "That address is taken.",
@@ -104,10 +151,11 @@ export function attachSignupRoutes(app) {
     });
   });
 
-  app.post("/api/setup/complete", async (req, res) => {
+  /** Step 1 — workspace name, slug, password. Token stays valid for later steps. */
+  app.post("/api/setup/workspace", async (req, res) => {
     try {
-      const row = await getValidSetupToken(String(req.body?.token || ""));
-      if (!row) return res.status(400).json({ ok: false, error: "Invalid or expired link" });
+      const ctx = await setupContext(req.body?.token);
+      if (!ctx) return res.status(400).json({ ok: false, error: "Invalid or expired link" });
 
       const orgName = String(req.body?.orgName || "").trim();
       const slug = String(req.body?.slug || "").toLowerCase().trim();
@@ -115,12 +163,15 @@ export function attachSignupRoutes(app) {
       if (!orgName) return res.status(400).json({ ok: false, error: "Workspace name required" });
       const problem = slugProblem(slug);
       if (problem) return res.status(400).json({ ok: false, error: problem });
-      if (!(await isSlugAvailable(slug))) {
-        return res.status(409).json({ ok: false, error: "That address is taken." });
+
+      const { account, org } = ctx;
+      if (slug !== org.slug) {
+        const taken = await getOrgBySlug(slug);
+        if (taken && taken.id !== org.id) {
+          return res.status(409).json({ ok: false, error: "That address is taken." });
+        }
       }
 
-      const account = await getAccount(row.account_id);
-      if (!account) return res.status(400).json({ ok: false, error: "Account missing" });
       if (!account.password_hash) {
         if (!password || String(password).length < 8) {
           return res.status(400).json({ ok: false, error: "Password must be at least 8 characters" });
@@ -128,16 +179,156 @@ export function attachSignupRoutes(app) {
         await setAccountPassword(account.id, hashPassword(password));
       }
 
-      const org = await updateOrgFields(row.org_id, { name: orgName, slug });
-      await markSetupTokenUsed(row.token);
+      const updated = await updateOrgFields(org.id, { name: orgName, slug });
+      setSaasSessionCookie(res, {
+        accountId: account.id,
+        email: account.email,
+        username: account.email.split("@")[0],
+        orgId: org.id,
+      });
 
+      res.json({
+        ok: true,
+        step: updated.discord_guild_id ? (ctx.servers.length ? "review" : "server") : "discord",
+        org: { id: updated.id, name: updated.name, slug: updated.slug },
+        botInviteUrl: botInviteUrlSimple(),
+        maxServers: maxServersForPlan(updated.plan),
+      });
+    } catch (error) {
+      console.error("Setup workspace failed:", error.message);
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  /** Step 2 — link Discord guild after inviting the bot. */
+  app.post("/api/setup/guild", async (req, res) => {
+    try {
+      const ctx = await setupContext(req.body?.token);
+      if (!ctx) return res.status(400).json({ ok: false, error: "Invalid or expired link" });
+      const { account, org, servers } = ctx;
+      if (inferStep(account, org, servers) === "workspace") {
+        return res.status(400).json({ ok: false, error: "Finish workspace setup first" });
+      }
+
+      const guildId = String(req.body?.guildId || "").trim();
+      if (!/^\d{5,32}$/.test(guildId)) {
+        return res.status(400).json({ ok: false, error: "Enter a valid Discord guild ID" });
+      }
+
+      const discord = client || req.app?.locals?.discordClient || null;
+      if (discord) {
+        let guild = discord.guilds.cache.get(guildId) || null;
+        for (let i = 0; i < 5 && !guild; i++) {
+          await new Promise((r) => setTimeout(r, 400));
+          guild = await discord.guilds.fetch(guildId).catch(() => null);
+        }
+        if (!guild) {
+          return res.status(400).json({
+            ok: false,
+            error: "Bot is not in that Discord yet. Click Invite Discord bot, authorize, then try again.",
+            botInviteUrl: botInviteUrlSimple(),
+          });
+        }
+      }
+
+      const updated = await setGuild(org.id, guildId);
+      res.json({
+        ok: true,
+        step: servers.length ? "review" : "server",
+        guildId: updated.discord_guild_id,
+      });
+    } catch (error) {
+      console.error("Setup guild failed:", error.message);
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  /** Step 3 — add a WebRCON server (repeatable up to plan limit). */
+  app.post("/api/setup/server", async (req, res) => {
+    try {
+      const ctx = await setupContext(req.body?.token);
+      if (!ctx) return res.status(400).json({ ok: false, error: "Invalid or expired link" });
+      const { account, org, servers } = ctx;
+      if (inferStep(account, org, servers) === "workspace") {
+        return res.status(400).json({ ok: false, error: "Finish workspace setup first" });
+      }
+      if (!org.discord_guild_id) {
+        return res.status(400).json({ ok: false, error: "Link your Discord guild first" });
+      }
+
+      const name = String(req.body?.name || "").trim();
+      const host = String(req.body?.host || "").trim();
+      const port = Number(req.body?.port);
+      const password = String(req.body?.password || "");
+      if (!name || !host || !port || !password) {
+        return res.status(400).json({ ok: false, error: "Name, host, port, and password are required" });
+      }
+
+      const server = await createServer(org.id, { name, host, port, password });
+      if (!config.saas.mock) {
+        try {
+          const { attachSaasServer } = await import("../../modules/rcon/client.js");
+          const raw = await getServerRaw(server.id);
+          await attachSaasServer(withCredentials(raw)).catch((e) =>
+            console.error("Setup RCON attach failed:", e.message),
+          );
+        } catch (e) {
+          console.error("Setup RCON attach failed:", e.message);
+        }
+      }
+
+      const nextServers = await listServers(org.id);
+      const max = maxServersForPlan(org.plan);
+      res.json({
+        ok: true,
+        server,
+        servers: publicServers(nextServers),
+        canAddMore: nextServers.length < max,
+        maxServers: max,
+        step: "review",
+      });
+    } catch (error) {
+      const status = error.code === "SERVER_LIMIT" || error.code === "PLAN_REQUIRED" ? 402 : 400;
+      res.status(status).json({ ok: false, error: error.message, code: error.code });
+    }
+  });
+
+  /** Finish — consume token and hop to the org panel. */
+  app.post("/api/setup/finish", async (req, res) => {
+    try {
+      const ctx = await setupContext(req.body?.token);
+      if (!ctx) return res.status(400).json({ ok: false, error: "Invalid or expired link" });
+      const { row, account, org, servers } = ctx;
+
+      if (inferStep(account, org, servers) === "workspace") {
+        return res.status(400).json({ ok: false, error: "Finish workspace setup first" });
+      }
+      if (!org.discord_guild_id) {
+        return res.status(400).json({ ok: false, error: "Invite the Discord bot and link your guild first" });
+      }
+      if (!servers.length) {
+        return res.status(400).json({ ok: false, error: "Add at least one WebRCON server first" });
+      }
+
+      await markSetupTokenUsed(row.token);
       const hop = createExchangeToken({ accountId: account.id, email: account.email });
       const redirect = `${orgPanelUrl(org).replace(/\/admin$/, "")}/admin/auth/exchange?t=${hop}`;
       res.json({ ok: true, redirect, panelUrl: orgPanelUrl(org) });
     } catch (error) {
-      console.error("Setup completion failed:", error.message);
+      console.error("Setup finish failed:", error.message);
       res.status(500).json({ ok: false, error: error.message });
     }
+  });
+
+  /** Back-compat for any old setup page still posting here. */
+  app.post("/api/setup/complete", (req, res) => {
+    // Delegate to the workspace handler by rewriting the path for this request cycle.
+    const handlers = app._router?.stack || [];
+    void handlers;
+    res.status(410).json({
+      ok: false,
+      error: "Reload this page — setup is now multi-step (workspace → Discord → server).",
+    });
   });
 
   app.get("/admin/auth/exchange", (req, res) => {

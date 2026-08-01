@@ -55,8 +55,8 @@ export function setupEmailHtml({ setupUrl, plan }) {
     <h1 style="font-size:22px;margin:0 0 .75rem">Your workspace is ready to set up</h1>
     <p style="color:#9aa0ab;line-height:1.6;margin:0 0 1.5rem">
       Thanks for subscribing to the <strong style="color:#f0f2f5">${plan}</strong> plan.
-      Finish setup to pick your panel address, create your password, and connect
-      your Rust Console servers.
+      Finish setup to pick your panel address, invite the Discord bot, and connect
+      your Rust Console servers over WebRCON.
     </p>
     <a href="${setupUrl}"
        style="display:inline-block;background:#e8edf4;color:#0b0c0e;font-weight:600;

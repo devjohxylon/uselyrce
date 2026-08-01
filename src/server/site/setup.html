@@ -26,13 +26,13 @@
     }
     a { color: inherit; text-decoration: none; }
     .card {
-      width: min(30rem, 100%); border: 1px solid var(--line); border-radius: var(--radius);
+      width: min(34rem, 100%); border: 1px solid var(--line); border-radius: var(--radius);
       background: var(--bg2); padding: 2rem 1.75rem; display: grid; gap: 1rem;
     }
     .brand { display: flex; align-items: center; gap: .65rem; font-weight: 700; letter-spacing: .14em; font-size: .85rem; }
     .brand img { width: 28px; height: 28px; border-radius: 7px; }
-    h1 { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; }
-    p.sub { margin: -0.4rem 0 0; color: var(--muted); font-size: .92rem; line-height: 1.5; }
+    h1 { margin: 0; font-size: 1.45rem; font-weight: 600; letter-spacing: -.01em; }
+    p.sub { margin: -0.35rem 0 0; color: var(--muted); font-size: .92rem; line-height: 1.5; }
     label { font-size: .82rem; color: var(--muted); display: grid; gap: .35rem; }
     input {
       width: 100%; font: inherit; color: var(--text); background: var(--bg3);
@@ -42,45 +42,137 @@
     .slugrow { display: flex; align-items: center; gap: .5rem; }
     .slugrow input { flex: 1; }
     .slugrow .dom { font-family: var(--mono); color: var(--faint); font-size: .85rem; white-space: nowrap; }
-    .hint { font-size: .78rem; min-height: 1rem; }
+    .hint { font-size: .78rem; min-height: 1rem; color: var(--muted); }
     .hint.ok { color: var(--ok); }
     .hint.bad { color: var(--bad); }
-    button {
+    button, .btn {
       font: inherit; font-weight: 600; cursor: pointer; border: none; border-radius: var(--radius);
-      background: var(--accent); color: #0b0c0e; padding: .85rem 1rem;
+      background: var(--accent); color: #0b0c0e; padding: .85rem 1rem; text-align: center;
     }
-    button:hover { background: #fff; }
+    button:hover, .btn:hover { background: #fff; }
     button:disabled { opacity: .55; cursor: default; }
+    button.ghost, .btn.ghost {
+      background: transparent; color: var(--text); border: 1px solid var(--line2);
+    }
+    button.ghost:hover, .btn.ghost:hover { border-color: var(--chrome-dim); background: var(--bg3); }
     .err { color: var(--bad); font-size: .85rem; display: none; }
     .invalid { display: none; color: var(--muted); line-height: 1.55; }
+    .steps { display: flex; gap: .4rem; margin: .25rem 0 .5rem; }
+    .steps span {
+      flex: 1; height: 3px; border-radius: 2px; background: var(--line2);
+    }
+    .steps span.on { background: var(--chrome); }
+    .steps span.done { background: var(--ok); }
+    .step { display: none; gap: 1rem; }
+    .step.on { display: grid; }
+    .server-list { display: grid; gap: .45rem; margin: 0; padding: 0; list-style: none; }
+    .server-list li {
+      border: 1px solid var(--line); border-radius: var(--radius); padding: .65rem .8rem;
+      font-size: .88rem; display: flex; justify-content: space-between; gap: .75rem;
+    }
+    .server-list .meta { color: var(--faint); font-family: var(--mono); font-size: .78rem; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
+    @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+    .callout {
+      border: 1px solid var(--line); border-radius: var(--radius); padding: .85rem 1rem;
+      color: var(--muted); font-size: .86rem; line-height: 1.5;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .actions > * { flex: 1; min-width: 8rem; }
   </style>
 </head>
 <body>
   <div class="card">
     <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
-    <div id="form" style="display:none;gap:1rem">
-      <h1>Set up your workspace</h1>
-      <p class="sub">Signed up as <b id="email"></b> · <span id="plan"></span> plan</p>
-      <label>Community / workspace name
-        <input id="orgName" placeholder="Astral Rust" maxlength="48" />
-      </label>
-      <label>Panel address
-        <div class="slugrow">
-          <input id="slug" placeholder="astral" maxlength="32" autocapitalize="off" spellcheck="false" />
-          <span class="dom" id="domainSuffix">.usely.dev</span>
-        </div>
-        <span class="hint" id="slugHint"></span>
-      </label>
-      <div id="pwFields" style="display:grid;gap:1rem">
-        <label>Password
-          <input id="pw" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
-        </label>
-        <label>Confirm password
-          <input id="pw2" type="password" autocomplete="new-password" />
-        </label>
+    <div id="wizard" style="display:none">
+      <div class="steps" id="stepBar" aria-hidden="true">
+        <span data-s="workspace"></span>
+        <span data-s="discord"></span>
+        <span data-s="server"></span>
+        <span data-s="review"></span>
       </div>
-      <div class="err" id="err"></div>
-      <button id="go">Create my panel</button>
+      <p class="sub">Signed up as <b id="email"></b> · <span id="plan"></span> plan</p>
+
+      <section class="step" id="step-workspace">
+        <h1>1. Your workspace</h1>
+        <p class="sub">Choose the panel address you and your staff will use.</p>
+        <label>Community / workspace name
+          <input id="orgName" placeholder="Astral Rust" maxlength="48" />
+        </label>
+        <label>Panel address
+          <div class="slugrow">
+            <input id="slug" placeholder="astral" maxlength="32" autocapitalize="off" spellcheck="false" />
+            <span class="dom" id="domainSuffix">.usely.dev</span>
+          </div>
+          <span class="hint" id="slugHint"></span>
+        </label>
+        <div id="pwFields" style="display:grid;gap:1rem">
+          <label>Password
+            <input id="pw" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+          </label>
+          <label>Confirm password
+            <input id="pw2" type="password" autocomplete="new-password" />
+          </label>
+        </div>
+        <div class="err" id="err-workspace"></div>
+        <button id="goWorkspace">Continue — invite Discord bot</button>
+      </section>
+
+      <section class="step" id="step-discord">
+        <h1>2. Invite the Discord bot</h1>
+        <p class="sub">The bot powers staff login, kill feeds, and population channels. You need <strong>Manage Server</strong> on that Discord.</p>
+        <div class="callout">
+          Click invite, pick your Discord server, authorize with Administrator, then paste the guild ID below.
+        </div>
+        <div class="actions">
+          <a class="btn" id="inviteBtn" href="#" target="_blank" rel="noopener">Invite Discord bot</a>
+        </div>
+        <label>Discord guild ID
+          <input id="guildId" placeholder="Right-click server → Copy Server ID (Developer Mode on)" inputmode="numeric" />
+        </label>
+        <p class="hint">Developer Mode: Discord User Settings → Advanced → Developer Mode</p>
+        <div class="err" id="err-discord"></div>
+        <div class="actions">
+          <button class="ghost" id="backDiscord">Back</button>
+          <button id="goDiscord">Link guild &amp; continue</button>
+        </div>
+      </section>
+
+      <section class="step" id="step-server">
+        <h1>3. Connect WebRCON</h1>
+        <p class="sub">From Nitrado → Settings → WebRCON. Host is the IP only; port is the RCON port (not the game port).</p>
+        <label>Server display name
+          <input id="srvName" placeholder="Astral Main" maxlength="48" />
+        </label>
+        <div class="row2">
+          <label>RCON host
+            <input id="srvHost" placeholder="203.0.113.10" autocapitalize="off" spellcheck="false" />
+          </label>
+          <label>RCON port
+            <input id="srvPort" placeholder="28016" inputmode="numeric" />
+          </label>
+        </div>
+        <label>RCON password
+          <input id="srvPass" type="password" autocomplete="off" />
+        </label>
+        <div class="err" id="err-server"></div>
+        <div class="actions">
+          <button class="ghost" id="backServer">Back</button>
+          <button id="goServer">Add server</button>
+        </div>
+      </section>
+
+      <section class="step" id="step-review">
+        <h1>You're ready</h1>
+        <p class="sub">Discord is linked and at least one server is connected. Open your panel to finish kits, roles, and channels.</p>
+        <ul class="server-list" id="serverList"></ul>
+        <p class="hint" id="moreHint"></p>
+        <div class="err" id="err-review"></div>
+        <div class="actions">
+          <button class="ghost" id="addAnother" style="display:none">Add another server</button>
+          <button id="goFinish">Open my panel</button>
+        </div>
+      </section>
     </div>
     <div class="invalid" id="invalid">
       <h1>Link expired or already used</h1>
@@ -91,18 +183,77 @@
     const token = new URLSearchParams(location.search).get("token") || "";
     let slugOk = false;
     let checkTimer = null;
+    let state = {
+      step: "workspace",
+      botInviteUrl: "#",
+      maxServers: 1,
+      servers: [],
+      baseDomain: "usely.dev",
+      hasPassword: false,
+    };
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      if (!msg) { el.style.display = "none"; el.textContent = ""; return; }
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    function setStep(step) {
+      state.step = step;
+      document.querySelectorAll(".step").forEach((el) => el.classList.toggle("on", el.id === "step-" + step));
+      const order = ["workspace", "discord", "server", "review"];
+      const idx = order.indexOf(step);
+      document.querySelectorAll("#stepBar span").forEach((el, i) => {
+        el.classList.toggle("on", i === idx);
+        el.classList.toggle("done", i < idx);
+      });
+    }
+
+    function renderServers() {
+      const list = document.getElementById("serverList");
+      list.innerHTML = (state.servers || []).map((s) =>
+        `<li><span>${escapeHtml(s.name)}</span><span class="meta">${escapeHtml(s.host)}:${escapeHtml(String(s.port))}</span></li>`
+      ).join("") || "<li class='meta'>No servers yet</li>";
+      const canMore = state.servers.length < state.maxServers;
+      document.getElementById("addAnother").style.display = canMore ? "" : "none";
+      document.getElementById("moreHint").textContent = canMore
+        ? `Your ${document.getElementById("plan").textContent} plan allows ${state.maxServers} server(s). You can add more now or later in the panel.`
+        : "You've reached your plan's server limit.";
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
 
     async function boot() {
       const r = await fetch("/api/setup/info?token=" + encodeURIComponent(token)).then((r) => r.json());
       if (!r.ok) { document.getElementById("invalid").style.display = "grid"; return; }
-      document.getElementById("form").style.display = "grid";
+      document.getElementById("wizard").style.display = "grid";
       document.getElementById("email").textContent = r.email;
       document.getElementById("plan").textContent = r.plan;
       document.getElementById("domainSuffix").textContent = "." + r.baseDomain;
+      state.baseDomain = r.baseDomain;
+      state.hasPassword = r.hasPassword;
+      state.botInviteUrl = r.botInviteUrl || "#";
+      state.maxServers = r.maxServers || 1;
+      state.servers = r.servers || [];
+      document.getElementById("inviteBtn").href = state.botInviteUrl;
       if (r.hasPassword) document.getElementById("pwFields").style.display = "none";
-      const suggested = r.email.split("@")[0].toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
-      document.getElementById("slug").value = suggested;
-      checkSlug();
+      if (r.orgName) document.getElementById("orgName").value = r.orgName;
+      if (r.slug) {
+        document.getElementById("slug").value = r.slug;
+        slugOk = true;
+        document.getElementById("slugHint").className = "hint ok";
+        document.getElementById("slugHint").textContent = r.slug + "." + r.baseDomain;
+      } else {
+        const suggested = r.email.split("@")[0].toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
+        document.getElementById("slug").value = suggested;
+        checkSlug();
+      }
+      if (r.guildId) document.getElementById("guildId").value = r.guildId;
+      renderServers();
+      setStep(r.step || "workspace");
     }
 
     function checkSlug() {
@@ -112,7 +263,9 @@
         const hint = document.getElementById("slugHint");
         slugOk = false;
         if (!slug) { hint.textContent = ""; return; }
-        const r = await fetch("/api/setup/slug?slug=" + encodeURIComponent(slug)).then((r) => r.json());
+        const r = await fetch(
+          "/api/setup/slug?slug=" + encodeURIComponent(slug) + "&token=" + encodeURIComponent(token)
+        ).then((r) => r.json());
         if (r.available) {
           slugOk = true;
           hint.className = "hint ok";
@@ -125,36 +278,118 @@
     }
     document.getElementById("slug").addEventListener("input", checkSlug);
 
-    document.getElementById("go").addEventListener("click", async () => {
-      const err = document.getElementById("err");
-      err.style.display = "none";
+    document.getElementById("goWorkspace").addEventListener("click", async () => {
+      showErr("err-workspace");
       const orgName = document.getElementById("orgName").value.trim();
       const slug = document.getElementById("slug").value.trim().toLowerCase();
       const needsPw = document.getElementById("pwFields").style.display !== "none";
       const pw = document.getElementById("pw").value;
       const pw2 = document.getElementById("pw2").value;
-      function fail(msg) { err.textContent = msg; err.style.display = "block"; }
-      if (!orgName) return fail("Enter a workspace name.");
-      if (!slugOk) return fail("Pick an available panel address.");
+      if (!orgName) return showErr("err-workspace", "Enter a workspace name.");
+      if (!slugOk) return showErr("err-workspace", "Pick an available panel address.");
       if (needsPw) {
-        if (pw.length < 8) return fail("Password must be at least 8 characters.");
-        if (pw !== pw2) return fail("Passwords don't match.");
+        if (pw.length < 8) return showErr("err-workspace", "Password must be at least 8 characters.");
+        if (pw !== pw2) return showErr("err-workspace", "Passwords don't match.");
       }
-      const btn = document.getElementById("go");
+      const btn = document.getElementById("goWorkspace");
       btn.disabled = true;
-      btn.textContent = "Creating…";
       try {
-        const r = await fetch("/api/setup/complete", {
+        const r = await fetch("/api/setup/workspace", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token, orgName, slug, password: needsPw ? pw : undefined }),
         }).then((r) => r.json());
         if (!r.ok) throw new Error(r.error || "Setup failed");
+        if (r.botInviteUrl) {
+          state.botInviteUrl = r.botInviteUrl;
+          document.getElementById("inviteBtn").href = r.botInviteUrl;
+        }
+        if (r.maxServers) state.maxServers = r.maxServers;
+        setStep(r.step || "discord");
+      } catch (e) {
+        showErr("err-workspace", e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById("backDiscord").addEventListener("click", () => setStep("workspace"));
+    document.getElementById("goDiscord").addEventListener("click", async () => {
+      showErr("err-discord");
+      const guildId = document.getElementById("guildId").value.trim();
+      if (!guildId) return showErr("err-discord", "Paste your Discord guild ID after inviting the bot.");
+      const btn = document.getElementById("goDiscord");
+      btn.disabled = true;
+      try {
+        const r = await fetch("/api/setup/guild", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, guildId }),
+        }).then((r) => r.json());
+        if (!r.ok) throw new Error(r.error || "Could not link guild");
+        setStep(r.step || "server");
+      } catch (e) {
+        showErr("err-discord", e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById("backServer").addEventListener("click", () => setStep("discord"));
+    document.getElementById("goServer").addEventListener("click", async () => {
+      showErr("err-server");
+      const name = document.getElementById("srvName").value.trim();
+      const host = document.getElementById("srvHost").value.trim();
+      const port = document.getElementById("srvPort").value.trim();
+      const password = document.getElementById("srvPass").value;
+      if (!name || !host || !port || !password) {
+        return showErr("err-server", "Name, host, port, and password are required.");
+      }
+      const btn = document.getElementById("goServer");
+      btn.disabled = true;
+      try {
+        const r = await fetch("/api/setup/server", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, name, host, port: Number(port), password }),
+        }).then((r) => r.json());
+        if (!r.ok) throw new Error(r.error || "Could not add server");
+        state.servers = r.servers || [];
+        document.getElementById("srvPass").value = "";
+        renderServers();
+        setStep("review");
+      } catch (e) {
+        showErr("err-server", e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById("addAnother").addEventListener("click", () => {
+      document.getElementById("srvName").value = "";
+      document.getElementById("srvHost").value = "";
+      document.getElementById("srvPort").value = "";
+      document.getElementById("srvPass").value = "";
+      setStep("server");
+    });
+
+    document.getElementById("goFinish").addEventListener("click", async () => {
+      showErr("err-review");
+      const btn = document.getElementById("goFinish");
+      btn.disabled = true;
+      btn.textContent = "Opening…";
+      try {
+        const r = await fetch("/api/setup/finish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        }).then((r) => r.json());
+        if (!r.ok) throw new Error(r.error || "Could not finish setup");
         location.href = r.redirect;
       } catch (e) {
-        fail(e.message);
+        showErr("err-review", e.message);
         btn.disabled = false;
-        btn.textContent = "Create my panel";
+        btn.textContent = "Open my panel";
       }
     });
 

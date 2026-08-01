@@ -12,7 +12,7 @@ export const groups = [
       },
       {
         q: "How do I get set up?",
-        a: "Pick a plan and pay. We email you a setup link where you choose your panel address, create a password, and enter your WebRCON host, port, and password. Once the connection is live, the panel starts showing your players.",
+        a: "Pick a plan and pay. We email you a setup link where you choose your panel address, create a password, invite the Discord bot, and enter your WebRCON host, port, and password. Once the connection is live, the panel starts showing your players.",
       },
       {
         q: "What do I need from my host?",
