@@ -79,7 +79,7 @@ async function ensureFullMessage(message) {
 export async function getLeaderboardChannel(client) {
   const channelId = config.channels.leaderboard;
   if (!channelId) {
-    throw new Error("CHANNEL_LEADERBOARD is not set in .env");
+    throw new Error("Leaderboard channel isn't set. Pick it in the panel under Discord → Channels.");
   }
 
   let channel;
@@ -87,7 +87,7 @@ export async function getLeaderboardChannel(client) {
     channel = await client.channels.fetch(channelId);
   } catch {
     throw new Error(
-      `Cannot access channel ${channelId}. Check the ID and that Astral Bot can View Channel + Read Message History.`,
+      `Cannot access channel ${channelId}. Check the ID and that the Usely bot can View Channel + Read Message History.`,
     );
   }
 
@@ -219,7 +219,7 @@ export async function syncServerPop(client, { silent = false, force = false } = 
   } catch {
     if (!silent) {
       console.error(
-        `Cannot access POP_CHANNEL_ID ${channelId}. Check the ID and that Astral Bot can View Channel.`,
+        `Cannot access pop channel ${channelId}. Check the ID and that the Usely bot can View Channel.`,
       );
     }
     return null;

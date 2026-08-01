@@ -1,6 +1,7 @@
 import { EmbedBuilder } from "discord.js";
 import { requireStaff } from "../lib/permissions.js";
 import { sendModLog } from "../lib/modlog.js";
+import { rconOfflineMessage } from "../lib/rcon-messages.js";
 import {
   getOnlinePlayers,
   getServerInfo,
@@ -25,11 +26,7 @@ const CATEGORY_LABELS = {
 };
 
 function offlineNotice() {
-  const status = getRconStatus();
-  if (!status.enabled) {
-    return "RCON isn't configured yet. Add `RCON_HOST`, `RCON_PORT` and `RCON_PASSWORD` to `.env`.";
-  }
-  return `Not connected to the Rust server${status.lastError ? ` — ${status.lastError}` : ""}.`;
+  return rconOfflineMessage(getRconStatus());
 }
 
 function formatUptime(seconds) {

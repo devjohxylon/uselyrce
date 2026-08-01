@@ -19,7 +19,7 @@ export function buildGiveawayEmbed(giveaway) {
       { name: "Entries", value: `${giveaway.entries.length}`, inline: true },
       { name: "Ends", value: `<t:${endsUnix}:R>`, inline: true },
     )
-    .setFooter({ text: "Click Enter to join • Astral Bot" })
+    .setFooter({ text: "Click Enter to join • Usely" })
     .setTimestamp(new Date(giveaway.endsAt));
 
   if (giveaway.requiredRoleId) {

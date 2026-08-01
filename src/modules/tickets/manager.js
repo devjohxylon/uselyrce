@@ -20,7 +20,7 @@ const TICKET_TYPES = {
 
 export function buildTicketPanelEmbed() {
   return new EmbedBuilder()
-    .setTitle("Astral Support Tickets")
+    .setTitle("Usely Support Tickets")
     .setColor(0x3498db)
     .setDescription(
       "Need help? Open a ticket and staff will respond.\n\n" +

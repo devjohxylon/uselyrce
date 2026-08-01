@@ -8,6 +8,14 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Clearer SaaS setup guidance",
+    changes: [
+      { type: "changed", text: "When WebRCON isn't connected, Discord and the panel now point you to <strong>Workspace → Servers</strong> (or your setup link) instead of asking for <code>.env</code> values." },
+      { type: "changed", text: "VIP revoke and Discord channel/ticket errors also steer you to panel settings, and leftover Astral labels in bot embeds were renamed to Usely." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Discord slash commands cleanup",
     changes: [
       { type: "changed", text: "Removed legacy Astral website slash commands (<code>/astral-status</code>, <code>/astral-leaderboard</code>, <code>/astral-sync</code>). Rust, linking, and staff commands stay." },

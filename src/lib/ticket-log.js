@@ -19,7 +19,7 @@ export async function logTicketOpened(guild, { ticket, channel, member }) {
   const log = getTicketLogChannel(guild);
   if (!log) {
     console.warn(
-      "Ticket opened but no log channel set — add CHANNEL_TICKET_LOG or CHANNEL_MOD_LOG to .env",
+      "Ticket opened but no log channel is set — pick one in Discord → Channels (ticket log or mod log).",
     );
     return;
   }
@@ -37,7 +37,7 @@ export async function logTicketOpened(guild, { ticket, channel, member }) {
       { name: "Ticket ID", value: `\`${ticket.id}\``, inline: false },
     )
     .setThumbnail(member.user.displayAvatarURL({ size: 128 }))
-    .setFooter({ text: "Astral Support" })
+    .setFooter({ text: "Usely Support" })
     .setTimestamp();
 
   await log

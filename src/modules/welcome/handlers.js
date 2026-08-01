@@ -12,7 +12,7 @@ export async function handleMemberJoin(member) {
     .setTitle(`Welcome to ${member.guild.name}`)
     .setColor(0xe67e22)
     .setDescription(
-      `Hey <@${member.id}> — welcome to **Astral Vanilla+**.\n\n` +
+      `Hey <@${member.id}> — welcome to the server.\n\n` +
         "🔗 **Store:** https://acesrust.com\n" +
         "🏆 **Leaderboard:** https://acesrust.com/leaderboard\n" +
         "📅 **Wipes:** https://acesrust.com/wipes\n\n" +

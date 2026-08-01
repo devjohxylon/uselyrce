@@ -54,7 +54,7 @@ export function attachSaasRoutes(app, client) {
         <style>body{font-family:system-ui;background:#071018;color:#e8f0f4;display:grid;place-items:center;min-height:100vh;margin:0}
         a{color:#2dd4bf}</style></head><body><div style="max-width:28rem;padding:2rem">
         <h1>SaaS mode is off</h1>
-        <p>Discord signup needs <code>SAAS_MODE=true</code> plus Supabase and OAuth secrets in <code>.env</code>.</p>
+        <p>Discord login needs SaaS mode enabled on this deployment. If you're a customer, open your panel at <code>yourname.usely.dev</code>.</p>
         <p><a href="/">← Homepage</a> · <a href="/admin">Staff panel (access key)</a></p>
         </div></body></html>`);
     });

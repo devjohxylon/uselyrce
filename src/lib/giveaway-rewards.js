@@ -28,7 +28,7 @@ export async function grantVipToWinners(guild, winnerIds, { prize, giveawayId })
 
       await member
         .send(
-          `🎉 You won **${prize}** in the Astral giveaway!\n\n` +
+          `🎉 You won **${prize}** in the Usely giveaway!\n\n` +
             `You've been given the **${role.name}** role on Discord. ` +
             `If your in-game VIP isn't applied within 24h, open a 💎 VIP ticket.`,
         )

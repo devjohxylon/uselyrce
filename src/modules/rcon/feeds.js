@@ -359,7 +359,7 @@ export async function feedServerEvent({ event, special }) {
   const meta = EVENT_META[event] ?? { emoji: "🌍", color: 0x95a5a6 };
   const embed = new EmbedBuilder()
     .setTitle(`${meta.emoji} ${event}${special ? " (Special)" : ""}`)
-    .setDescription(`**${event}** has spawned on Astral Vanilla+`)
+    .setDescription(`**${event}** has spawned`)
     .setColor(meta.color)
     .setTimestamp();
 
@@ -470,7 +470,7 @@ export function feedKitSpawn({ player, kit, admin }) {
         ? [{ name: "Given by", value: givenBy, inline: true }]
         : []),
     )
-    .setFooter({ text: "Astral | Vanilla+" })
+    .setFooter({ text: "Usely" })
     .setTimestamp();
 
   queueFeedEmbed(channelId, embed);

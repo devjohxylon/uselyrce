@@ -1347,7 +1347,8 @@ export async function attachAdminPanel(app, client) {
           if (!config.vip.revokeCommand) {
             return res.status(400).json({
               ok: false,
-              error: "Set VIP_RCON_REVOKE in .env to revoke VIP via RCON",
+              error:
+                "VIP revoke isn't set up. Open Discord → VIP in the panel and set a revoke RCON command (e.g. removegroup {ign} vip).",
             });
           }
           const cmd = config.vip.revokeCommand

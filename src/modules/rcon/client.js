@@ -193,7 +193,9 @@ async function attachServer() {
 
   if (!added) {
     console.error(
-      "Could not reach the Rust server. Double-check RCON_HOST / RCON_PORT / RCON_PASSWORD in your Nitrado panel.",
+      config.saas?.enabled
+        ? "Could not reach a Rust server over WebRCON. Check host/port/password in Workspace → Servers."
+        : "Could not reach the Rust server. Double-check RCON_HOST / RCON_PORT / RCON_PASSWORD in your Nitrado panel.",
     );
   }
   return Boolean(added);
@@ -233,7 +235,11 @@ export async function connectRcon() {
   }
 
   if (!isRconEnabled()) {
-    console.log("RCON disabled — set RCON_HOST, RCON_PORT, RCON_PASSWORD in .env to connect.");
+    console.log(
+      config.saas?.enabled
+        ? "Legacy single-server RCON disabled (SaaS uses Workspace → Servers)."
+        : "RCON disabled — set RCON_HOST, RCON_PORT, RCON_PASSWORD in .env to connect.",
+    );
     return null;
   }
 

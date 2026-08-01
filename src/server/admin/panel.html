@@ -2976,7 +2976,7 @@ function renderCommandField(cmdKey, field) {
 
 async function renderDiscordChannels() {
   const DISCORD_SUBS = [
-    { id: "channels", label: "Channels", hint: "Pick where each feed posts. Panel values override .env." },
+    { id: "channels", label: "Channels", hint: "Pick where each feed posts. Saved for this workspace." },
     { id: "status", label: "Status", hint: "How pop / wipe voice channels are renamed." },
     { id: "feeds", label: "Feeds", hint: "What gets posted — killfeed filters and feed toggles." },
     { id: "vip", label: "VIP", hint: "Discord role, kit id, claim phrase, and cooldowns." },
@@ -4746,7 +4746,7 @@ async function switchSaasContext() {
 function saasDisabledCard(title) {
   return `<div class="card">
     <h3>${esc(title)}</h3>
-    <p class="muted">This is the multi-tenant Usely workspace. Enable it locally by setting <code>SAAS_MODE=true</code> in <code>.env</code> (plus Supabase + Discord OAuth), then restart. See <a href="/" style="color:var(--acc,#2dd4bf)">the homepage</a> and DEPLOY.md.</p>
+    <p class="muted">This workspace isn't available on this host yet. Finish setup from your Usely setup link, or open your panel at <code>yourname.usely.dev</code>.</p>
     <p class="muted" style="margin-top:.75rem">Until then, this panel is the staff console for a single env-configured server.</p>
   </div>`;
 }
@@ -4836,7 +4836,7 @@ async function renderServers() {
       <h3>Add server</h3>
       <p class="muted">From Nitrado → Settings → WebRCON. Host is IP only; port is the RCON port.</p>
       <div class="form-row" style="grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.75rem">
-        <input id="saasSrvName" placeholder="Display name (e.g. Astral Main)" />
+        <input id="saasSrvName" placeholder="Display name (e.g. Main)" />
         <input id="saasSrvHost" placeholder="RCON host" />
         <input id="saasSrvPort" placeholder="RCON port" />
         <input id="saasSrvPass" type="password" placeholder="RCON password" />

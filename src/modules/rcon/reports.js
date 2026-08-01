@@ -95,7 +95,7 @@ async function postGroupDiscord(entry) {
       value: entry.members.map((n) => `• ${n}`).join("\n").slice(0, 1000) || "—",
     })
     .setTimestamp(new Date(entry.at))
-    .setFooter({ text: "Astral group detection" });
+    .setFooter({ text: "Usely group detection" });
 
   await channel.send({ embeds: [embed], allowedMentions: { parse: [] } }).catch(() => {});
 }

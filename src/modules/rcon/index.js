@@ -56,7 +56,11 @@ let discordClient = null;
 
 export async function startRcon(client) {
   if (!isRconEnabled()) {
-    console.log("RCON not configured — running in Discord-only mode.");
+    console.log(
+      config.saas?.enabled
+        ? "RCON pool idle — waiting for servers added in customer workspaces."
+        : "RCON not configured — running in Discord-only mode.",
+    );
     startWipeScheduler(client);
     return null;
   }

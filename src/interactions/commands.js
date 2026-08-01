@@ -204,7 +204,7 @@ export async function handleCommunityCommands(interaction) {
       .setTitle(title)
       .setDescription(text)
       .setColor(0xe67e22)
-      .setFooter({ text: "Astral Vanilla+" })
+      .setFooter({ text: "Usely" })
       .setTimestamp();
     await channel.send({ embeds: [embed] });
     return interaction.reply({ ephemeral: true, content: `Announcement sent to ${channel}.` });
