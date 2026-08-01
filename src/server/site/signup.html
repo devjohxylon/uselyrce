@@ -85,7 +85,7 @@
     <div class="done" id="done">
       <h2>Check your email</h2>
       <p id="doneMsg">We sent a setup link to your inbox. Open it to pick your panel address and password.</p>
-      <p id="mockLink" style="display:none">Mock mode — no real email was sent. <a class="setup" id="mockHref" href="#">Open your setup link</a></p>
+      <p id="mockLink" style="display:none">No payment required for this preview. <a class="setup" id="mockHref" href="#">Open your setup link</a></p>
     </div>
     <div class="foot">Already set up? <a href="/admin">Sign in to your panel</a></div>
   </div>
@@ -131,6 +131,10 @@
         if (r.setupUrl) {
           document.getElementById("mockLink").style.display = "block";
           document.getElementById("mockHref").href = r.setupUrl;
+          if (r.preview) {
+            document.getElementById("doneMsg").textContent =
+              "Ops preview — checkout was skipped. Open the setup link below.";
+          }
         }
       } catch (e) {
         err.textContent = e.message;

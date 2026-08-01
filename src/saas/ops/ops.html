@@ -45,7 +45,9 @@
 
     <div class="toolbar">
       <input type="search" id="q" placeholder="Filter by name, slug, email, plan, status…" autocomplete="off" />
+      <button class="btn btn-ghost" type="button" id="previewSetup">Free setup preview</button>
     </div>
+    <p class="banner" id="previewBanner"></p>
 
     <div class="table-wrap">
       <table class="clickable">
@@ -197,6 +199,37 @@
     document.getElementById("rows").addEventListener("click", (ev) => {
       const tr = ev.target.closest("tr[data-href]");
       if (tr?.dataset.href) location.href = tr.dataset.href;
+    });
+    document.getElementById("previewSetup").addEventListener("click", async () => {
+      const btn = document.getElementById("previewSetup");
+      const banner = document.getElementById("previewBanner");
+      const err = document.getElementById("err");
+      err.style.display = "none";
+      btn.disabled = true;
+      btn.textContent = "Creating…";
+      try {
+        const r = await fetch("/api/ops/preview-setup", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: "pro" }),
+        }).then((r) => r.json());
+        if (!r.ok) throw new Error(r.error || "Failed");
+        banner.classList.add("on");
+        banner.innerHTML =
+          `Setup link ready (no payment). ` +
+          `<a href="${escAttr(r.setupUrl)}" style="color:var(--chrome);text-decoration:underline;word-break:break-all">${esc(r.setupUrl)}</a>` +
+          ` · <button class="btn btn-primary btn-sm" type="button" id="openSetup">Open setup</button>`;
+        document.getElementById("openSetup").onclick = () => {
+          location.href = r.setupUrl;
+        };
+      } catch (e) {
+        err.textContent = e.message || "Failed to create setup link";
+        err.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Free setup preview";
+      }
     });
     load();
   </script>

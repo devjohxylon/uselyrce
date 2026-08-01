@@ -11,7 +11,13 @@ import { sendEmail, setupEmailHtml } from "../email/send.js";
  * Runs after a successful purchase (Stripe webhook, or instantly in mock mode).
  * Creates the account + org, then emails the setup link.
  */
-export async function finalizeSignup({ email, plan, stripeCustomerId, stripeSubscriptionId }) {
+export async function finalizeSignup({
+  email,
+  plan,
+  stripeCustomerId,
+  stripeSubscriptionId,
+  skipEmail = false,
+}) {
   const normalized = String(email).toLowerCase().trim();
   let account = await getAccountByEmail(normalized);
   if (!account) account = await createAccount({ email: normalized });
@@ -30,12 +36,14 @@ export async function finalizeSignup({ email, plan, stripeCustomerId, stripeSubs
   const token = await createSetupToken({ accountId: account.id, orgId: org.id });
   const setupUrl = `${config.saas.publicUrl.replace(/\/$/, "")}/setup?token=${token}`;
 
-  await sendEmail({
-    to: normalized,
-    subject: "Finish setting up your Usely workspace",
-    html: setupEmailHtml({ setupUrl, plan }),
-    text: `Thanks for subscribing to Usely (${plan} plan). Finish setup: ${setupUrl}`,
-  });
+  if (!skipEmail) {
+    await sendEmail({
+      to: normalized,
+      subject: "Finish setting up your Usely workspace",
+      html: setupEmailHtml({ setupUrl, plan }),
+      text: `Thanks for subscribing to Usely (${plan} plan). Finish setup: ${setupUrl}`,
+    });
+  }
 
   return { account, org, setupUrl };
 }

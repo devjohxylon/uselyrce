@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 import { config } from "../../config.js";
@@ -8,101 +7,26 @@ import { getServerRaw, listServers, withCredentials } from "../db/servers.js";
 import { syncSubscriptionFromStripe } from "../billing/stripe.js";
 import { attachSaasServer, detachSaasServer, getRconStatus } from "../../modules/rcon/client.js";
 import { orgPanelUrl } from "../tenancy.js";
+import { finalizeSignup } from "../signup/finalize.js";
 import { buildHealth, serializeServerForOps } from "./health.js";
 import {
   applyMockOpsFix,
   getMockOpsDetail,
   listMockOpsOrgs,
 } from "./mock-orgs.js";
+import {
+  clearOpsCookie,
+  codesMatch,
+  hasOpsSession,
+  opsCodeConfigured,
+  setOpsCookie,
+} from "./session.js";
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const OPS_HTML = path.resolve(DIR, "ops.html");
 const ORG_HTML = path.resolve(DIR, "org.html");
 const OPS_CSS = path.resolve(DIR, "ops-ui.css");
 
-const COOKIE = "usely_ops";
-const TTL_MS = 14 * 24 * 60 * 60 * 1000;
-
-function configuredCode() {
-  return String(config.saas.opsAccessCode || "").trim();
-}
-
-function signingSecret() {
-  return (
-    configuredCode() ||
-    config.adminPanel.sessionSecret ||
-    "usely-ops"
-  );
-}
-
-function sign(payload) {
-  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const sig = crypto.createHmac("sha256", signingSecret()).update(body).digest("base64url");
-  return `${body}.${sig}`;
-}
-
-function verify(token) {
-  if (!token || !token.includes(".")) return null;
-  const [body, sig] = token.split(".");
-  const expected = crypto.createHmac("sha256", signingSecret()).update(body).digest("base64url");
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
-  try {
-    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
-    if (!payload?.ops || !payload?.exp || Date.now() > payload.exp) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-function parseCookies(req) {
-  const header = req.get?.("cookie") ?? req.headers?.cookie ?? "";
-  return Object.fromEntries(
-    header
-      .split(";")
-      .map((p) => p.trim())
-      .filter(Boolean)
-      .map((p) => {
-        const i = p.indexOf("=");
-        return i === -1 ? [p, ""] : [p.slice(0, i), decodeURIComponent(p.slice(i + 1))];
-      }),
-  );
-}
-
-function cookieAttrs() {
-  const secure =
-    process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === "production"
-      ? "; Secure"
-      : "";
-  return `${secure}; HttpOnly; SameSite=Lax; Path=/`;
-}
-
-function setOpsCookie(res) {
-  const token = sign({ ops: true, exp: Date.now() + TTL_MS });
-  res.setHeader(
-    "Set-Cookie",
-    `${COOKIE}=${token}; Max-Age=${Math.floor(TTL_MS / 1000)}${cookieAttrs()}`,
-  );
-}
-
-function clearOpsCookie(res) {
-  res.setHeader("Set-Cookie", `${COOKIE}=; Max-Age=0${cookieAttrs()}`);
-}
-
-function readOpsCookie(req) {
-  return verify(parseCookies(req)[COOKIE]);
-}
-
-function codesMatch(input) {
-  const expected = configuredCode();
-  if (!expected) return false;
-  const a = Buffer.from(String(input || ""));
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(a, b);
-}
 
 function escapeHtml(s) {
   return String(s)
@@ -114,7 +38,7 @@ function escapeHtml(s) {
 
 function gateHtml({ error = "" } = {}) {
   const err = error ? `<p class="err">${escapeHtml(error)}</p>` : "";
-  const configured = Boolean(configuredCode());
+  const configured = opsCodeConfigured();
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="robots" content="noindex, nofollow"/>
@@ -156,7 +80,7 @@ function requireOps(req, res, { html = false } = {}) {
     }
     return false;
   }
-  if (!configuredCode()) {
+  if (!opsCodeConfigured()) {
     if (html) {
       res.status(503).type("html").send(gateHtml());
     } else {
@@ -164,7 +88,7 @@ function requireOps(req, res, { html = false } = {}) {
     }
     return false;
   }
-  if (!readOpsCookie(req)) {
+  if (!hasOpsSession(req)) {
     if (html) {
       res.status(401).type("html").send(gateHtml());
     } else {
@@ -458,6 +382,38 @@ export function attachOpsRoutes(app, client = null) {
       const status = error.status || 500;
       if (status >= 500) console.error("ops fix failed:", error.message);
       res.status(status).json({ ok: false, error: error.message || "Fix failed" });
+    }
+  });
+
+  /** Skip Stripe — create a real setup token so you can walk through /setup. */
+  app.post("/api/ops/preview-setup", async (req, res) => {
+    if (!requireOps(req, res)) return;
+    try {
+      const plan = ["basic", "pro", "network"].includes(req.body?.plan)
+        ? req.body.plan
+        : "pro";
+      const rawEmail = String(req.body?.email || "").toLowerCase().trim();
+      const email = rawEmail || `preview+${Date.now()}@usely.dev`;
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        return res.status(400).json({ ok: false, error: "Invalid email" });
+      }
+      const { setupUrl, org } = await finalizeSignup({
+        email,
+        plan,
+        skipEmail: true,
+      });
+      res.json({
+        ok: true,
+        preview: true,
+        email,
+        plan,
+        orgId: org.id,
+        slug: org.slug,
+        setupUrl,
+      });
+    } catch (error) {
+      console.error("ops preview-setup failed:", error.message);
+      res.status(500).json({ ok: false, error: error.message || "Failed to create setup link" });
     }
   });
 }
