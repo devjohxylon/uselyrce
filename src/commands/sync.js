@@ -1,6 +1,6 @@
 import { REST, Routes } from "discord.js";
-import { config } from "./config.js";
-import { commandDefinitions } from "./commands/definitions.js";
+import { config } from "../config.js";
+import { commandDefinitions } from "./definitions.js";
 
 /**
  * Push slash command definitions to Discord.
