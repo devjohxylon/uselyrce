@@ -10,8 +10,8 @@ export const entries = [
     date: "2026-08-01",
     title: "Workspace setup and staff keys",
     changes: [
-      { type: "changed", text: "Workspace is a clearer Setup flow (Discord → WebRCON → staff access), plus Staff keys and Billing — Discord role maps for panel login are gone." },
-      { type: "changed", text: "Staff sign in with access keys on your panel URL; owners still use email. Create and revoke keys under <strong>Workspace → Staff keys</strong>." },
+      { type: "changed", text: "Workspace Setup is a side-by-side Discord + servers layout; Staff keys use permission chips you can click to turn on or off." },
+      { type: "changed", text: "Discord role maps for panel login are gone. Staff sign in with access keys on your panel URL; create and revoke them under <strong>Workspace → Staff keys</strong>." },
     ],
   },
   {

@@ -92,8 +92,97 @@ input, select, textarea {
   padding: .6rem .75rem; border-radius: var(--radius-sm); font-family: var(--mono); font-size: .8rem;
 }
 input[type="checkbox"], input[type="radio"] {
-  width: 16px; height: 16px; min-width: 16px; padding: 0; margin: 0;
-  background: transparent; border: none; box-shadow: none; accent-color: #7eb8e8;
+  width: 16px; height: 16px; min-width: 16px; max-width: 16px;
+  padding: 0; margin: 0; flex-shrink: 0;
+  -webkit-appearance: auto; appearance: auto;
+  accent-color: #7eb8e8;
+  cursor: pointer;
+}
+.perm-grid {
+  display: grid;
+  gap: 1rem;
+}
+.perm-group-label {
+  font-size: .68rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: .45rem;
+}
+.perm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.perm-chip {
+  padding: .4rem .7rem !important;
+  font-size: .74rem !important;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--line2);
+  background: rgba(255,255,255,.03);
+  color: var(--muted);
+  transform: none !important;
+  box-shadow: none !important;
+}
+.perm-chip:hover {
+  border-color: rgba(215,221,230,.35);
+  color: var(--text);
+  background: rgba(255,255,255,.06);
+  transform: none !important;
+}
+.perm-chip.on,
+.perm-chip[aria-pressed="true"] {
+  border-color: rgba(126,184,232,.55);
+  background: rgba(126,184,232,.14);
+  color: #d7e9f8;
+}
+.ws-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.ws-head h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -.02em;
+  text-transform: none;
+  font-family: var(--font);
+  color: var(--text);
+  font-weight: 650;
+}
+.ws-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1.15fr;
+  align-items: start;
+}
+.ws-panel .card-desc { margin-top: 0; }
+.ws-status {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .78rem;
+  color: var(--muted);
+}
+.ws-status .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--faint);
+}
+.ws-status.ok .dot { background: var(--ok); }
+.ws-status.warn .dot { background: var(--warn); }
+.ws-add {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 1000px) {
+  .ws-grid { grid-template-columns: 1fr; }
 }
 input::placeholder, textarea::placeholder { color: var(--faint); }
 input:focus, textarea:focus, select:focus {
@@ -4380,70 +4469,89 @@ async function renderKeys() {
   const permKeys = Object.keys(data.defaults || {});
   const saas = Boolean(state.session?.saas);
   const created = state.lastCreatedKey
-    ? `<div class="card" style="margin-bottom:1rem;border-color:var(--line2)">
+    ? `<div class="card" style="border-color:rgba(94,217,160,.35)">
         <h3>Copy this key now</h3>
-        <p class="muted" style="margin:0 0 .5rem">Shown once. Send it to your staff — they sign in on this panel with it.</p>
-        <code style="display:block;word-break:break-all;font-family:var(--mono);font-size:.85rem;padding:.75rem;background:var(--panel2,#0a0a0a);border:1px solid var(--line)">${esc(state.lastCreatedKey.secret)}</code>
-        <p style="margin:.6rem 0 0" class="muted">Label: <strong>${esc(state.lastCreatedKey.key.label)}</strong></p>
+        <p class="muted" style="margin:0 0 .65rem">Shown once. Send it to your staff — they sign in on this panel with it.</p>
+        <code style="display:block;word-break:break-all;font-family:var(--mono);font-size:.85rem;padding:.85rem;background:rgba(0,0,0,.45);border:1px solid var(--line)">${esc(state.lastCreatedKey.secret)}</code>
+        <p class="muted" style="margin:.65rem 0 0">Label: <strong>${esc(state.lastCreatedKey.key.label)}</strong></p>
       </div>`
     : "";
 
-  const rows = data.keys.map((k) => `
-    <tr>
-      <td><strong>${esc(k.label)}</strong><div class="muted">${esc(k.id)}</div></td>
-      <td>${k.enabled ? `<span class="pill ok">ON</span>` : `<span class="pill bad">OFF</span>`}</td>
-      <td class="muted" style="font-size:.7rem">${Object.entries(k.permissions).filter(([,v])=>v).map(([p])=>p).join(", ") || "none"}</td>
-      <td>${k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleString() : "never"}</td>
-      <td class="actions">
-        <button data-action="toggleKey" data-id="${esc(k.id)}" data-on="${k.enabled ? "0" : "1"}">${k.enabled ? "Disable" : "Enable"}</button>
-        <button class="danger" data-action="revokeKey" data-id="${esc(k.id)}">Revoke</button>
-      </td>
-    </tr>`).join("") || `<tr><td colspan="5" class="muted">No staff keys yet — create one on the right.</td></tr>`;
-
-  const permissionGroups = {
-    "Server Access": ["overview", "rcon"],
-    "Player Management": ["players", "kick", "ban", "teleport"],
-    "Communication": ["broadcast", "automessages"],
-    "Server Tools": ["stats", "statsReset", "warps", "links", "kits", "serverCommands"],
-    "Monitoring": ["reports", "schedule"]
+  const PERM_LABELS = {
+    overview: "Home",
+    rcon: "RCON",
+    players: "Players",
+    kick: "Kick",
+    ban: "Ban",
+    teleport: "Teleport",
+    broadcast: "Broadcast",
+    automessages: "Auto messages",
+    stats: "Stats",
+    statsReset: "Reset stats",
+    warps: "Warps",
+    links: "Links",
+    kits: "Kits",
+    serverCommands: "Actions",
+    reports: "Reports",
+    schedule: "Schedules",
   };
 
-  const checks = Object.entries(permissionGroups).map(([groupName, perms]) => `
-    <div style="margin-bottom:1.25rem">
-      <div class="muted" style="font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.55rem">${groupName}</div>
-      <div style="display:grid;gap:.45rem">
-        ${perms.filter(p => permKeys.includes(p)).map(p => `
-          <label style="display:flex;gap:.55rem;align-items:center;cursor:pointer">
-            <input type="checkbox" data-perm-check="${esc(p)}" ${data.defaults[p] ? "checked" : ""} />
-            <span style="font-size:.8rem">${esc(p)}</span>
-          </label>
-        `).join("")}
-      </div>
-    </div>
-  `).join("");
+  const rows = data.keys.map((k) => {
+    const on = Object.entries(k.permissions || {}).filter(([, v]) => v).map(([p]) => PERM_LABELS[p] || p);
+    return `
+    <tr>
+      <td data-label="Label"><strong>${esc(k.label)}</strong><div class="muted">${esc(k.id)}</div></td>
+      <td data-label="Status">${k.enabled ? `<span class="pill ok">ON</span>` : `<span class="pill bad">OFF</span>`}</td>
+      <td data-label="Permissions" class="muted" style="font-size:.74rem">${on.length ? esc(on.join(" · ")) : "none"}</td>
+      <td data-label="Last used">${k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleString() : "never"}</td>
+      <td data-label="" class="actions">
+        <button type="button" data-action="toggleKey" data-id="${esc(k.id)}" data-on="${k.enabled ? "0" : "1"}">${k.enabled ? "Disable" : "Enable"}</button>
+        <button type="button" class="danger" data-action="revokeKey" data-id="${esc(k.id)}">Revoke</button>
+      </td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="5" class="muted">No staff keys yet.</td></tr>`;
+
+  const permissionGroups = [
+    ["Access", ["overview", "rcon"]],
+    ["Players", ["players", "kick", "ban", "teleport"]],
+    ["Chat & tools", ["broadcast", "automessages", "stats", "statsReset", "warps", "links", "kits", "serverCommands"]],
+    ["Monitoring", ["reports", "schedule"]],
+  ];
+
+  const chips = permissionGroups.map(([groupName, perms]) => {
+    const list = perms.filter((p) => permKeys.includes(p));
+    if (!list.length) return "";
+    return `
+      <div>
+        <div class="perm-group-label">${esc(groupName)}</div>
+        <div class="perm-chips">
+          ${list.map((p) => {
+            const on = Boolean(data.defaults[p]);
+            return `<button type="button" class="perm-chip${on ? " on" : ""}" data-action="togglePerm" data-perm="${esc(p)}" aria-pressed="${on ? "true" : "false"}">${esc(PERM_LABELS[p] || p)}</button>`;
+          }).join("")}
+        </div>
+      </div>`;
+  }).join("");
 
   return `
     ${created}
-    <div class="card" style="margin-bottom:1rem">
-      <h3>Staff keys</h3>
-      <p class="muted" style="margin:0">
+    <div class="card">
+      <h3>Create staff key</h3>
+      <p class="card-desc">
         ${saas
-          ? "Create a key per person. They open this same panel URL and sign in under <strong>Staff → Access key</strong>. Revoke the key to cut access. Keys never get billing or key-management."
-          : "Keys for moderators and staff. They can never manage keys or view audit logs."}
+          ? "One key per person. They open this panel URL and sign in under Staff. Keys never get billing or key management."
+          : "Keys for moderators. They can never manage keys or view audit logs."}
       </p>
+      <label class="field" style="display:block;margin-bottom:1rem">
+        <span style="display:block;margin-bottom:.35rem;font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">Label</span>
+        <input id="keyLabel" placeholder="e.g. Mod — Alex" autocomplete="off" />
+      </label>
+      <div class="perm-grid" id="keyPermGrid">${chips}</div>
+      <button type="button" class="primary" style="margin-top:1.15rem" data-action="createKey">Generate access key</button>
     </div>
-    <div class="split">
-      <div class="card">
-        <h3>Active keys</h3>
-        <div class="table-wrap"><table class="table"><thead><tr><th>Label</th><th></th><th>Permissions</th><th>Last used</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-      </div>
-      <div class="card">
-        <h3>Create key</h3>
-        <p class="muted" style="margin:0 0 1rem">Pick what they can do, then generate once.</p>
-        <input id="keyLabel" placeholder="Label (e.g. Mod — Alex)" style="margin-bottom:1rem" />
-        <div style="max-height:420px;overflow-y:auto">${checks}</div>
-        <button class="primary" style="margin-top:1rem;width:100%" data-action="createKey">Generate access key</button>
-      </div>
+    <div class="card">
+      <h3>Active keys</h3>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Label</th><th>Status</th><th>Permissions</th><th>Last used</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
 }
 
@@ -4808,13 +4916,13 @@ async function renderServers() {
   }
   const rows = servers.map((s) => `
     <tr>
-      <td><strong>${esc(s.name)}</strong><div class="muted">${esc(s.rcon_host)}:${esc(String(s.rcon_port))}</div></td>
-      <td>${s.enabled ? `<span class="pill ok">ON</span>` : `<span class="pill bad">OFF</span>`}</td>
-      <td class="actions">
-        <button data-action="saasDefaultServer" data-id="${esc(s.id)}">Default</button>
-        <button class="danger" data-action="saasDeleteServer" data-id="${esc(s.id)}">Remove</button>
+      <td data-label="Server"><strong>${esc(s.name)}</strong><div class="muted">${esc(s.rcon_host)}:${esc(String(s.rcon_port))}</div></td>
+      <td data-label="Status">${s.enabled ? `<span class="pill ok">ON</span>` : `<span class="pill bad">OFF</span>`}</td>
+      <td data-label="" class="actions">
+        <button type="button" data-action="saasDefaultServer" data-id="${esc(s.id)}">Default</button>
+        <button type="button" class="danger" data-action="saasDeleteServer" data-id="${esc(s.id)}">Remove</button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="3" class="muted">None yet — add WebRCON below.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="3" class="muted">No servers connected yet.</td></tr>`;
 
   const org = state.session.org || {};
   const inviteUrl =
@@ -4822,57 +4930,59 @@ async function renderServers() {
     state.session.botInviteUrlSimple ||
     "#";
   const guildLinked = Boolean(org.guildId);
-  const hasServer = servers.length > 0;
-  const step = (n, title, done, body) => `
-    <div class="card" style="margin-bottom:1rem">
-      <div class="card-head" style="align-items:center;gap:.65rem">
-        <span class="pill ${done ? "ok" : "info"}" style="min-width:2rem;justify-content:center">${done ? "✓" : n}</span>
-        <h3 style="margin:0;flex:1">${title}</h3>
-        ${done ? `<span class="muted" style="font-size:.75rem">Done</span>` : ""}
-      </div>
-      ${body}
-    </div>`;
 
   return `
-    <div class="card" style="margin-bottom:1rem">
-      <h3>${esc(org.name || "Your workspace")}</h3>
-      <p class="muted" style="margin:0">Plan <strong>${esc(org.plan || "basic")}</strong> · ${esc(org.planStatus || "—")}. Finish the steps below, then hand staff keys from the <strong>Staff keys</strong> tab.</p>
+    <div class="ws-head">
+      <div>
+        <h3>${esc(org.name || "Your workspace")}</h3>
+        <p class="muted" style="margin:.35rem 0 0">Plan <strong>${esc(org.plan || "basic")}</strong> · ${esc(org.planStatus || "—")}</p>
+      </div>
+      <p class="muted" style="margin:0;font-size:.78rem">Staff keys are on the next tab.</p>
     </div>
-    ${step(1, "Link Discord", guildLinked, guildLinked ? `
-      <p class="muted" style="margin:.65rem 0 0">Guild <code>${esc(org.guildId)}</code> is linked. The bot runs kill feeds, population channels, and slash commands.</p>
-      <p class="muted" style="margin:.5rem 0 0">
-        <a href="${esc(inviteUrl)}" target="_blank" rel="noopener" style="color:var(--chrome)">Re-invite bot</a>
-        if it was kicked or permissions changed.
-      </p>` : `
-      <p class="muted" style="margin:.65rem 0">Invite the Usely bot (you need <strong>Manage Server</strong>), then paste the guild ID if it doesn’t auto-link.</p>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.75rem">
-        <a class="primary" href="${esc(inviteUrl)}" target="_blank" rel="noopener"
-          style="display:inline-flex;align-items:center;justify-content:center;padding:.65rem 1rem;text-decoration:none">
-          Invite Discord bot
-        </a>
-      </div>
-      <div class="form-row" style="grid-template-columns:1fr auto;gap:.5rem">
-        <input id="saasGuildId" placeholder="Discord guild ID" />
-        <button class="primary" data-action="saasLinkGuild">Link guild</button>
-      </div>
-      <p class="muted" style="margin:.55rem 0 0;font-size:.75rem">Guild ID: Server Settings → Widget, or right-click the server with Developer Mode on.</p>`)}
-    ${step(2, "Connect WebRCON", hasServer, `
-      <p class="muted" style="margin:.65rem 0">From Nitrado → Settings → WebRCON. Host is the IP only; port is the RCON port (not the game port).</p>
-      <div class="table-wrap" style="margin-bottom:.85rem"><table>
-        <thead><tr><th>Server</th><th>Status</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>
-      <div class="form-row" style="grid-template-columns:1fr 1fr;gap:.6rem">
-        <input id="saasSrvName" placeholder="Display name (e.g. Main)" />
-        <input id="saasSrvHost" placeholder="RCON host" />
-        <input id="saasSrvPort" placeholder="RCON port" />
-        <input id="saasSrvPass" type="password" placeholder="RCON password" />
-      </div>
-      <button class="primary" style="margin-top:.75rem" data-action="saasAddServer">Add server</button>
-    `)}
-    ${step(3, "Staff access", true, `
-      <p class="muted" style="margin:.65rem 0 0">Staff don’t use Discord login. Open the <strong>Staff keys</strong> tab, create a key, and send it to them. They sign in on this panel URL with that key.</p>
-    `)}`;
+    <div class="ws-grid">
+      <section class="card ws-panel">
+        <div class="card-head" style="margin-bottom:.85rem">
+          <h3 style="margin:0">Discord</h3>
+          <span class="ws-status ${guildLinked ? "ok" : "warn"}"><span class="dot"></span>${guildLinked ? "Linked" : "Not linked"}</span>
+        </div>
+        ${guildLinked ? `
+          <p class="muted" style="margin:0">Guild <code>${esc(org.guildId)}</code>. Bot handles kill feeds, population, and slash commands.</p>
+          <p style="margin:.85rem 0 0">
+            <a href="${esc(inviteUrl)}" target="_blank" rel="noopener" style="color:var(--chrome)">Re-invite bot</a>
+            <span class="muted"> if it was kicked.</span>
+          </p>
+        ` : `
+          <p class="card-desc">Invite the Usely bot (Manage Server required), then paste the guild ID if it doesn’t auto-link.</p>
+          <a class="primary" href="${esc(inviteUrl)}" target="_blank" rel="noopener"
+            style="display:inline-flex;text-decoration:none;margin-bottom:.85rem">Invite Discord bot</a>
+          <div class="form-row" style="grid-template-columns:1fr auto;gap:.5rem">
+            <input id="saasGuildId" placeholder="Discord guild ID" />
+            <button type="button" class="primary" data-action="saasLinkGuild">Link</button>
+          </div>
+          <p class="muted" style="margin:.55rem 0 0;font-size:.75rem">Server Settings → Widget, or right-click the server with Developer Mode on.</p>
+        `}
+      </section>
+      <section class="card ws-panel">
+        <div class="card-head" style="margin-bottom:.85rem">
+          <h3 style="margin:0">Servers</h3>
+          <span class="ws-status ${servers.length ? "ok" : "warn"}"><span class="dot"></span>${servers.length ? `${servers.length} connected` : "None yet"}</span>
+        </div>
+        <p class="card-desc">Nitrado → Settings → WebRCON. Host is IP only; port is the RCON port.</p>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>Server</th><th>Status</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+        <div class="ws-add">
+          <div class="form-row" style="grid-template-columns:1fr 1fr;gap:.55rem">
+            <input id="saasSrvName" placeholder="Display name" />
+            <input id="saasSrvHost" placeholder="RCON host" />
+            <input id="saasSrvPort" placeholder="RCON port" />
+            <input id="saasSrvPass" type="password" placeholder="RCON password" />
+          </div>
+          <button type="button" class="primary" style="margin-top:.75rem" data-action="saasAddServer">Add server</button>
+        </div>
+      </section>
+    </div>`;
 }
 
 
@@ -5969,8 +6079,8 @@ function bindView() {
         if (a === "delJob") { await api(`/schedule/${el.dataset.id}`, { method: "DELETE" }); render(); }
         if (a === "createKey") {
           const permissions = {};
-          document.querySelectorAll("[data-perm-check]").forEach((box) => {
-            permissions[box.dataset.permCheck] = box.checked;
+          document.querySelectorAll("[data-perm][data-action='togglePerm']").forEach((btn) => {
+            permissions[btn.dataset.perm] = btn.getAttribute("aria-pressed") === "true";
           });
           const r = await api("/keys", {
             method: "POST",
@@ -5979,6 +6089,12 @@ function bindView() {
           state.lastCreatedKey = r;
           toast("Staff key created — copy it now");
           render();
+        }
+        if (a === "togglePerm") {
+          const on = el.getAttribute("aria-pressed") === "true";
+          el.setAttribute("aria-pressed", on ? "false" : "true");
+          el.classList.toggle("on", !on);
+          return;
         }
         if (a === "toggleKey") {
           await api(`/keys/${el.dataset.id}`, { method: "PATCH", body: { enabled: el.dataset.on === "1" } });
