@@ -1,5 +1,4 @@
 import { EmbedBuilder } from "discord.js";
-import { config } from "../config.js";
 import { requireStaff } from "../lib/permissions.js";
 import { getCasesForUser } from "../data/store.js";
 import {
