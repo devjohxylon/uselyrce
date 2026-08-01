@@ -37,11 +37,11 @@ export const groups = [
       },
       {
         q: "What does the Discord bot do?",
-        a: "It runs the Discord side of your community: live population channels, kill feeds, and the other standard RCE bot tooling. It also lets your staff sign into the panel with Discord instead of a shared password.",
+        a: "It runs the Discord side of your community: live population channels, kill feeds, VIP tools, and slash commands. Panel staff access is separate — that uses access keys from your workspace.",
       },
       {
         q: "Can I give my moderators access without sharing my login?",
-        a: "Yes. Staff sign in with Discord, and you map Discord roles to permissions — so a role can be allowed to kick and ban but blocked from RCON or billing. You keep the owner account to yourself.",
+        a: "Yes. From <strong>Workspace → Staff keys</strong>, create a key with the permissions you want and send it to them. They sign in on your panel URL with that key. Revoke the key anytime. Billing and key management stay on the owner account.",
       },
       {
         q: "Can I manage more than one server?",
@@ -57,8 +57,8 @@ export const groups = [
         a: "Every workspace gets its own subdomain, like <code>myserver.usely.dev</code>, which you choose during setup. That address is where you and your staff sign in.",
       },
       {
-        q: "Why do owners use email and staff use Discord?",
-        a: "The owner account controls billing and server credentials, so it isn't tied to a Discord account that could be lost or compromised. Staff access is meant to be quick to grant and revoke, which is exactly what Discord roles are good at.",
+        q: "Why do owners use email and staff use keys?",
+        a: "The owner account controls billing and server credentials. Staff get their own access keys with limited permissions — quick to create, easy to revoke, and never tied to Discord roles.",
       },
       {
         q: "Can I change plans or cancel?",

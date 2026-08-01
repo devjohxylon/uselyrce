@@ -8,6 +8,14 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Workspace setup and staff keys",
+    changes: [
+      { type: "changed", text: "Workspace is a clearer Setup flow (Discord → WebRCON → staff access), plus Staff keys and Billing — Discord role maps for panel login are gone." },
+      { type: "changed", text: "Staff sign in with access keys on your panel URL; owners still use email. Create and revoke keys under <strong>Workspace → Staff keys</strong>." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Hardened WebRCON setup",
     changes: [
       { type: "changed", text: "Setup and Workspace → Servers validate host/port/password, test the WebRCON connection, and warn if it doesn't come up — instead of silently saving bad credentials." },

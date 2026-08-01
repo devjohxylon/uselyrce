@@ -3,18 +3,15 @@ import { config } from "../../config.js";
 import { OWNER_PERMISSIONS } from "../../modules/admin/access-keys.js";
 import {
   getOrg,
-  listOrgsByGuildIds,
   listOrgsOwnedBy,
   listOrgsOwnedByAccount,
 } from "../db/orgs.js";
 import { listServers } from "../db/servers.js";
-import { permissionsForMember } from "../db/roles.js";
+import { resolveOrgAccessKey } from "../db/org-keys.js";
 import { baseDomain } from "../tenancy.js";
 
 const COOKIE = "usely_saas";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const roleCache = new Map(); // key -> { at, roleIds }
-const ROLE_CACHE_MS = 60_000;
 
 function signingSecret() {
   return (
@@ -185,45 +182,16 @@ export async function exchangeDiscordCode(code) {
   };
 }
 
-async function memberRoleIds(discordClient, guildId, userId) {
-  const cacheKey = `${guildId}:${userId}`;
-  const cached = roleCache.get(cacheKey);
-  if (cached && Date.now() - cached.at < ROLE_CACHE_MS) return cached.roleIds;
-
-  let roleIds = [];
-  try {
-    const guild = await discordClient.guilds.fetch(guildId);
-    const member = await guild.members.fetch(userId);
-    roleIds = [...member.roles.cache.keys()];
-  } catch {
-    roleIds = [];
-  }
-  roleCache.set(cacheKey, { at: Date.now(), roleIds });
-  return roleIds;
-}
-
 /**
- * Build accessible org list for a Discord user (owner or staff role in linked guild).
+ * Discord OAuth only unlocks orgs the user owns. Staff use access keys.
  */
-export async function listAccessibleOrgs(discordClient, discordUserId, guildIdsFromOAuth = []) {
+export async function listAccessibleOrgs(_discordClient, discordUserId, _guildIdsFromOAuth = []) {
   const owned = await listOrgsOwnedBy(discordUserId);
-  const byGuild = await listOrgsByGuildIds(guildIdsFromOAuth);
-  const map = new Map();
-  for (const o of [...owned, ...byGuild]) map.set(o.id, o);
-
-  const accessible = [];
-  for (const org of map.values()) {
-    const isOwner = org.owner_discord_id === String(discordUserId);
-    if (isOwner) {
-      accessible.push({ org, isOwner: true, permissions: { ...OWNER_PERMISSIONS, servers: true, billing: true } });
-      continue;
-    }
-    if (!org.discord_guild_id || !discordClient) continue;
-    const roles = await memberRoleIds(discordClient, org.discord_guild_id, discordUserId);
-    const perms = await permissionsForMember(org.id, roles, { isOwner: false });
-    if (perms) accessible.push({ org, isOwner: false, permissions: perms });
-  }
-  return accessible;
+  return owned.map((org) => ({
+    org,
+    isOwner: true,
+    permissions: { ...OWNER_PERMISSIONS, servers: true, billing: true },
+  }));
 }
 
 function ownerEntry(org) {
@@ -246,9 +214,58 @@ export async function listAccessibleOrgsForCookie(discordClient, cookie) {
   return [];
 }
 
+async function sessionForOrgEntry(entry, cookie, req) {
+  const servers = entry.org ? await listServers(entry.org.id) : [];
+  let serverId =
+    req.get?.("x-server-id") ||
+    cookie.serverId ||
+    entry.org.default_server_id ||
+    servers[0]?.id ||
+    null;
+  if (serverId && !servers.some((s) => s.id === serverId)) {
+    serverId = servers[0]?.id || null;
+  }
+  return {
+    role: entry.isOwner ? "owner" : "staff",
+    discordUserId: cookie.discordUserId || null,
+    accountId: cookie.accountId || null,
+    keyId: cookie.keyId || null,
+    label: entry.label || cookie.username || cookie.email || "Staff",
+    orgId: entry.org.id,
+    org: entry.org,
+    serverId,
+    servers,
+    permissions: entry.permissions,
+    needsOnboarding: false,
+  };
+}
+
+async function resolveKeySaasSession(req, cookie) {
+  const hostOrg = req.orgFromHost || null;
+  if (hostOrg && cookie.orgId && hostOrg.id !== cookie.orgId) return null;
+  const orgId = hostOrg?.id || cookie.orgId;
+  if (!orgId) return null;
+
+  const key = await resolveOrgAccessKey(orgId, cookie.keyId);
+  if (!key) return null;
+  const org = hostOrg || (await getOrg(orgId));
+  if (!org) return null;
+  return sessionForOrgEntry(
+    { org, isOwner: false, permissions: key.permissions, label: key.label },
+    { ...cookie, orgId },
+    req,
+  );
+}
+
 export async function resolveSaasSession(req, discordClient) {
   const cookie = readSaasCookie(req);
-  if (!cookie?.discordUserId && !cookie?.accountId) return null;
+  if (!cookie) return null;
+
+  if (cookie.keyId && cookie.orgId) {
+    return resolveKeySaasSession(req, cookie);
+  }
+
+  if (!cookie.discordUserId && !cookie.accountId) return null;
 
   let accessible;
   if (cookie.accountId) {
@@ -265,7 +282,6 @@ export async function resolveSaasSession(req, discordClient) {
   let entry = null;
   const hostOrg = req.orgFromHost || null;
   if (hostOrg) {
-    // On <slug>.usely.dev only that org's panel is valid.
     entry = accessible.find((a) => a.org.id === hostOrg.id) || null;
     if (!entry) return null;
   } else {
@@ -273,7 +289,6 @@ export async function resolveSaasSession(req, discordClient) {
     entry = accessible.find((a) => a.org.id === activeOrgId) || accessible[0] || null;
   }
 
-  // Discord owner with no linked guild yet still gets in to finish setup
   if (!entry) {
     const owned = cookie.discordUserId
       ? await listOrgsOwnedBy(cookie.discordUserId)
@@ -294,34 +309,12 @@ export async function resolveSaasSession(req, discordClient) {
     }
   }
 
-  const servers = entry.org ? await listServers(entry.org.id) : [];
-  let serverId =
-    req.get?.("x-server-id") ||
-    cookie.serverId ||
-    entry.org.default_server_id ||
-    servers[0]?.id ||
-    null;
-  if (serverId && !servers.some((s) => s.id === serverId)) {
-    serverId = servers[0]?.id || null;
-  }
-
-  return {
-    role: entry.isOwner ? "owner" : "staff",
-    discordUserId: cookie.discordUserId || null,
-    accountId: cookie.accountId || null,
-    label: cookie.username || cookie.email || "Staff",
-    orgId: entry.org.id,
-    org: entry.org,
-    serverId,
-    servers,
-    permissions: entry.permissions,
-    needsOnboarding: false,
-  };
+  return sessionForOrgEntry(entry, cookie, req);
 }
 
-export async function refreshOrgSession(req, discordClient, { orgId, serverId } = {}) {
+export async function refreshOrgSession(req, _discordClient, { orgId, serverId } = {}) {
   const cookie = readSaasCookie(req);
-  if (!cookie?.discordUserId) return null;
+  if (!cookie?.discordUserId && !cookie?.accountId && !cookie?.keyId) return null;
   return {
     ...cookie,
     orgId: orgId ?? cookie.orgId,

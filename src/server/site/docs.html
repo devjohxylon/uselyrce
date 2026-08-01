@@ -134,7 +134,7 @@
             <li>Choose a plan on the <a href="/pricing">pricing page</a> and pay.</li>
             <li>We email you a setup link (valid for seven days).</li>
             <li>On that link you pick a <strong>panel address</strong> (like <code>myserver.usely.dev</code>), set your owner password, invite the Discord bot, and add at least one WebRCON server.</li>
-            <li>Open your panel — staff can sign in with Discord once you map roles.</li>
+            <li>Open your panel — create staff keys under <strong>Workspace → Staff keys</strong> and share them with moderators.</li>
           </ol>
           <div class="callout">
             <p><strong>Choose your address carefully.</strong> It's what you and your staff type to reach the panel, and changing it later means everyone updates their bookmarks. Use your community name, not a server name you might retire.</p>
@@ -181,30 +181,30 @@
 
         <section id="discord">
           <h2>Discord bot</h2>
-          <p>The bot is included with every plan. From the panel open <strong>Workspace → Servers</strong> and click <strong>Invite Discord bot</strong>. You need Manage Server on that Discord. After it joins, paste the guild ID (or finish the Discord authorize flow) and link it so staff can sign in with Discord roles.</p>
+          <p>The bot is included with every plan. From the panel open <strong>Workspace → Setup</strong> and click <strong>Invite Discord bot</strong>. You need Manage Server on that Discord. After it joins, paste the guild ID (or finish the Discord authorize flow) and link it.</p>
           <p>What it handles:</p>
           <ul>
             <li><strong>Population channels</strong> — a channel name that updates with your live player count, so members can see how busy the server is without launching the game.</li>
             <li><strong>Kill feeds</strong> — in-game kills posted to a channel.</li>
-            <li><strong>Staff sign-in</strong> — moderators authenticate to the panel with Discord instead of a password you have to share.</li>
+            <li><strong>VIP and slash commands</strong> — community tools in Discord; panel staff access uses keys instead.</li>
           </ul>
           <p>If the bot goes offline, the panel keeps working — they're independent connections.</p>
         </section>
 
         <section id="staff">
           <h2>Staff permissions</h2>
-          <p>You don't create accounts for your staff. Instead, you map <strong>Discord roles</strong> to permissions in your workspace. Anyone with that role can sign in with Discord and gets exactly what the role allows.</p>
-          <p>The practical effect: promoting someone is giving them a Discord role, and removing their access is taking it away. Nothing to deprovision, and no shared credentials to rotate when someone leaves.</p>
-          <p>Permissions are checked on every action, not just at sign-in, so a role that can kick and ban but not use RCON genuinely cannot run RCON commands.</p>
+          <p>Staff sign in with <strong>access keys</strong>, not Discord. From <strong>Workspace → Staff keys</strong>, create a key, choose permissions (kick, ban, kits, and so on), and send the secret once. They open your panel URL and sign in under Staff.</p>
+          <p>Revoke or disable a key to cut access immediately. Keys never get billing or key management — those stay on the owner email login.</p>
+          <p>Permissions are checked on every action, not just at sign-in, so a key that can kick and ban but not use RCON genuinely cannot run RCON commands.</p>
           <div class="callout">
-            <p><strong>The owner account stays separate.</strong> Billing and server credentials belong to your email login, not to any Discord role — so staff access can be broad without exposing your payment details or RCON passwords.</p>
+            <p><strong>The owner account stays separate.</strong> Billing and server credentials belong to your email login — staff keys can be broad for day-to-day moderation without exposing payment or RCON passwords.</p>
           </div>
         </section>
 
         <section id="multi">
           <h2>Multiple servers</h2>
           <p>Basic covers one server. Pro covers two, and Network covers more. Each one is its own WebRCON connection with its own players, bans, and status.</p>
-          <p>Switch which server you're managing from the panel header. Your kits and staff role mappings belong to the workspace, so you configure them once rather than repeating the setup per server.</p>
+          <p>Switch which server you're managing from the panel header. Kits and staff keys belong to the workspace, so you configure them once rather than repeating the setup per server.</p>
           <p>If you downgrade to a plan with a lower limit, disconnect the extra servers first.</p>
         </section>
 
@@ -223,7 +223,7 @@
           <h3>The Discord bot is offline or silent</h3>
           <p>Check that it's still in your Discord and can view and post in the channels you assigned. Population channels also need permission to rename the channel, which is separate from posting.</p>
           <h3>Staff can't sign in</h3>
-          <p>Confirm the Discord role is mapped in your workspace and that the person actually holds that role. Discord role changes can take a moment to appear.</p>
+          <p>They must open your workspace panel URL (e.g. <code>myserver.usely.dev</code>), not the marketing site. Confirm the key is still enabled under <strong>Workspace → Staff keys</strong>, and that they paste the full <code>ask_…</code> secret.</p>
           <h3>Something else</h3>
           <p>Check the <a href="/faq">FAQ</a>, then <a href="/contact">get in touch</a> — include your panel address so we can find your workspace.</p>
         </section>

@@ -1604,17 +1604,20 @@ button { transition: all .15s ease; }
         <button class="primary" id="loginBtn">Sign In</button>
       </div>
       <div id="saasLogin" class="hidden">
+        <p class="login-subtitle" style="margin:0 0 .85rem;text-align:left">Owner</p>
         <label for="saasEmail">Email</label>
         <input id="saasEmail" type="email" placeholder="you@example.com" autocomplete="email" />
         <label for="saasPassword" style="margin-top:.6rem">Password</label>
         <input id="saasPassword" type="password" placeholder="Your password" autocomplete="current-password" />
-        <button class="primary" id="saasEmailLoginBtn" style="margin-top:.85rem">Sign In</button>
+        <button class="primary" id="saasEmailLoginBtn" style="margin-top:.85rem">Sign in as owner</button>
         <p id="opsLoginHint" class="login-subtitle hidden" style="margin-top:.85rem;margin-bottom:0;color:var(--chrome)">Sign in with your ops email, then you'll be sent to the platform dashboard.</p>
-        <div style="display:flex;align-items:center;gap:.6rem;margin:1rem 0;color:var(--faint);font-size:.75rem">
+        <div style="display:flex;align-items:center;gap:.6rem;margin:1.15rem 0;color:var(--faint);font-size:.75rem">
           <span style="flex:1;height:1px;background:var(--line)"></span>staff<span style="flex:1;height:1px;background:var(--line)"></span>
         </div>
-        <a class="primary" id="discordLoginBtn" href="/admin/auth/discord" style="display:block;text-align:center;text-decoration:none;padding:.85rem 1rem;background:transparent;border:1px solid var(--line2);color:var(--text)">Continue with Discord</a>
-        <p class="login-subtitle" style="margin-top:1rem;margin-bottom:0">Owners sign in with email. Staff with a mapped Discord role use Discord. New here? <a href="/signup" style="color:var(--chrome)">Create a workspace</a>.</p>
+        <label for="saasStaffKey">Access key</label>
+        <input id="saasStaffKey" type="password" placeholder="ask_…" autocomplete="current-password" />
+        <button class="primary" id="saasKeyLoginBtn" style="margin-top:.85rem;background:transparent;border:1px solid var(--line2);color:var(--text)">Sign in with key</button>
+        <p class="login-subtitle" style="margin-top:1rem;margin-bottom:0">Owners use email. Staff use a key from <strong>Workspace → Staff keys</strong> on this panel URL. New here? <a href="/signup" style="color:var(--chrome)">Create a workspace</a>.</p>
       </div>
       <div id="loginError" class="login-error hidden"></div>
     </div>
@@ -1672,8 +1675,6 @@ button { transition: all .15s ease; }
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg>RCON</button>
         <button type="button" data-tab="warps" data-perm="warps">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Warps</button>
-        <button type="button" data-tab="keys" data-perm="keys">
-          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><path d="M11 12l7-7 3 3M16 7l2 2"/></svg>Keys</button>
         <button type="button" data-tab="logs" data-perm="logs">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6M9 13h6M9 17h6"/></svg>Logs</button>
       </div>
@@ -1831,14 +1832,28 @@ const NAV_SECTIONS = {
   },
   workspace: {
     title: "Workspace",
-    sub: "Org, servers, roles, billing",
+    sub: "Discord, servers, staff keys, billing",
     tabs: [
-      { id: "servers", label: "Servers", perm: "servers" },
-      { id: "roles", label: "Roles", perm: "keys" },
+      { id: "servers", label: "Setup", perm: "servers" },
+      { id: "keys", label: "Staff keys", perm: "keys" },
       { id: "billing", label: "Billing", perm: "billing" },
     ],
   },
 };
+
+function syncWorkspaceNav() {
+  if (state.session?.saas) {
+    NAV_SECTIONS.workspace.sub = "Discord, servers, staff keys, billing";
+    NAV_SECTIONS.workspace.tabs = [
+      { id: "servers", label: "Setup", perm: "servers" },
+      { id: "keys", label: "Staff keys", perm: "keys" },
+      { id: "billing", label: "Billing", perm: "billing" },
+    ];
+  } else {
+    NAV_SECTIONS.workspace.sub = "Staff access keys";
+    NAV_SECTIONS.workspace.tabs = [{ id: "keys", label: "Staff keys", perm: "keys" }];
+  }
+}
 
 const MAIN_TOOL_TABS = [
   { id: "commands", label: "Actions", perm: "serverCommands", title: "Actions", sub: "Give kits, ranks, and trigger events" },
@@ -1848,7 +1863,6 @@ const MAIN_TOOL_TABS = [
 const ADVANCED_TABS = [
   { id: "console", label: "RCON", perm: "rcon", title: "RCON", sub: "Raw RCON commands" },
   { id: "warps", label: "Warps", perm: "warps", title: "Warps", sub: "Warps and force teleports" },
-  { id: "keys", label: "Keys", perm: "keys", title: "Keys", sub: "Staff access keys" },
   { id: "logs", label: "Logs", perm: "logs", title: "Logs", sub: "Panel actions and system audit trail" },
 ];
 
@@ -1867,8 +1881,8 @@ const TAB_META = {
   status: { title: "Server", sub: "Live telemetry, map, wipe, and connections", perm: "overview" },
   wipe: { title: "Server", sub: "Checklist and one-click wipe automation", perm: "overview" },
   analytics: { title: "Server", sub: "Pop, FPS, and weapon stats", perm: "overview" },
-  servers: { title: "Workspace", sub: "Add and manage WebRCON servers", perm: "servers" },
-  roles: { title: "Workspace", sub: "Map Discord roles to panel permissions", perm: "keys" },
+  servers: { title: "Workspace", sub: "Link Discord and connect WebRCON servers", perm: "servers" },
+  keys: { title: "Workspace", sub: "Staff access keys for your panel", perm: "keys" },
   billing: { title: "Workspace", sub: "Plan and Stripe subscription", perm: "billing" },
 };
 
@@ -1879,6 +1893,7 @@ for (const t of [...MAIN_TOOL_TABS, ...ADVANCED_TABS]) {
 function normalizeTab(tab) {
   if (tab === "automsg" || tab === "schedule") return "automation";
   if (tab === "audit") return "logs";
+  if (tab === "roles") return "keys";
   return tab;
 }
 
@@ -1933,6 +1948,7 @@ function setAdvancedOpen(open) {
 }
 
 function applyNavPermissions() {
+  syncWorkspaceNav();
   document.querySelectorAll(".nav [data-tab][data-perm]").forEach((btn) => {
     const allowed = can(btn.dataset.perm);
     btn.classList.toggle("hidden", !allowed);
@@ -2339,7 +2355,6 @@ async function render({ animate = false } = {}) {
     if (state.tab === "wipe") view.innerHTML = await renderWipe();
     if (state.tab === "analytics") view.innerHTML = await renderAnalytics();
     if (state.tab === "servers") view.innerHTML = await renderServers();
-    if (state.tab === "roles") view.innerHTML = await renderRoles();
     if (state.tab === "billing") view.innerHTML = await renderBilling();
     if (state.tab === "warps") view.innerHTML = await renderWarps();
     if (state.tab === "links") view.innerHTML = await renderLinks();
@@ -4363,12 +4378,13 @@ async function renderKits() {
 async function renderKeys() {
   const data = await api("/keys");
   const permKeys = Object.keys(data.defaults || {});
+  const saas = Boolean(state.session?.saas);
   const created = state.lastCreatedKey
-    ? `<div class="card" style="margin-bottom:1rem;border-color:#555">
-        <h3>New key created — copy now</h3>
-        <p class="muted" style="font-family:var(--mono);font-size:.75rem;margin:0 0 .5rem">Shown once. Give this to staff.</p>
-        <code style="display:block;word-break:break-all;font-family:var(--mono);font-size:.85rem;padding:.75rem;background:#0a0a0a;border:1px solid var(--line)">${esc(state.lastCreatedKey.secret)}</code>
-        <p style="margin:.6rem 0 0;font-family:var(--mono);font-size:.75rem">Label: <strong>${esc(state.lastCreatedKey.key.label)}</strong></p>
+    ? `<div class="card" style="margin-bottom:1rem;border-color:var(--line2)">
+        <h3>Copy this key now</h3>
+        <p class="muted" style="margin:0 0 .5rem">Shown once. Send it to your staff — they sign in on this panel with it.</p>
+        <code style="display:block;word-break:break-all;font-family:var(--mono);font-size:.85rem;padding:.75rem;background:var(--panel2,#0a0a0a);border:1px solid var(--line)">${esc(state.lastCreatedKey.secret)}</code>
+        <p style="margin:.6rem 0 0" class="muted">Label: <strong>${esc(state.lastCreatedKey.key.label)}</strong></p>
       </div>`
     : "";
 
@@ -4382,7 +4398,7 @@ async function renderKeys() {
         <button data-action="toggleKey" data-id="${esc(k.id)}" data-on="${k.enabled ? "0" : "1"}">${k.enabled ? "Disable" : "Enable"}</button>
         <button class="danger" data-action="revokeKey" data-id="${esc(k.id)}">Revoke</button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="5" class="muted">No staff keys yet</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="5" class="muted">No staff keys yet — create one on the right.</td></tr>`;
 
   const permissionGroups = {
     "Server Access": ["overview", "rcon"],
@@ -4393,13 +4409,13 @@ async function renderKeys() {
   };
 
   const checks = Object.entries(permissionGroups).map(([groupName, perms]) => `
-    <div style="margin-bottom:1.5rem">
-      <div style="font-family:var(--mono);font-size:.65rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(215,221,230,.5);margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid rgba(255,255,255,.04)">${groupName}</div>
-      <div style="display:grid;gap:.6rem">
+    <div style="margin-bottom:1.25rem">
+      <div class="muted" style="font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.55rem">${groupName}</div>
+      <div style="display:grid;gap:.45rem">
         ${perms.filter(p => permKeys.includes(p)).map(p => `
-          <label style="display:flex;gap:.6rem;align-items:center;padding:.5rem .65rem;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);cursor:pointer;transition:all .15s ease" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='rgba(255,255,255,.02)'">
-            <input type="checkbox" data-perm-check="${esc(p)}" ${data.defaults[p] ? "checked" : ""} style="cursor:pointer;width:16px;height:16px" />
-            <span style="font-family:var(--mono);font-size:.75rem;color:rgba(215,221,230,.85);flex:1">${esc(p)}</span>
+          <label style="display:flex;gap:.55rem;align-items:center;cursor:pointer">
+            <input type="checkbox" data-perm-check="${esc(p)}" ${data.defaults[p] ? "checked" : ""} />
+            <span style="font-size:.8rem">${esc(p)}</span>
           </label>
         `).join("")}
       </div>
@@ -4408,19 +4424,25 @@ async function renderKeys() {
 
   return `
     ${created}
+    <div class="card" style="margin-bottom:1rem">
+      <h3>Staff keys</h3>
+      <p class="muted" style="margin:0">
+        ${saas
+          ? "Create a key per person. They open this same panel URL and sign in under <strong>Staff → Access key</strong>. Revoke the key to cut access. Keys never get billing or key-management."
+          : "Keys for moderators and staff. They can never manage keys or view audit logs."}
+      </p>
+    </div>
     <div class="split">
       <div class="card">
-        <h3>Staff Access Keys</h3>
-        <p class="muted" style="font-family:var(--mono);font-size:.74rem;margin:0 0 1rem">Keys for moderators and staff. They can never manage keys or view audit logs.</p>
-        <table class="table"><thead><tr><th>Label</th><th></th><th>Permissions</th><th>Last Used</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+        <h3>Active keys</h3>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Label</th><th></th><th>Permissions</th><th>Last used</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       </div>
       <div class="card">
-        <h3>Create New Key</h3>
-        <p class="muted" style="font-family:var(--mono);font-size:.74rem;margin:0 0 1.25rem">Select permissions and generate an access key for a staff member.</p>
-        <input id="keyLabel" placeholder="Label (e.g. Moderator - John)" style="margin-bottom:1.5rem" />
-        <div style="max-height:480px;overflow-y:auto;padding:.5rem">${checks}</div>
-        <button class="primary" style="margin-top:1.25rem;width:100%;padding:.8rem;font-size:.85rem" data-action="createKey">🔑 Generate Access Key</button>
-        <p class="hint" style="margin-top:1rem;text-align:center">Owner password always has full access</p>
+        <h3>Create key</h3>
+        <p class="muted" style="margin:0 0 1rem">Pick what they can do, then generate once.</p>
+        <input id="keyLabel" placeholder="Label (e.g. Mod — Alex)" style="margin-bottom:1rem" />
+        <div style="max-height:420px;overflow-y:auto">${checks}</div>
+        <button class="primary" style="margin-top:1rem;width:100%" data-action="createKey">Generate access key</button>
       </div>
     </div>`;
 }
@@ -4773,9 +4795,9 @@ async function saasFetch(path, opts = {}) {
 
 
 async function renderServers() {
-  if (!state.session?.saas) return saasDisabledCard("Servers");
+  if (!state.session?.saas) return saasDisabledCard("Setup");
   if (!can("servers")) {
-    return `<div class="card"><p class="muted">Only the org owner can add servers.</p></div>`;
+    return `<div class="card"><p class="muted">Only the workspace owner can manage Discord and servers.</p></div>`;
   }
   let servers = [];
   try {
@@ -4792,7 +4814,7 @@ async function renderServers() {
         <button data-action="saasDefaultServer" data-id="${esc(s.id)}">Default</button>
         <button class="danger" data-action="saasDeleteServer" data-id="${esc(s.id)}">Remove</button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="3" class="muted">No servers yet — add your first Nitrado WebRCON below.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="3" class="muted">None yet — add WebRCON below.</td></tr>`;
 
   const org = state.session.org || {};
   const inviteUrl =
@@ -4800,111 +4822,71 @@ async function renderServers() {
     state.session.botInviteUrlSimple ||
     "#";
   const guildLinked = Boolean(org.guildId);
+  const hasServer = servers.length > 0;
+  const step = (n, title, done, body) => `
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-head" style="align-items:center;gap:.65rem">
+        <span class="pill ${done ? "ok" : "info"}" style="min-width:2rem;justify-content:center">${done ? "✓" : n}</span>
+        <h3 style="margin:0;flex:1">${title}</h3>
+        ${done ? `<span class="muted" style="font-size:.75rem">Done</span>` : ""}
+      </div>
+      ${body}
+    </div>`;
+
   return `
     <div class="card" style="margin-bottom:1rem">
-      <h3>${esc(org.name || "Workspace")}</h3>
-      <p class="muted">Plan: <strong>${esc(org.plan || "basic")}</strong> · status <strong>${esc(org.planStatus || "—")}</strong>
-      ${guildLinked ? ` · Discord guild linked (<code>${esc(org.guildId)}</code>)` : " · Discord not linked yet"}</p>
-      ${!guildLinked ? `
-        <div style="margin-top:.9rem;display:grid;gap:.65rem">
-          <p class="muted" style="margin:0">Invite the Usely bot to your Discord, then link the guild. You need <strong>Manage Server</strong> on that Discord.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center">
-            <a class="primary" href="${esc(inviteUrl)}" target="_blank" rel="noopener"
-              style="display:inline-flex;align-items:center;justify-content:center;padding:.65rem 1rem;border-radius:var(--radius,4px);background:var(--acc,#2dd4bf);color:#041016;font-weight:600;text-decoration:none">
-              Invite Discord bot
-            </a>
-            <span class="muted" style="font-size:.8rem">Opens Discord — pick your server and authorize</span>
-          </div>
-          <div class="form-row" style="margin-top:.25rem;grid-template-columns:1fr auto;gap:.5rem">
-            <input id="saasGuildId" placeholder="Discord guild ID (if auto-link didn’t run)" />
-            <button class="primary" data-action="saasLinkGuild">Link guild</button>
-          </div>
-          <p class="muted" style="margin:0;font-size:.75rem">Guild ID: Discord → Server Settings → Widget → Server ID, or right-click the server with Developer Mode on.</p>
-        </div>` : `
-        <p class="muted" style="margin-top:.75rem">
-          <a href="${esc(inviteUrl)}" target="_blank" rel="noopener" style="color:var(--acc,#2dd4bf)">Re-invite bot</a>
-          if permissions were updated or the bot was kicked.
-        </p>`}
+      <h3>${esc(org.name || "Your workspace")}</h3>
+      <p class="muted" style="margin:0">Plan <strong>${esc(org.plan || "basic")}</strong> · ${esc(org.planStatus || "—")}. Finish the steps below, then hand staff keys from the <strong>Staff keys</strong> tab.</p>
     </div>
-    <div class="card" style="margin-bottom:1rem">
-      <h3>Connected servers</h3>
-      <div class="table-wrap"><table>
+    ${step(1, "Link Discord", guildLinked, guildLinked ? `
+      <p class="muted" style="margin:.65rem 0 0">Guild <code>${esc(org.guildId)}</code> is linked. The bot runs kill feeds, population channels, and slash commands.</p>
+      <p class="muted" style="margin:.5rem 0 0">
+        <a href="${esc(inviteUrl)}" target="_blank" rel="noopener" style="color:var(--chrome)">Re-invite bot</a>
+        if it was kicked or permissions changed.
+      </p>` : `
+      <p class="muted" style="margin:.65rem 0">Invite the Usely bot (you need <strong>Manage Server</strong>), then paste the guild ID if it doesn’t auto-link.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.75rem">
+        <a class="primary" href="${esc(inviteUrl)}" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;justify-content:center;padding:.65rem 1rem;text-decoration:none">
+          Invite Discord bot
+        </a>
+      </div>
+      <div class="form-row" style="grid-template-columns:1fr auto;gap:.5rem">
+        <input id="saasGuildId" placeholder="Discord guild ID" />
+        <button class="primary" data-action="saasLinkGuild">Link guild</button>
+      </div>
+      <p class="muted" style="margin:.55rem 0 0;font-size:.75rem">Guild ID: Server Settings → Widget, or right-click the server with Developer Mode on.</p>`)}
+    ${step(2, "Connect WebRCON", hasServer, `
+      <p class="muted" style="margin:.65rem 0">From Nitrado → Settings → WebRCON. Host is the IP only; port is the RCON port (not the game port).</p>
+      <div class="table-wrap" style="margin-bottom:.85rem"><table>
         <thead><tr><th>Server</th><th>Status</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>
-    </div>
-    <div class="card">
-      <h3>Add server</h3>
-      <p class="muted">From Nitrado → Settings → WebRCON. Host is IP only; port is the RCON port.</p>
-      <div class="form-row" style="grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.75rem">
+      <div class="form-row" style="grid-template-columns:1fr 1fr;gap:.6rem">
         <input id="saasSrvName" placeholder="Display name (e.g. Main)" />
         <input id="saasSrvHost" placeholder="RCON host" />
         <input id="saasSrvPort" placeholder="RCON port" />
         <input id="saasSrvPass" type="password" placeholder="RCON password" />
       </div>
       <button class="primary" style="margin-top:.75rem" data-action="saasAddServer">Add server</button>
-    </div>`;
-}
-
-
-async function renderRoleMaps() {
-  if (!state.session?.saas) return saasDisabledCard("Staff roles");
-  if (!can("keys") && state.session.role !== "owner") {
-    return `<div class="card"><p class="muted">Missing permission to edit role maps.</p></div>`;
-  }
-  let maps = [];
-  let defaults = state.session.staffPermissionDefaults || {};
-  try {
-    const data = await saasFetch("/role-maps");
-    maps = data.maps || [];
-  } catch (e) {
-    return `<div class="card"><p class="muted">${esc(e.message)}</p></div>`;
-  }
-  const permKeys = Object.keys(defaults);
-  const rows = maps.map((m) => `
-    <tr>
-      <td><strong>${esc(m.label || m.discord_role_id)}</strong><div class="muted">${esc(m.discord_role_id)}</div></td>
-      <td class="muted" style="font-size:.7rem">${Object.entries(m.permissions || {}).filter(([,v])=>v).map(([p])=>p).join(", ") || "none"}</td>
-      <td class="actions"><button class="danger" data-action="saasDeleteRole" data-id="${esc(m.discord_role_id)}">Remove</button></td>
-    </tr>`).join("") || `<tr><td colspan="3" class="muted">No role maps yet</td></tr>`;
-
-  const checks = permKeys.map((p) => `
-    <label style="display:flex;gap:.4rem;align-items:center;font-size:.8rem">
-      <input type="checkbox" data-saas-perm="${esc(p)}" ${defaults[p] ? "checked" : ""} /> ${esc(p)}
-    </label>`).join("");
-
-  return `
-    <div class="card" style="margin-bottom:1rem">
-      <h3>Discord role → permissions</h3>
-      <p class="muted">Anyone with a mapped role in your linked Discord can log in with Discord and use the panel.</p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Role</th><th>Permissions</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>
-    </div>
-    <div class="card">
-      <h3>Add / update map</h3>
-      <div class="form-row" style="grid-template-columns:1fr 1fr;gap:.6rem">
-        <input id="saasRoleId" placeholder="Discord role ID" />
-        <input id="saasRoleLabel" placeholder="Label (e.g. Mod)" />
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(9rem,1fr));gap:.35rem;margin-top:.75rem">${checks}</div>
-      <button class="primary" style="margin-top:.75rem" data-action="saasSaveRole">Save role map</button>
-    </div>`;
+    `)}
+    ${step(3, "Staff access", true, `
+      <p class="muted" style="margin:.65rem 0 0">Staff don’t use Discord login. Open the <strong>Staff keys</strong> tab, create a key, and send it to them. They sign in on this panel URL with that key.</p>
+    `)}`;
 }
 
 
 async function renderBilling() {
   if (!state.session?.saas) return saasDisabledCard("Billing");
   if (!can("billing")) {
-    return `<div class="card"><p class="muted">Only the org owner can manage billing.</p></div>`;
+    return `<div class="card"><p class="muted">Only the workspace owner can manage billing.</p></div>`;
   }
   const org = state.session.org || {};
   return `
     <div class="card">
-      <h3>Plan</h3>
+      <h3>Plan &amp; billing</h3>
       <p class="muted">Current: <strong>${esc(org.plan || "basic")}</strong> · <strong>${esc(org.planStatus || "inactive")}</strong></p>
-      <p class="muted">Basic $20 / 1 server · Pro $49 / 5 · Network $99 / 15 — <a href="/pricing" style="color:var(--acc,#2dd4bf)">pricing page</a></p>
+      <p class="muted">Basic $20 / 1 server · Pro $49 / 5 · Network $99 / 15 — <a href="/pricing" style="color:var(--chrome)">pricing</a></p>
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem">
         <button class="primary" data-action="saasCheckout" data-plan="basic">Checkout Basic</button>
         <button class="primary" data-action="saasCheckout" data-plan="pro">Checkout Pro</button>
@@ -4912,11 +4894,6 @@ async function renderBilling() {
         <button data-action="saasPortal">Manage subscription</button>
       </div>
     </div>`;
-}
-
-
-async function renderRoles() {
-  return renderRoleMaps();
 }
 
 async function renderAnalytics() {
@@ -6183,29 +6160,6 @@ function bindView() {
           location.reload();
           return;
         }
-        if (a === "saasSaveRole") {
-          const discordRoleId = document.getElementById("saasRoleId")?.value?.trim();
-          const label = document.getElementById("saasRoleLabel")?.value?.trim();
-          if (!discordRoleId) { toast("Discord role ID required", true); return; }
-          const permissions = {};
-          document.querySelectorAll("[data-saas-perm]").forEach((box) => {
-            permissions[box.dataset.saasPerm] = box.checked;
-          });
-          await saasFetch("/role-maps", {
-            method: "PUT",
-            body: { discordRoleId, label, permissions },
-          });
-          toast("Role map saved");
-          render();
-          return;
-        }
-        if (a === "saasDeleteRole") {
-          if (!confirm("Remove this role map?")) return;
-          await saasFetch(`/role-maps/${encodeURIComponent(el.dataset.id)}`, { method: "DELETE" });
-          toast("Role map removed");
-          render();
-          return;
-        }
         if (a === "saasCheckout") {
           const plan = el.dataset.plan || "basic";
           const data = await saasFetch("/billing/checkout", { method: "POST", body: { plan } });
@@ -6353,6 +6307,23 @@ document.getElementById("saasEmailLoginBtn")?.addEventListener("click", async ()
 });
 document.getElementById("saasPassword")?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") document.getElementById("saasEmailLoginBtn")?.click();
+});
+document.getElementById("saasKeyLoginBtn")?.addEventListener("click", async () => {
+  const errorEl = document.getElementById("loginError");
+  errorEl.classList.add("hidden");
+  try {
+    await api("/login", {
+      method: "POST",
+      body: { password: document.getElementById("saasStaffKey")?.value || "" },
+    });
+    await boot();
+  } catch (e) {
+    errorEl.textContent = e.message || "Wrong access key";
+    errorEl.classList.remove("hidden");
+  }
+});
+document.getElementById("saasStaffKey")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("saasKeyLoginBtn")?.click();
 });
 document.getElementById("orgSelect")?.addEventListener("change", () => switchSaasContext());
 document.getElementById("serverSelect")?.addEventListener("change", () => switchSaasContext());

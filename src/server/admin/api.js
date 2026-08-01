@@ -262,14 +262,6 @@ export async function attachAdminPanel(app, client) {
   app.get("/demo/", (_req, res) => res.redirect(302, "/demo"));
 
   app.post("/admin/api/login", async (req, res) => {
-    if (config.saas.enabled) {
-      return res.status(400).json({
-        ok: false,
-        error: "Use Discord login",
-        saas: true,
-        loginUrl: "/admin/auth/discord",
-      });
-    }
     const ip = clientIp(req);
     const rate = checkLoginRate(ip);
     if (!rate.ok) {
@@ -281,6 +273,39 @@ export async function attachAdminPanel(app, client) {
     }
 
     const password = String(req.body?.password ?? "");
+
+    if (config.saas.enabled) {
+      const org = req.orgFromHost || null;
+      if (!org) {
+        return res.status(400).json({
+          ok: false,
+          error: "Open your workspace panel (yourslug.usely.dev) to sign in with a staff key. Owners use email on the login form.",
+          saas: true,
+        });
+      }
+      const { authenticateOrgAccessKey } = await import("../../saas/db/org-keys.js");
+      const { setSaasSessionCookie } = await import("../../saas/auth/discord-session.js");
+      const session = await authenticateOrgAccessKey(org.id, password);
+      if (!session) {
+        recordLoginFailure(ip);
+        return res.status(401).json({ ok: false, error: "Wrong access key", saas: true });
+      }
+      clearLoginFailures(ip);
+      setSaasSessionCookie(res, {
+        keyId: session.keyId,
+        orgId: session.orgId,
+        label: session.label,
+        permissions: session.permissions,
+      });
+      return res.json({
+        ok: true,
+        role: session.role,
+        label: session.label,
+        permissions: session.permissions,
+        saas: true,
+      });
+    }
+
     const session = await authenticateAccessKey(password);
     if (!session) {
       recordLoginFailure(ip);
@@ -1438,19 +1463,44 @@ export async function attachAdminPanel(app, client) {
     }
   });
 
-  // ——— Owner-only: access keys ———
-  app.get("/admin/api/keys", requireAuth, requirePerm("keys"), async (_req, res) => {
+  // ——— Owner-only: access keys (org-scoped in SaaS) ———
+  app.get("/admin/api/keys", requireAuth, requirePerm("keys"), async (req, res) => {
+    if (config.saas.enabled) {
+      if (!req.session?.orgId) return res.status(400).json({ ok: false, error: "No workspace" });
+      const { listOrgAccessKeys } = await import("../../saas/db/org-keys.js");
+      return res.json({
+        ok: true,
+        keys: await listOrgAccessKeys(req.session.orgId),
+        defaults: STAFF_PERMISSIONS,
+        orgScoped: true,
+      });
+    }
     res.json({ ok: true, keys: await listAccessKeys(), defaults: STAFF_PERMISSIONS });
   });
 
   app.post("/admin/api/keys", requireAuth, requirePerm("keys"), async (req, res) => {
     const { label, permissions } = req.body ?? {};
+    if (config.saas.enabled) {
+      if (!req.session?.orgId) return res.status(400).json({ ok: false, error: "No workspace" });
+      const { createOrgAccessKey } = await import("../../saas/db/org-keys.js");
+      const created = await createOrgAccessKey(req.session.orgId, { label, permissions });
+      await audit(req, "key_create", { label: created.key.label, id: created.key.id });
+      return res.status(201).json({ ok: true, ...created });
+    }
     const created = await createAccessKey({ label, permissions });
     await audit(req, "key_create", { label: created.key.label, id: created.key.id });
     res.status(201).json({ ok: true, ...created });
   });
 
   app.patch("/admin/api/keys/:id", requireAuth, requirePerm("keys"), async (req, res) => {
+    if (config.saas.enabled) {
+      if (!req.session?.orgId) return res.status(400).json({ ok: false, error: "No workspace" });
+      const { updateOrgAccessKey } = await import("../../saas/db/org-keys.js");
+      const key = await updateOrgAccessKey(req.session.orgId, req.params.id, req.body ?? {});
+      if (!key) return res.status(404).json({ ok: false, error: "Key not found" });
+      await audit(req, "key_update", { id: key.id, enabled: key.enabled });
+      return res.json({ ok: true, key });
+    }
     const key = await updateAccessKey(req.params.id, req.body ?? {});
     if (!key) return res.status(404).json({ ok: false, error: "Key not found" });
     await audit(req, "key_update", { id: key.id, enabled: key.enabled });
@@ -1458,6 +1508,14 @@ export async function attachAdminPanel(app, client) {
   });
 
   app.delete("/admin/api/keys/:id", requireAuth, requirePerm("keys"), async (req, res) => {
+    if (config.saas.enabled) {
+      if (!req.session?.orgId) return res.status(400).json({ ok: false, error: "No workspace" });
+      const { revokeOrgAccessKey } = await import("../../saas/db/org-keys.js");
+      const ok = await revokeOrgAccessKey(req.session.orgId, req.params.id);
+      if (!ok) return res.status(404).json({ ok: false, error: "Key not found" });
+      await audit(req, "key_revoke", { id: req.params.id });
+      return res.json({ ok: true });
+    }
     const ok = await revokeAccessKey(req.params.id);
     if (!ok) return res.status(404).json({ ok: false, error: "Key not found" });
     await audit(req, "key_revoke", { id: req.params.id });

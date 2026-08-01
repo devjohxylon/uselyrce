@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { config } from "../../config.js";
-import { STAFF_PERMISSIONS, hasPerm } from "../../modules/admin/access-keys.js";
+import { STAFF_PERMISSIONS } from "../../modules/admin/access-keys.js";
 import {
   attachSaasServer,
   detachSaasServer,
@@ -27,11 +27,6 @@ import {
   listServers,
   updateServer,
 } from "../db/servers.js";
-import {
-  deleteRoleMap,
-  listRoleMaps,
-  upsertRoleMap,
-} from "../db/roles.js";
 import { PLAN_LIMITS, PLAN_PRICES_USD, maxServersForPlan } from "../billing/plans.js";
 import {
   createCheckoutSession,
@@ -195,11 +190,19 @@ export function attachSaasRoutes(app, client) {
 
   app.post("/admin/api/saas/context", async (req, res) => {
     const cookie = readSaasCookie(req);
-    if (!cookie?.discordUserId && !cookie?.accountId) {
+    if (!cookie?.discordUserId && !cookie?.accountId && !cookie?.keyId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
     const orgId = req.body?.orgId || cookie.orgId;
     const serverId = req.body?.serverId || cookie.serverId || null;
+
+    if (cookie.keyId) {
+      if (orgId && cookie.orgId && orgId !== cookie.orgId) {
+        return res.status(403).json({ error: "No access to org" });
+      }
+      setSaasSessionCookie(res, { ...cookie, orgId: cookie.orgId, serverId });
+      return res.json({ ok: true, orgId: cookie.orgId, serverId });
+    }
 
     if (orgId) {
       const accessible = await listAccessibleOrgsForCookie(client, cookie);
@@ -349,37 +352,13 @@ export function attachSaasRoutes(app, client) {
     res.json({ ok: true, org });
   });
 
-  app.get("/admin/api/saas/role-maps", async (req, res) => {
-    const session = await resolveSaasSession(req, client);
-    if (!session?.orgId) return res.status(401).json({ error: "Unauthorized" });
-    if (!hasPerm(session, "keys") && session.role !== "owner") {
-      return res.status(403).json({ error: "Missing permission" });
-    }
-    const maps = await listRoleMaps(session.orgId);
-    res.json({ ok: true, maps });
-  });
-
-  app.put("/admin/api/saas/role-maps", async (req, res) => {
-    const session = await resolveSaasSession(req, client);
-    if (!session?.orgId || (!hasPerm(session, "keys") && session.role !== "owner")) {
-      return res.status(403).json({ error: "Missing permission" });
-    }
-    const map = await upsertRoleMap(session.orgId, {
-      discordRoleId: req.body?.discordRoleId,
-      label: req.body?.label,
-      permissions: req.body?.permissions,
+  const roleMapsGone = (_req, res) => {
+    res.status(410).json({
+      error: "Discord role maps were removed. Create staff access keys under Workspace → Staff keys.",
     });
-    res.json({ ok: true, map });
-  });
-
-  app.delete("/admin/api/saas/role-maps/:roleId", async (req, res) => {
-    const session = await resolveSaasSession(req, client);
-    if (!session?.orgId || (!hasPerm(session, "keys") && session.role !== "owner")) {
-      return res.status(403).json({ error: "Missing permission" });
-    }
-    await deleteRoleMap(session.orgId, req.params.roleId);
-    res.json({ ok: true });
-  });
+  };
+  app.all("/admin/api/saas/role-maps", roleMapsGone);
+  app.all("/admin/api/saas/role-maps/:roleId", roleMapsGone);
 
   app.post("/admin/api/saas/billing/checkout", async (req, res) => {
     const session = await resolveSaasSession(req, client);
