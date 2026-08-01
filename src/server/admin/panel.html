@@ -4465,18 +4465,6 @@ async function renderKits() {
 }
 
 async function renderKeys() {
-  const data = await api("/keys");
-  const permKeys = Object.keys(data.defaults || {});
-  const saas = Boolean(state.session?.saas);
-  const created = state.lastCreatedKey
-    ? `<div class="card" style="border-color:rgba(94,217,160,.35)">
-        <h3>Copy this key now</h3>
-        <p class="muted" style="margin:0 0 .65rem">Shown once. Send it to your staff — they sign in on this panel with it.</p>
-        <code style="display:block;word-break:break-all;font-family:var(--mono);font-size:.85rem;padding:.85rem;background:rgba(0,0,0,.45);border:1px solid var(--line)">${esc(state.lastCreatedKey.secret)}</code>
-        <p class="muted" style="margin:.65rem 0 0">Label: <strong>${esc(state.lastCreatedKey.key.label)}</strong></p>
-      </div>`
-    : "";
-
   const PERM_LABELS = {
     overview: "Home",
     rcon: "RCON",
@@ -4495,22 +4483,24 @@ async function renderKeys() {
     reports: "Reports",
     schedule: "Schedules",
   };
-
-  const rows = data.keys.map((k) => {
-    const on = Object.entries(k.permissions || {}).filter(([, v]) => v).map(([p]) => PERM_LABELS[p] || p);
-    return `
-    <tr>
-      <td data-label="Label"><strong>${esc(k.label)}</strong><div class="muted">${esc(k.id)}</div></td>
-      <td data-label="Status">${k.enabled ? `<span class="pill ok">ON</span>` : `<span class="pill bad">OFF</span>`}</td>
-      <td data-label="Permissions" class="muted" style="font-size:.74rem">${on.length ? esc(on.join(" · ")) : "none"}</td>
-      <td data-label="Last used">${k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleString() : "never"}</td>
-      <td data-label="" class="actions">
-        <button type="button" data-action="toggleKey" data-id="${esc(k.id)}" data-on="${k.enabled ? "0" : "1"}">${k.enabled ? "Disable" : "Enable"}</button>
-        <button type="button" class="danger" data-action="revokeKey" data-id="${esc(k.id)}">Revoke</button>
-      </td>
-    </tr>`;
-  }).join("") || `<tr><td colspan="5" class="muted">No staff keys yet.</td></tr>`;
-
+  const FALLBACK_DEFAULTS = {
+    overview: true,
+    rcon: false,
+    players: true,
+    kick: true,
+    ban: false,
+    teleport: true,
+    broadcast: true,
+    automessages: true,
+    stats: true,
+    statsReset: false,
+    warps: true,
+    links: true,
+    kits: false,
+    serverCommands: true,
+    reports: true,
+    schedule: false,
+  };
   const permissionGroups = [
     ["Access", ["overview", "rcon"]],
     ["Players", ["players", "kick", "ban", "teleport"]],
@@ -4518,20 +4508,59 @@ async function renderKeys() {
     ["Monitoring", ["reports", "schedule"]],
   ];
 
-  const chips = permissionGroups.map(([groupName, perms]) => {
-    const list = perms.filter((p) => permKeys.includes(p));
-    if (!list.length) return "";
+  let data = { keys: [], defaults: null };
+  try {
+    data = await api("/keys");
+  } catch (e) {
+    // Still show the create form — permissions don't depend on the list API.
+    toast(e.message || "Could not load keys", true);
+  }
+
+  const saas = Boolean(state.session?.saas);
+  const defaults = {
+    ...FALLBACK_DEFAULTS,
+    ...(state.session?.staffPermissionDefaults || {}),
+    ...(data.defaults || {}),
+  };
+  const keys = Array.isArray(data.keys) ? data.keys.filter(Boolean) : [];
+
+  const secret = state.lastCreatedKey?.secret;
+  const createdLabel = state.lastCreatedKey?.key?.label || state.lastCreatedKey?.label || "Staff";
+  if (state.lastCreatedKey && !secret) state.lastCreatedKey = null;
+  const created = secret
+    ? `<div class="card" style="border-color:rgba(94,217,160,.35)">
+        <h3>Copy this key now</h3>
+        <p class="muted" style="margin:0 0 .65rem">Shown once. Send it to your staff — they sign in on this panel with it.</p>
+        <code style="display:block;word-break:break-all;font-family:var(--mono);font-size:.85rem;padding:.85rem;background:rgba(0,0,0,.45);border:1px solid var(--line)">${esc(secret)}</code>
+        <p class="muted" style="margin:.65rem 0 0">Label: <strong>${esc(createdLabel)}</strong></p>
+      </div>`
+    : "";
+
+  const rows = keys.map((k) => {
+    const on = Object.entries(k.permissions || {}).filter(([, v]) => v).map(([p]) => PERM_LABELS[p] || p);
     return `
+    <tr>
+      <td data-label="Label"><strong>${esc(k.label || "Staff")}</strong><div class="muted">${esc(k.id || "")}</div></td>
+      <td data-label="Status">${k.enabled !== false ? `<span class="pill ok">ON</span>` : `<span class="pill bad">OFF</span>`}</td>
+      <td data-label="Permissions" class="muted" style="font-size:.74rem">${on.length ? esc(on.join(" · ")) : "none"}</td>
+      <td data-label="Last used">${k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleString() : "never"}</td>
+      <td data-label="" class="actions">
+        <button type="button" data-action="toggleKey" data-id="${esc(k.id)}" data-on="${k.enabled !== false ? "0" : "1"}">${k.enabled !== false ? "Disable" : "Enable"}</button>
+        <button type="button" class="danger" data-action="revokeKey" data-id="${esc(k.id)}">Revoke</button>
+      </td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="5" class="muted">No staff keys yet.</td></tr>`;
+
+  const chips = permissionGroups.map(([groupName, perms]) => `
       <div>
         <div class="perm-group-label">${esc(groupName)}</div>
         <div class="perm-chips">
-          ${list.map((p) => {
-            const on = Boolean(data.defaults[p]);
+          ${perms.map((p) => {
+            const on = Boolean(defaults[p]);
             return `<button type="button" class="perm-chip${on ? " on" : ""}" data-action="togglePerm" data-perm="${esc(p)}" aria-pressed="${on ? "true" : "false"}">${esc(PERM_LABELS[p] || p)}</button>`;
           }).join("")}
         </div>
-      </div>`;
-  }).join("");
+      </div>`).join("");
 
   return `
     ${created}
@@ -6079,16 +6108,21 @@ function bindView() {
         if (a === "delJob") { await api(`/schedule/${el.dataset.id}`, { method: "DELETE" }); render(); }
         if (a === "createKey") {
           const permissions = {};
-          document.querySelectorAll("[data-perm][data-action='togglePerm']").forEach((btn) => {
+          document.querySelectorAll("#keyPermGrid [data-perm]").forEach((btn) => {
             permissions[btn.dataset.perm] = btn.getAttribute("aria-pressed") === "true";
           });
           const r = await api("/keys", {
             method: "POST",
-            body: { label: document.getElementById("keyLabel").value, permissions },
+            body: { label: document.getElementById("keyLabel")?.value || "", permissions },
           });
-          state.lastCreatedKey = r;
+          if (!r?.secret || !r?.key) {
+            toast(r?.error || "Key created but the secret was missing — try again", true);
+            return;
+          }
+          state.lastCreatedKey = { key: r.key, secret: r.secret };
           toast("Staff key created — copy it now");
           render();
+          return;
         }
         if (a === "togglePerm") {
           const on = el.getAttribute("aria-pressed") === "true";

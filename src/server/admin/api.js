@@ -1479,17 +1479,28 @@ export async function attachAdminPanel(app, client) {
   });
 
   app.post("/admin/api/keys", requireAuth, requirePerm("keys"), async (req, res) => {
-    const { label, permissions } = req.body ?? {};
-    if (config.saas.enabled) {
-      if (!req.session?.orgId) return res.status(400).json({ ok: false, error: "No workspace" });
-      const { createOrgAccessKey } = await import("../../saas/db/org-keys.js");
-      const created = await createOrgAccessKey(req.session.orgId, { label, permissions });
+    try {
+      const { label, permissions } = req.body ?? {};
+      if (config.saas.enabled) {
+        if (!req.session?.orgId) return res.status(400).json({ ok: false, error: "No workspace" });
+        const { createOrgAccessKey } = await import("../../saas/db/org-keys.js");
+        const created = await createOrgAccessKey(req.session.orgId, { label, permissions });
+        if (!created?.key || !created?.secret) {
+          return res.status(500).json({ ok: false, error: "Failed to create key" });
+        }
+        await audit(req, "key_create", { label: created.key.label, id: created.key.id });
+        return res.status(201).json({ ok: true, key: created.key, secret: created.secret });
+      }
+      const created = await createAccessKey({ label, permissions });
+      if (!created?.key || !created?.secret) {
+        return res.status(500).json({ ok: false, error: "Failed to create key" });
+      }
       await audit(req, "key_create", { label: created.key.label, id: created.key.id });
-      return res.status(201).json({ ok: true, ...created });
+      return res.status(201).json({ ok: true, key: created.key, secret: created.secret });
+    } catch (error) {
+      console.error("Create access key failed:", error);
+      return res.status(500).json({ ok: false, error: error.message || "Failed to create key" });
     }
-    const created = await createAccessKey({ label, permissions });
-    await audit(req, "key_create", { label: created.key.label, id: created.key.id });
-    res.status(201).json({ ok: true, ...created });
   });
 
   app.patch("/admin/api/keys/:id", requireAuth, requirePerm("keys"), async (req, res) => {
