@@ -115,7 +115,7 @@ input[type="checkbox"], input[type="radio"] {
   gap: .4rem;
 }
 .perm-chip {
-  padding: .4rem .7rem !important;
+  padding: .45rem .75rem !important;
   font-size: .74rem !important;
   font-weight: 600;
   border-radius: 6px;
@@ -124,6 +124,22 @@ input[type="checkbox"], input[type="radio"] {
   color: var(--muted);
   transform: none !important;
   box-shadow: none !important;
+  text-align: left;
+  line-height: 1.25;
+  display: inline-flex !important;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 14rem;
+}
+.perm-chip small {
+  display: block;
+  font-size: .62rem;
+  font-weight: 500;
+  opacity: .72;
+  margin-top: .15rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: inherit;
 }
 .perm-chip:hover {
   border-color: rgba(215,221,230,.35);
@@ -159,10 +175,25 @@ input[type="checkbox"], input[type="radio"] {
 .ws-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: 1fr 1.15fr;
-  align-items: start;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
 }
+.ws-panel {
+  height: 100%;
+  margin-bottom: 0 !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+}
+.ws-panel:hover { transform: none; }
 .ws-panel .card-desc { margin-top: 0; }
+.ws-panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  min-height: 0;
+}
 .ws-status {
   display: inline-flex;
   align-items: center;
@@ -177,12 +208,13 @@ input[type="checkbox"], input[type="radio"] {
 .ws-status.ok .dot { background: var(--ok); }
 .ws-status.warn .dot { background: var(--warn); }
 .ws-add {
-  margin-top: 1rem;
+  margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid var(--line);
 }
 @media (max-width: 1000px) {
   .ws-grid { grid-template-columns: 1fr; }
+  .ws-panel { min-height: 0; }
 }
 input::placeholder, textarea::placeholder { color: var(--faint); }
 input:focus, textarea:focus, select:focus {
@@ -4465,23 +4497,24 @@ async function renderKits() {
 }
 
 async function renderKeys() {
-  const PERM_LABELS = {
-    overview: "Home",
-    rcon: "RCON",
-    players: "Players",
-    kick: "Kick",
-    ban: "Ban",
-    teleport: "Teleport",
-    broadcast: "Broadcast",
-    automessages: "Auto messages",
-    stats: "Stats",
-    statsReset: "Reset stats",
-    warps: "Warps",
-    links: "Links",
-    kits: "Kits",
-    serverCommands: "Actions",
-    reports: "Reports",
-    schedule: "Schedules",
+  // Labels describe what the staff can do — keys stay the API ids.
+  const PERM_META = {
+    overview: { label: "Dashboard", hint: "Home, map, status, wipe tools" },
+    players: { label: "Player list", hint: "Search and open player profiles" },
+    kick: { label: "Kick", hint: "Kick players from the server" },
+    ban: { label: "Ban", hint: "Ban and unban players" },
+    teleport: { label: "Teleport", hint: "Teleport players / force TP" },
+    broadcast: { label: "Broadcast", hint: "Send in-game server messages" },
+    rcon: { label: "Raw RCON", hint: "Run any console command" },
+    stats: { label: "Leaderboards", hint: "View wipe stats and lookups" },
+    statsReset: { label: "Wipe reset", hint: "Reset wipe stats / run wipe jobs" },
+    warps: { label: "Warps", hint: "Manage warps and teleports" },
+    links: { label: "Discord links", hint: "Link / unlink Discord ↔ IGN" },
+    kits: { label: "Edit kits", hint: "Create and edit panel kits" },
+    serverCommands: { label: "Kits, ranks & Discord", hint: "Give kits/ranks; Discord bot settings" },
+    automessages: { label: "Auto messages", hint: "Repeating in-game messages" },
+    schedule: { label: "Scheduled jobs", hint: "Timed RCON commands and events" },
+    reports: { label: "Combat reports", hint: "Kill log and trio alerts" },
   };
   const FALLBACK_DEFAULTS = {
     overview: true,
@@ -4502,10 +4535,9 @@ async function renderKeys() {
     schedule: false,
   };
   const permissionGroups = [
-    ["Access", ["overview", "rcon"]],
-    ["Players", ["players", "kick", "ban", "teleport"]],
-    ["Chat & tools", ["broadcast", "automessages", "stats", "statsReset", "warps", "links", "kits", "serverCommands"]],
-    ["Monitoring", ["reports", "schedule"]],
+    ["Moderation", ["players", "kick", "ban", "teleport"]],
+    ["Server", ["overview", "broadcast", "warps", "rcon"]],
+    ["Community", ["serverCommands", "kits", "links", "stats", "automessages", "schedule", "reports", "statsReset"]],
   ];
 
   let data = { keys: [], defaults: null };
@@ -4537,7 +4569,9 @@ async function renderKeys() {
     : "";
 
   const rows = keys.map((k) => {
-    const on = Object.entries(k.permissions || {}).filter(([, v]) => v).map(([p]) => PERM_LABELS[p] || p);
+    const on = Object.entries(k.permissions || {})
+      .filter(([, v]) => v)
+      .map(([p]) => PERM_META[p]?.label || p);
     return `
     <tr>
       <td data-label="Label"><strong>${esc(k.label || "Staff")}</strong><div class="muted">${esc(k.id || "")}</div></td>
@@ -4556,8 +4590,9 @@ async function renderKeys() {
         <div class="perm-group-label">${esc(groupName)}</div>
         <div class="perm-chips">
           ${perms.map((p) => {
+            const meta = PERM_META[p] || { label: p, hint: "" };
             const on = Boolean(defaults[p]);
-            return `<button type="button" class="perm-chip${on ? " on" : ""}" data-action="togglePerm" data-perm="${esc(p)}" aria-pressed="${on ? "true" : "false"}">${esc(PERM_LABELS[p] || p)}</button>`;
+            return `<button type="button" class="perm-chip${on ? " on" : ""}" data-action="togglePerm" data-perm="${esc(p)}" aria-pressed="${on ? "true" : "false"}" title="${esc(meta.hint)}">${esc(meta.label)}<small>${esc(meta.hint)}</small></button>`;
           }).join("")}
         </div>
       </div>`).join("");
@@ -4568,8 +4603,8 @@ async function renderKeys() {
       <h3>Create staff key</h3>
       <p class="card-desc">
         ${saas
-          ? "One key per person. They open this panel URL and sign in under Staff. Keys never get billing or key management."
-          : "Keys for moderators. They can never manage keys or view audit logs."}
+          ? "One key per person. Click permissions to turn them on (blue) or off. They sign in on this panel URL under Staff — never billing or key management."
+          : "Click permissions to turn them on or off. Staff keys can never manage keys or view audit logs."}
       </p>
       <label class="field" style="display:block;margin-bottom:1rem">
         <span style="display:block;margin-bottom:.35rem;font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">Label</span>
@@ -4974,28 +5009,31 @@ async function renderServers() {
           <h3 style="margin:0">Discord</h3>
           <span class="ws-status ${guildLinked ? "ok" : "warn"}"><span class="dot"></span>${guildLinked ? "Linked" : "Not linked"}</span>
         </div>
+        <div class="ws-panel-body">
         ${guildLinked ? `
           <p class="muted" style="margin:0">Guild <code>${esc(org.guildId)}</code>. Bot handles kill feeds, population, and slash commands.</p>
-          <p style="margin:.85rem 0 0">
+          <p style="margin:0">
             <a href="${esc(inviteUrl)}" target="_blank" rel="noopener" style="color:var(--chrome)">Re-invite bot</a>
             <span class="muted"> if it was kicked.</span>
           </p>
         ` : `
           <p class="card-desc">Invite the Usely bot (Manage Server required), then paste the guild ID if it doesn’t auto-link.</p>
           <a class="primary" href="${esc(inviteUrl)}" target="_blank" rel="noopener"
-            style="display:inline-flex;text-decoration:none;margin-bottom:.85rem">Invite Discord bot</a>
+            style="display:inline-flex;text-decoration:none">Invite Discord bot</a>
           <div class="form-row" style="grid-template-columns:1fr auto;gap:.5rem">
             <input id="saasGuildId" placeholder="Discord guild ID" />
             <button type="button" class="primary" data-action="saasLinkGuild">Link</button>
           </div>
-          <p class="muted" style="margin:.55rem 0 0;font-size:.75rem">Server Settings → Widget, or right-click the server with Developer Mode on.</p>
+          <p class="muted" style="margin:0;font-size:.75rem">Server Settings → Widget, or right-click the server with Developer Mode on.</p>
         `}
+        </div>
       </section>
       <section class="card ws-panel">
         <div class="card-head" style="margin-bottom:.85rem">
-          <h3 style="margin:0">Servers</h3>
+          <h3 style="margin:0">WebRCON</h3>
           <span class="ws-status ${servers.length ? "ok" : "warn"}"><span class="dot"></span>${servers.length ? `${servers.length} connected` : "None yet"}</span>
         </div>
+        <div class="ws-panel-body">
         <p class="card-desc">Nitrado → Settings → WebRCON. Host is IP only; port is the RCON port.</p>
         <div class="table-wrap"><table class="table">
           <thead><tr><th>Server</th><th>Status</th><th></th></tr></thead>
@@ -5009,6 +5047,7 @@ async function renderServers() {
             <input id="saasSrvPass" type="password" placeholder="RCON password" />
           </div>
           <button type="button" class="primary" style="margin-top:.75rem" data-action="saasAddServer">Add server</button>
+        </div>
         </div>
       </section>
     </div>`;
