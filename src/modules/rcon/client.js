@@ -45,7 +45,7 @@ const MOCK_PLAYERS = [
 
 function mockServerInfo() {
   return {
-    Hostname: "Astral Main [MOCK]",
+    Hostname: "Usely Main [MOCK]",
     Players: MOCK_PLAYERS.length,
     MaxPlayers: 100,
     Queued: 0,
