@@ -103,11 +103,28 @@ export function discordAuthorizeUrl(state) {
 
 export function botInviteUrl(orgId) {
   const clientId = config.discord.clientId;
+  if (!clientId) return "";
+  const redirect = `${String(config.saas.publicUrl || "").replace(/\/$/, "")}/admin/auth/bot-installed`;
+  const params = new URLSearchParams({
+    client_id: clientId,
+    // Administrator — tickets, channel rename, feeds, moderation need broad guild access.
+    permissions: "8",
+    scope: "bot applications.commands",
+    redirect_uri: redirect,
+    response_type: "code",
+    state: orgId || "",
+  });
+  return `https://discord.com/api/oauth2/authorize?${params}`;
+}
+
+/** Invite URL without redirect — works even before OAuth redirect is registered. */
+export function botInviteUrlSimple() {
+  const clientId = config.discord.clientId;
+  if (!clientId) return "";
   const params = new URLSearchParams({
     client_id: clientId,
     permissions: "8",
     scope: "bot applications.commands",
-    state: orgId || "",
   });
   return `https://discord.com/api/oauth2/authorize?${params}`;
 }

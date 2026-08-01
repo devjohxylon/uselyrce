@@ -112,6 +112,10 @@ import {
   attachSaasRoutes,
   resolvePanelSession,
 } from "../../saas/auth/routes.js";
+import {
+  botInviteUrl,
+  botInviteUrlSimple,
+} from "../../saas/auth/discord-session.js";
 import { runWithServer } from "../../modules/rcon/client.js";
 import { getAnalyticsSummary } from "../../modules/analytics/tracker.js";
 import {
@@ -354,6 +358,8 @@ export async function attachAdminPanel(app, client) {
         serverId: session.serverId,
         servers: session.servers || [],
         staffPermissionDefaults: STAFF_PERMISSIONS,
+        botInviteUrl: botInviteUrlSimple() || botInviteUrl(session.orgId),
+        botInviteUrlAutoLink: botInviteUrl(session.orgId),
       });
     }
     const session = await resolveSession(req);

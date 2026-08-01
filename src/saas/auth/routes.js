@@ -9,6 +9,7 @@ import {
 import { withCredentials, getServerRaw } from "../db/servers.js";
 import {
   botInviteUrl,
+  botInviteUrlSimple,
   clearSaasSessionCookie,
   discordAuthorizeUrl,
   exchangeDiscordCode,
@@ -66,8 +67,42 @@ export function attachSaasRoutes(app, client) {
       saas: true,
       plans: PLAN_LIMITS,
       prices: PLAN_PRICES_USD,
-      botInviteUrl: botInviteUrl(),
+      botInviteUrl: botInviteUrlSimple(),
     });
+  });
+
+  /** After Discord bot invite — auto-link guild when redirect_uri is registered. */
+  app.get("/admin/auth/bot-installed", async (req, res) => {
+    try {
+      const err = String(req.query.error || "");
+      if (err) {
+        return res.redirect(302, "/admin?bot=denied");
+      }
+      const guildId = String(req.query.guild_id || "").trim();
+      const orgId = String(req.query.state || "").trim();
+      const session = await resolveSaasSession(req, client);
+      if (!session?.orgId || session.role !== "owner") {
+        return res.redirect(302, "/admin?bot=login");
+      }
+      const targetOrg = orgId && orgId === session.orgId ? orgId : session.orgId;
+      if (guildId) {
+        // Guild join can lag the redirect by a beat — retry fetch briefly.
+        let guild = client.guilds.cache.get(guildId) || null;
+        for (let i = 0; i < 5 && !guild; i++) {
+          await new Promise((r) => setTimeout(r, 400));
+          guild = await client.guilds.fetch(guildId).catch(() => null);
+        }
+        if (!guild) {
+          return res.redirect(302, `/admin?bot=pending&guild=${encodeURIComponent(guildId)}`);
+        }
+        await setGuild(targetOrg, guildId);
+        return res.redirect(302, "/admin?bot=linked");
+      }
+      return res.redirect(302, "/admin?bot=ok");
+    } catch (error) {
+      console.error("Bot install callback failed:", error.message);
+      return res.redirect(302, "/admin?bot=error");
+    }
   });
 
   app.get("/admin/auth/discord", async (_req, res) => {

@@ -2109,6 +2109,20 @@ async function boot() {
   if (session.authed) {
     stopLoginScene();
     state.session = session;
+    const botStatus = new URLSearchParams(location.search).get("bot");
+    if (botStatus) {
+      const msgs = {
+        linked: "Discord bot linked to this workspace",
+        pending: "Bot invited — wait a few seconds, then paste the guild ID and Link guild",
+        denied: "Discord invite was cancelled",
+        login: "Sign in as the workspace owner to finish linking the bot",
+        error: "Could not finish bot linking — try Link guild with the guild ID",
+        ok: "Bot invite finished",
+      };
+      if (msgs[botStatus]) toast(msgs[botStatus], botStatus === "denied" || botStatus === "error");
+      if (botStatus === "linked" || botStatus === "pending") setTab("servers");
+      history.replaceState({}, "", location.pathname);
+    }
     if (window.USELY_DEMO) {
       const sub = document.getElementById("devBannerSub");
       if (sub) sub.textContent = "DEMO · mock data";
@@ -4773,16 +4787,36 @@ async function renderServers() {
     </tr>`).join("") || `<tr><td colspan="3" class="muted">No servers yet — add your first Nitrado WebRCON below.</td></tr>`;
 
   const org = state.session.org || {};
+  const inviteUrl =
+    state.session.botInviteUrl ||
+    state.session.botInviteUrlSimple ||
+    "#";
+  const guildLinked = Boolean(org.guildId);
   return `
     <div class="card" style="margin-bottom:1rem">
       <h3>${esc(org.name || "Workspace")}</h3>
       <p class="muted">Plan: <strong>${esc(org.plan || "basic")}</strong> · status <strong>${esc(org.planStatus || "—")}</strong>
-      ${org.guildId ? ` · Discord guild linked` : ` · <a href="${esc(state.session.botInviteUrl || "#")}" target="_blank" rel="noopener" style="color:var(--acc,#2dd4bf)">Invite bot</a> then paste guild ID below`}</p>
-      ${!org.guildId ? `
-        <div class="form-row" style="margin-top:.75rem;grid-template-columns:1fr auto;gap:.5rem">
-          <input id="saasGuildId" placeholder="Discord guild ID" />
-          <button class="primary" data-action="saasLinkGuild">Link guild</button>
-        </div>` : ""}
+      ${guildLinked ? ` · Discord guild linked (<code>${esc(org.guildId)}</code>)` : " · Discord not linked yet"}</p>
+      ${!guildLinked ? `
+        <div style="margin-top:.9rem;display:grid;gap:.65rem">
+          <p class="muted" style="margin:0">Invite the Usely bot to your Discord, then link the guild. You need <strong>Manage Server</strong> on that Discord.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center">
+            <a class="primary" href="${esc(inviteUrl)}" target="_blank" rel="noopener"
+              style="display:inline-flex;align-items:center;justify-content:center;padding:.65rem 1rem;border-radius:var(--radius,4px);background:var(--acc,#2dd4bf);color:#041016;font-weight:600;text-decoration:none">
+              Invite Discord bot
+            </a>
+            <span class="muted" style="font-size:.8rem">Opens Discord — pick your server and authorize</span>
+          </div>
+          <div class="form-row" style="margin-top:.25rem;grid-template-columns:1fr auto;gap:.5rem">
+            <input id="saasGuildId" placeholder="Discord guild ID (if auto-link didn’t run)" />
+            <button class="primary" data-action="saasLinkGuild">Link guild</button>
+          </div>
+          <p class="muted" style="margin:0;font-size:.75rem">Guild ID: Discord → Server Settings → Widget → Server ID, or right-click the server with Developer Mode on.</p>
+        </div>` : `
+        <p class="muted" style="margin-top:.75rem">
+          <a href="${esc(inviteUrl)}" target="_blank" rel="noopener" style="color:var(--acc,#2dd4bf)">Re-invite bot</a>
+          if permissions were updated or the bot was kicked.
+        </p>`}
     </div>
     <div class="card" style="margin-bottom:1rem">
       <h3>Connected servers</h3>
@@ -6085,6 +6119,91 @@ function bindView() {
           } else {
             toast(r.error, true);
           }
+        }
+
+        // ——— SaaS workspace ———
+        if (a === "saasLinkGuild") {
+          const guildId = document.getElementById("saasGuildId")?.value?.trim();
+          if (!guildId) { toast("Paste the Discord guild ID", true); return; }
+          const orgId = state.session?.orgId;
+          if (!orgId) { toast("No workspace selected", true); return; }
+          try {
+            await saasFetch(`/orgs/${encodeURIComponent(orgId)}/guild`, {
+              method: "POST",
+              body: { guildId },
+            });
+            toast("Discord guild linked");
+            location.reload();
+          } catch (err) {
+            toast(err.message, true);
+          }
+          return;
+        }
+        if (a === "saasAddServer") {
+          const name = document.getElementById("saasSrvName")?.value?.trim();
+          const host = document.getElementById("saasSrvHost")?.value?.trim();
+          const port = document.getElementById("saasSrvPort")?.value?.trim();
+          const password = document.getElementById("saasSrvPass")?.value || "";
+          if (!name || !host || !port || !password) {
+            toast("Name, host, port, and password are required", true);
+            return;
+          }
+          await saasFetch("/servers", {
+            method: "POST",
+            body: { name, host, port: Number(port), password },
+          });
+          toast("Server added");
+          location.reload();
+          return;
+        }
+        if (a === "saasDeleteServer") {
+          if (!confirm("Remove this server from the workspace?")) return;
+          await saasFetch(`/servers/${encodeURIComponent(el.dataset.id)}`, { method: "DELETE" });
+          toast("Server removed");
+          location.reload();
+          return;
+        }
+        if (a === "saasDefaultServer") {
+          await saasFetch(`/servers/${encodeURIComponent(el.dataset.id)}/default`, { method: "POST", body: {} });
+          toast("Default server updated");
+          location.reload();
+          return;
+        }
+        if (a === "saasSaveRole") {
+          const discordRoleId = document.getElementById("saasRoleId")?.value?.trim();
+          const label = document.getElementById("saasRoleLabel")?.value?.trim();
+          if (!discordRoleId) { toast("Discord role ID required", true); return; }
+          const permissions = {};
+          document.querySelectorAll("[data-saas-perm]").forEach((box) => {
+            permissions[box.dataset.saasPerm] = box.checked;
+          });
+          await saasFetch("/role-maps", {
+            method: "PUT",
+            body: { discordRoleId, label, permissions },
+          });
+          toast("Role map saved");
+          render();
+          return;
+        }
+        if (a === "saasDeleteRole") {
+          if (!confirm("Remove this role map?")) return;
+          await saasFetch(`/role-maps/${encodeURIComponent(el.dataset.id)}`, { method: "DELETE" });
+          toast("Role map removed");
+          render();
+          return;
+        }
+        if (a === "saasCheckout") {
+          const plan = el.dataset.plan || "basic";
+          const data = await saasFetch("/billing/checkout", { method: "POST", body: { plan } });
+          if (data.url) location.href = data.url;
+          else toast(data.error || "Checkout failed", true);
+          return;
+        }
+        if (a === "saasPortal") {
+          const data = await saasFetch("/billing/portal", { method: "POST", body: {} });
+          if (data.url) location.href = data.url;
+          else toast(data.error || "Portal failed", true);
+          return;
         }
       } catch (e) {
         toast(e.message, true);

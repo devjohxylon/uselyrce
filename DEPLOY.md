@@ -68,7 +68,13 @@ them, so signup stays broken until they're set.
 
 3. Custom domains on the Railway service: `app.usely.dev` **and** `*.usely.dev`
    (wildcard — this is what makes `astral.usely.dev` org panels work).
-4. Discord OAuth redirect: `https://app.usely.dev/admin/auth/callback`
+4. Discord Developer Portal (the **bot** application matching `DISCORD_CLIENT_ID`):
+   - Bot → enable **Public Bot** (required so customers can invite it)
+   - Bot → Privileged Gateway Intents: Message Content + Server Members
+   - OAuth2 → Redirects:
+     - `https://app.usely.dev/admin/auth/callback` (staff Discord login — may use `DISCORD_OAUTH_CLIENT_ID` app instead)
+     - `https://app.usely.dev/admin/auth/bot-installed` (optional auto-link after bot invite)
+5. Customers invite from **Workspace → Servers → Invite Discord bot**, then Link guild.
 5. Stripe webhook: `https://app.usely.dev/billing/stripe/webhook`
    (events: `checkout.session.completed`, `customer.subscription.updated`,
    `customer.subscription.deleted`)

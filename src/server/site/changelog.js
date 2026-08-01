@@ -8,6 +8,14 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Invite the Discord bot from the panel",
+    changes: [
+      { type: "added", text: "Workspace Servers tab has a one-click <strong>Invite Discord bot</strong> button, plus guild linking that actually saves." },
+      { type: "fixed", text: "Adding servers, role maps, and billing checkout from the workspace tab now work end-to-end." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Bot and panel parity",
     changes: [
       { type: "added", text: "VIP kit claims via in-game quick chat, with once-per-wipe and post-wipe lockout." },

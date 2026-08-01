@@ -128,6 +128,7 @@ export async function buildDemoFixtures() {
       },
     ],
     staffPermissionDefaults: STAFF_PERMISSIONS,
+    botInviteUrl: "https://discord.com/api/oauth2/authorize?client_id=0&permissions=8&scope=bot%20applications.commands",
   };
 
   const overview = {
