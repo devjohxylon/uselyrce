@@ -39,7 +39,7 @@ export function findOnlinePlayer(ign) {
 }
 
 // Instant link: claim an online IGN to this Discord account. No note codes.
-export async function linkIgn(discordId, ign, { requireOnline = true } = {}) {
+export async function linkIgn(discordId, ign, { requireOnline = false } = {}) {
   const trimmed = String(ign ?? "").trim();
   if (!trimmed || trimmed.length > 32) {
     return { ok: false, error: "That doesn't look like a valid in-game name." };

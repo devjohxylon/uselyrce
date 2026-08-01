@@ -46,11 +46,11 @@ export function buildLinkPanelEmbed(guild) {
         "1️⃣ Click **Link Account** below\n" +
         "2️⃣ Enter your **exact** in-game username\n" +
         "3️⃣ Confirm — you're done!\n\n" +
-        "> You can only link once.\n" +
-        "> Contact an admin if you need help.",
+        "> You don’t need to be online to link.\n" +
+        "> You can only link once — contact staff if you need a change.",
     )
     .setFooter({
-      text: "Astral | Vanilla+",
+      text: config.brand?.name || "Usely",
       iconURL: icon || undefined,
     });
 
@@ -144,7 +144,7 @@ export async function handleLinkModal(interaction) {
     await interaction.editReply({
       content:
         `❌ **Couldn't link**\n${result.error}\n\n` +
-        "Make sure you're online and the name matches exactly.",
+        "Check the name matches exactly. You don’t need to be online.",
     });
     return true;
   }

@@ -5,14 +5,22 @@ import {
 import { openTicket, closeTicket } from "../modules/tickets/manager.js";
 import { handleVerifyButton } from "../modules/welcome/handlers.js";
 import { handleLinkPanelButton } from "../modules/panels/link-panel.js";
+import { handleStatsPanelButton } from "../modules/panels/stats-panel.js";
 import { requireStaff, isStaff } from "../lib/permissions.js";
 import { findTicketByChannel } from "../modules/tickets/manager.js";
 
 export async function handleButton(interaction, client) {
-  const [namespace, action, id] = interaction.customId.split(":");
+  const parts = interaction.customId.split(":");
+  const namespace = parts[0];
+  const action = parts[1];
+  const id = parts.slice(2).join(":") || undefined;
 
   if (namespace === "link" && (action === "open" || action === "status")) {
     return handleLinkPanelButton(interaction);
+  }
+
+  if (namespace === "stats" && action === "mine") {
+    return handleStatsPanelButton(interaction);
   }
 
   if (namespace === "giveaway" && action === "enter") {
@@ -25,7 +33,6 @@ export async function handleButton(interaction, client) {
   }
 
   if (namespace === "ticket" && action === "open") {
-    // Channel creation can exceed Discord's 3s reply window — defer first.
     await interaction.deferReply({ ephemeral: true });
     const result = await openTicket(
       interaction.guild,
@@ -45,10 +52,17 @@ export async function handleButton(interaction, client) {
       isStaff(interaction.member) ||
       ticketRecord?.userId === interaction.user.id;
     if (!canClose) {
-      return interaction.reply({ ephemeral: true, content: "Only staff or the ticket owner can close this." });
+      return interaction.reply({
+        ephemeral: true,
+        content: "Only staff or the ticket owner can close this.",
+      });
     }
     await interaction.deferReply({ ephemeral: true });
-    const ticket = await closeTicket(interaction.guild, id, interaction.user.id);
+    const ticket = await closeTicket(
+      interaction.guild,
+      ticketRecord?.id || id,
+      interaction.user.id,
+    );
     if (!ticket.ok) {
       return interaction.editReply(ticket.error);
     }

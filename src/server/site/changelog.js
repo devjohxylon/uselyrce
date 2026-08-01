@@ -7,6 +7,18 @@
  */
 export const entries = [
   {
+    date: "2026-08-01",
+    title: "Bot and panel parity",
+    changes: [
+      { type: "added", text: "VIP kit claims via in-game quick chat, with once-per-wipe and post-wipe lockout." },
+      { type: "added", text: "Edit and resync KitManager kits from the Kits tab." },
+      { type: "added", text: "Discord wipe stats cards — <code>/stats me</code>, <code>/stats panel</code>, and View My Stats." },
+      { type: "changed", text: "Killfeed Discord posts respect feed settings (compact style, filters, and toggles)." },
+      { type: "changed", text: "Account linking no longer requires you to be online." },
+      { type: "changed", text: "Leaderboard image publishes to Discord on a timer and when you push stats." },
+    ],
+  },
+  {
     date: "2026-07-29",
     title: "Interactive panel demo",
     changes: [

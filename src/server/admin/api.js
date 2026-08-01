@@ -52,10 +52,15 @@ import {
 import { pushLeaderboardToWebsite } from "../../modules/rcon/index.js";
 import { listRustItems } from "../../data/rust-items.js";
 import {
+  addServerKitItem,
   deleteKit,
+  deleteServerKit,
+  getServerKitDetails,
   giveKit,
   listKits,
   listServerKits,
+  removeServerKitItem,
+  resyncServerKits,
   upsertKit,
 } from "../../modules/rcon/kits.js";
 import { getWipeAt, setWipeAt, syncWipeStatus } from "../../modules/rcon/wipe.js";
@@ -742,15 +747,86 @@ export async function attachAdminPanel(app, client) {
   app.post("/admin/api/stats/push", requireAuth, requirePerm("stats"), async (req, res) => {
     try {
       const result = await pushLeaderboardToWebsite();
+      const { publishLeaderboardToDiscord } = await import("../../modules/rcon/leaderboard-publish.js");
+      const discordMsg = await publishLeaderboardToDiscord(client).catch((e) => ({ error: e.message }));
       await audit(req, "stats_push");
-      res.json({ ok: true, result });
+      res.json({
+        ok: true,
+        result,
+        discord: discordMsg?.error
+          ? { ok: false, error: discordMsg.error }
+          : { ok: true, messageId: discordMsg?.id || null },
+      });
     } catch (error) {
       res.status(500).json({ ok: false, error: error.message });
     }
   });
 
   app.get("/admin/api/links", requireAuth, requirePerm("links"), async (_req, res) => {
-    res.json({ ok: true, links: await listLinks() });
+    try {
+      const links = await listLinks();
+      const guild = config.discord.guildId
+        ? await client.guilds.fetch(config.discord.guildId).catch(() => null)
+        : client.guilds.cache.first() || null;
+
+      const snowflakeIds = [
+        ...new Set(
+          links
+            .map((l) => String(l.discordId || "").trim())
+            .filter((id) => /^\d{5,32}$/.test(id)),
+        ),
+      ];
+
+      const nameById = new Map();
+      if (guild && snowflakeIds.length) {
+        try {
+          const fetched = await guild.members.fetch({ user: snowflakeIds });
+          for (const [, member] of fetched) {
+            nameById.set(member.id, {
+              discordName: member.displayName || member.user?.username || null,
+              discordUsername: member.user?.username || null,
+            });
+          }
+        } catch {
+          /* per-id below */
+        }
+      }
+
+      for (const id of snowflakeIds) {
+        if (nameById.has(id)) continue;
+        const member = guild
+          ? await guild.members.fetch(id).catch(() => null)
+          : null;
+        if (member) {
+          nameById.set(id, {
+            discordName: member.displayName || member.user?.username || null,
+            discordUsername: member.user?.username || null,
+          });
+          continue;
+        }
+        const user = await client.users.fetch(id).catch(() => null);
+        if (user) {
+          nameById.set(id, {
+            discordName: user.globalName || user.username || null,
+            discordUsername: user.username || null,
+          });
+        }
+      }
+
+      const enriched = links.map((l) => {
+        const id = String(l.discordId || "").trim();
+        const names = nameById.get(id);
+        if (names) return { ...l, ...names };
+        if (id && !/^\d{5,32}$/.test(id)) {
+          return { ...l, discordName: id, discordUsername: id };
+        }
+        return { ...l, discordName: null, discordUsername: null };
+      });
+
+      res.json({ ok: true, links: enriched });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message, links: [] });
+    }
   });
 
   app.post("/admin/api/links", requireAuth, requirePerm("links"), async (req, res) => {
@@ -891,11 +967,16 @@ export async function attachAdminPanel(app, client) {
 
   app.get("/admin/api/kits", requireAuth, requirePerm("kits"), async (req, res) => {
     const refresh = String(req.query.refresh ?? "1") !== "0";
+    const force = String(req.query.force ?? "0") === "1";
     const panel = await listKits();
-    const server = await listServerKits({ refresh }).catch((error) => ({
+    const server = await listServerKits({ refresh: refresh || force, force }).catch((error) => ({
       ok: false,
       error: error.message,
       kits: [],
+      host: null,
+      port: null,
+      endpointKey: null,
+      rawPreview: null,
     }));
     res.json({
       ok: true,
@@ -903,7 +984,82 @@ export async function attachAdminPanel(app, client) {
       serverKits: server.kits || [],
       serverOk: server.ok !== false,
       serverError: server.error || null,
+      serverHost: server.host || null,
+      serverPort: server.port || null,
+      serverEndpoint: server.endpointKey || null,
+      serverRaw: server.rawPreview || null,
     });
+  });
+
+  app.post("/admin/api/kits/resync", requireAuth, requirePerm("kits"), async (req, res) => {
+    try {
+      const detail = Boolean(req.body?.detail);
+      const server = await resyncServerKits({ detail });
+      await audit(req, "kits_resync", {
+        count: server.kits?.length || 0,
+        host: server.host,
+        port: server.port,
+        detail,
+      });
+      res.json({
+        ok: server.ok !== false,
+        kits: server.kits || [],
+        count: server.kits?.length || 0,
+        host: server.host || null,
+        port: server.port || null,
+        endpointKey: server.endpointKey || null,
+        error: server.error || null,
+        rawPreview: server.rawPreview || null,
+      });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message, kits: [], count: 0 });
+    }
+  });
+
+  app.get("/admin/api/kits/server/:name", requireAuth, requirePerm("kits"), async (req, res) => {
+    try {
+      const result = await getServerKitDetails(req.params.name);
+      if (!result.ok) return res.status(400).json(result);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message, items: [] });
+    }
+  });
+
+  app.post("/admin/api/kits/server/item", requireAuth, requirePerm("kits"), async (req, res) => {
+    try {
+      const { kit, item, amount, condition, container } = req.body ?? {};
+      const result = await addServerKitItem(kit, { item, amount, condition, container });
+      if (!result.ok) return res.status(400).json(result);
+      await audit(req, "kit_server_item_add", { kit, item, amount });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/kits/server/item/remove", requireAuth, requirePerm("kits"), async (req, res) => {
+    try {
+      const { kit, itemId } = req.body ?? {};
+      const result = await removeServerKitItem(kit, itemId);
+      if (!result.ok) return res.status(400).json(result);
+      await audit(req, "kit_server_item_remove", { kit, itemId });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/kits/server/delete", requireAuth, requirePerm("kits"), async (req, res) => {
+    try {
+      const kit = String(req.body?.id ?? req.body?.name ?? "").trim();
+      const result = await deleteServerKit(kit);
+      if (!result.ok) return res.status(400).json(result);
+      await audit(req, "kit_server_delete", { kit });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message, kits: [] });
+    }
   });
 
   app.post("/admin/api/kits", requireAuth, requirePerm("kits"), async (req, res) => {

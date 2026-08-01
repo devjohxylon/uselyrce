@@ -1,7 +1,12 @@
 import { getKits, saveKits } from "../../data/store.js";
-import { getServer, sendGameCommand } from "./client.js";
+import { clearServerKitCache, getRconEndpointKey, getRconStatus, getServer, sendGameCommand } from "./client.js";
 
 const GIVE_DELAY_MS = 120;
+
+/** Last RCON host:port we successfully refreshed kits for */
+let kitsEndpointKey = null;
+/** Last raw `kit list` payload (for admin debugging) */
+let lastKitListRaw = null;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,43 +35,79 @@ function sanitizeItems(items) {
 
 function parseKitList(raw) {
   if (!raw || typeof raw !== "string") return [];
-  return raw
+
+  const text = raw
     .replaceAll("\\n", "\n")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith("[KITMANAGER]") && !/^kits?:/i.test(line))
-    .map((line) => {
-      // Formats like: "vip", "- vip", "vip (Cooldown: 60)", "Kit: vip"
-      const cleaned = line
-        .replace(/^[-*•]\s*/, "")
-        .replace(/^kit[s]?:\s*/i, "")
-        .replace(/\s*\(.*\)\s*$/, "")
-        .trim();
-      return cleaned;
-    })
-    .filter((name) => name && /^[a-zA-Z0-9._-]+$/.test(name));
+    .replace(/\u001b\[[0-9;]*m/g, "")
+    .trim();
+
+  const names = [];
+  const pushName = (value) => {
+    const name = String(value ?? "")
+      .replace(/^["']|["']$/g, "")
+      .trim();
+    // Console kit names may include spaces; reject only junk / headers
+    if (!name) return;
+    if (/^\[KITMANAGER\]/i.test(name)) return;
+    if (/^kits?\s*:?\s*$/i.test(name)) return;
+    if (/^kit\s*list$/i.test(name)) return;
+    if (/^available kits/i.test(name)) return;
+    if (/^no kits/i.test(name)) return;
+    if (name.length > 64) return;
+    if (!/^[\w .'+-]+$/i.test(name)) return;
+    if (!/[a-z0-9]/i.test(name)) return;
+    names.push(name);
+  };
+
+  for (const line of text.split(/\r?\n/)) {
+    let cleaned = line.trim();
+    if (!cleaned) continue;
+    if (cleaned.startsWith("[KITMANAGER]")) {
+      cleaned = cleaned.replace(/^\[KITMANAGER\]\s*/i, "").trim();
+      if (
+        !cleaned ||
+        /^kits?:/i.test(cleaned) ||
+        /^kit\s*list$/i.test(cleaned) ||
+        /^available/i.test(cleaned)
+      ) {
+        continue;
+      }
+    }
+    cleaned = cleaned
+      .replace(/^[-*•]\s*/, "")
+      .replace(/^\d+[\).:\s-]+/, "")
+      .trim();
+    if (/^kit\s*list$/i.test(cleaned)) continue;
+    pushName(cleaned);
+  }
+
+  return [...new Set(names)];
 }
 
 function parseKitInfoItems(raw) {
   if (!raw || typeof raw !== "string") return [];
   const cleaned = raw.replaceAll("\\n", "\n");
   const items = [];
+
+  // Console KitManager lines often look like:
+  // ID: [3] Shortname: wood Amount: [1000] Condition: [1] Container: [Main]
   const itemRegex =
-    /Shortname:\s*(\S+)\s+Amount:\s*\[(\d+)\](?:\s+Condition:\s*\[(\d+)\])?(?:\s+Container:\s*\[(Main|Belt|Wear)\])?/gi;
+    /(?:ID:\s*\[?(\d+)\]?\s*)?Shortname:\s*(\S+)\s+Amount:\s*\[(\d+)\](?:\s+Condition:\s*\[([\d.]+)\])?(?:\s+Container:\s*\[(Main|Belt|Wear)\])?/gi;
   let match;
   while ((match = itemRegex.exec(cleaned)) !== null) {
     items.push({
-      item: match[1],
-      amount: Number(match[2]) || 1,
-      condition: match[3] != null ? Number(match[3]) : null,
-      container: match[4] || null,
+      id: match[1] != null ? match[1] : null,
+      item: match[2],
+      amount: Number(match[3]) || 1,
+      condition: match[4] != null ? Number(match[4]) : null,
+      container: match[5] || null,
     });
   }
-  // Fallback: "wood x1000" / "wood 1000"
+
   if (!items.length) {
     for (const line of cleaned.split("\n").map((l) => l.trim()).filter(Boolean)) {
       const m = line.match(/^([a-z0-9._-]+)\s*[x×]\s*(\d+)$/i) || line.match(/^([a-z0-9._-]+)\s+(\d+)$/i);
-      if (m) items.push({ item: m[1].toLowerCase(), amount: Number(m[2]) || 1 });
+      if (m) items.push({ id: null, item: m[1].toLowerCase(), amount: Number(m[2]) || 1, condition: null, container: null });
     }
   }
   return items;
@@ -102,45 +143,78 @@ export async function getKit(id) {
 
 /**
  * Fetch kits defined on the Rust server (KitManager / Oxide kits).
- * Uses cached rce.js list when available, then refreshes via `kit list`.
+ * Never reuse kits from a different RCON endpoint after a server switch.
  */
-export async function listServerKits({ refresh = true, detail = false } = {}) {
-  const cached = getServer()?.kits;
-  let names = Array.isArray(cached) ? cached.map((k) => k.name).filter(Boolean) : [];
+export async function listServerKits({ refresh = true, detail = false, force = false } = {}) {
+  const endpointKey = getRconEndpointKey();
+  const server = getServer();
 
-  if (refresh || !names.length) {
+  if (force || (kitsEndpointKey && endpointKey && kitsEndpointKey !== endpointKey)) {
+    clearServerKitCache();
+    kitsEndpointKey = null;
+    lastKitListRaw = null;
+  }
+
+  let names = [];
+  let rawPreview = lastKitListRaw;
+
+  if (!refresh && !force && kitsEndpointKey === endpointKey && Array.isArray(server?.kits)) {
+    names = server.kits.map((k) => k.name).filter(Boolean);
+  } else {
     try {
+      clearServerKitCache();
+      kitsEndpointKey = null;
       const raw = await sendGameCommand("kit list");
+      lastKitListRaw = String(raw || "");
+      rawPreview = lastKitListRaw.slice(0, 800);
       names = parseKitList(raw);
-      const server = getServer();
-      if (server && names.length) {
-        server.kits = names.map((name) => {
-          const existing = (cached || []).find((k) => k.name === name);
-          return existing || { name, items: [] };
-        });
+      kitsEndpointKey = endpointKey;
+      if (server) {
+        server.kits = names.map((name) => ({ name, items: [] }));
       }
     } catch (error) {
-      if (!names.length) {
-        return { ok: false, error: error.message, kits: [] };
-      }
+      clearServerKitCache();
+      kitsEndpointKey = null;
+      lastKitListRaw = null;
+      return {
+        ok: false,
+        error: error.message,
+        kits: [],
+        endpointKey,
+        rawPreview: null,
+      };
     }
   }
 
   const kits = [];
   for (const name of names) {
-    const fromCache = (getServer()?.kits || cached || []).find((k) => k.name === name);
+    const fromCache = (getServer()?.kits || []).find((k) => k.name === name);
     let items = Array.isArray(fromCache?.items)
-      ? fromCache.items.map((i) => ({
-          item: i.shortName || i.item,
-          amount: i.quantity ?? i.amount ?? 1,
-        })).filter((i) => i.item)
+      ? fromCache.items
+          .map((i) => ({
+            id: i.id ?? null,
+            item: i.shortName || i.item,
+            amount: i.quantity ?? i.amount ?? 1,
+            condition: i.condition ?? null,
+            container: i.container || null,
+          }))
+          .filter((i) => i.item)
       : [];
 
     if (detail && !items.length) {
       try {
         const info = await sendGameCommand(`kit info "${name}"`);
         items = parseKitInfoItems(info);
-        await sleep(80);
+        if (fromCache) {
+          fromCache.items = items.map((i) => ({
+            id: i.id,
+            shortName: i.item,
+            quantity: i.amount,
+            condition: i.condition,
+            container: i.container,
+          }));
+        }
+        await sleep(100);
       } catch {
         /* info optional */
       }
@@ -156,7 +230,134 @@ export async function listServerKits({ refresh = true, detail = false } = {}) {
     });
   }
 
-  return { ok: true, kits };
+  const status = getRconStatus();
+  return {
+    ok: true,
+    kits,
+    endpointKey,
+    host: status.host,
+    port: status.port,
+    rawPreview: rawPreview != null ? String(rawPreview).slice(0, 800) : null,
+  };
+}
+
+/** Hard clear + re-fetch kit list from the current RCON server. */
+export async function resyncServerKits({ detail = false } = {}) {
+  clearServerKitCache();
+  kitsEndpointKey = null;
+  lastKitListRaw = null;
+  return listServerKits({ refresh: true, force: true, detail });
+}
+
+/** Load item contents for one in-game kit via `kit info`. */
+export async function getServerKitDetails(kitName) {
+  const kit = String(kitName ?? "").trim();
+  if (!kit) return { ok: false, error: "Missing kit name", items: [] };
+
+  try {
+    const raw = await sendGameCommand(`kit info "${kit}"`);
+    const items = parseKitInfoItems(raw);
+    const server = getServer();
+    if (server) {
+      if (!Array.isArray(server.kits)) server.kits = [];
+      let row = server.kits.find((k) => k.name === kit);
+      if (!row) {
+        row = { name: kit, items: [] };
+        server.kits.push(row);
+      }
+      row.items = items.map((i) => ({
+        id: i.id,
+        shortName: i.item,
+        quantity: i.amount,
+        condition: i.condition,
+        container: i.container,
+      }));
+    }
+    return {
+      ok: true,
+      kit,
+      items,
+      rawPreview: String(raw || "").slice(0, 1200),
+    };
+  } catch (error) {
+    return { ok: false, error: error.message, kit, items: [] };
+  }
+}
+
+/**
+ * Add an item to an in-game kit:
+ * kit add "Kit Name" shortname amount condition Container
+ */
+export async function addServerKitItem(kitName, { item, amount = 1, condition = 1, container = "Main" } = {}) {
+  const kit = String(kitName ?? "").trim();
+  const shortName = String(item ?? "").trim().toLowerCase();
+  const qty = Math.max(1, Math.min(100000, Number(amount) || 1));
+  const cond = Math.max(0, Math.min(1, Number(condition) || 1));
+  const slot = ["Main", "Belt", "Wear"].includes(container) ? container : "Main";
+
+  if (!kit) return { ok: false, error: "Missing kit name" };
+  if (!shortName || !/^[a-z0-9._-]+$/.test(shortName)) {
+    return { ok: false, error: "Invalid item shortname" };
+  }
+
+  try {
+    const cmd = `kit add "${kit}" ${shortName} ${qty} ${cond} ${slot}`;
+    const result = await sendGameCommand(cmd);
+    const details = await getServerKitDetails(kit);
+    return {
+      ok: true,
+      command: cmd,
+      result: result || "",
+      kit,
+      items: details.items || [],
+      rawPreview: details.rawPreview || null,
+    };
+  } catch (error) {
+    return { ok: false, error: error.message, kit };
+  }
+}
+
+/** Remove one item from an in-game kit: kit remove "Kit Name" "ID" */
+export async function removeServerKitItem(kitName, itemId) {
+  const kit = String(kitName ?? "").trim();
+  const id = String(itemId ?? "").trim();
+  if (!kit) return { ok: false, error: "Missing kit name" };
+  if (!id) return { ok: false, error: "Missing item id (from kit info)" };
+
+  try {
+    const cmd = `kit remove "${kit}" "${id}"`;
+    const result = await sendGameCommand(cmd);
+    const details = await getServerKitDetails(kit);
+    return {
+      ok: true,
+      command: cmd,
+      result: result || "",
+      kit,
+      items: details.items || [],
+      rawPreview: details.rawPreview || null,
+    };
+  } catch (error) {
+    return { ok: false, error: error.message, kit };
+  }
+}
+
+/** Delete a KitManager kit on the live game server, then resync. */
+export async function deleteServerKit(kitName) {
+  const kit = String(kitName ?? "").trim();
+  if (!kit) return { ok: false, error: "Missing kit name", kits: [] };
+
+  try {
+    const result = await sendGameCommand(`kit delete "${kit}"`);
+    const synced = await resyncServerKits({ detail: false });
+    return {
+      ...synced,
+      ok: synced.ok !== false,
+      deleted: kit,
+      deleteResult: result || "",
+    };
+  } catch (error) {
+    return { ok: false, error: error.message, deleted: kit, kits: [] };
+  }
 }
 
 export async function upsertKit({ id, label, items, cooldownMinutes } = {}) {
@@ -194,8 +395,8 @@ export async function giveServerKit(ign, kitName) {
   if (!name) return { ok: false, error: "Missing player name" };
   if (!kit) return { ok: false, error: "Missing kit name" };
 
-  // KitManager: kit "name" "player"  |  some forks: kit give "player" "name"
-  const cmd = `kit "${kit}" "${name}"`;
+  // Console KitManager: kit givetoplayer "kitname" "player"
+  const cmd = `kit givetoplayer "${kit}" "${name}"`;
   try {
     const result = await sendGameCommand(cmd);
     return {

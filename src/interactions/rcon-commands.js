@@ -7,13 +7,15 @@ import {
   sendGameCommand,
 } from "../modules/rcon/client.js";
 import { getRconStatus } from "../modules/rcon/client.js";
-import { pushLeaderboardToWebsite } from "../modules/rcon/index.js";
+import { pushLeaderboardToWebsite, buildLeaderboardAttachment } from "../modules/rcon/index.js";
 import {
   formatPlaytime,
   getLeaderboard,
   getPlayerCard,
   resetStats,
 } from "../modules/rcon/stats.js";
+import { getLinkByDiscord } from "../modules/rcon/linking.js";
+import { postStatsPanel, replyWithPlayerStats } from "../modules/panels/stats-panel.js";
 
 const CATEGORY_LABELS = {
   kills: "Top Kills",
@@ -44,7 +46,7 @@ export async function handleServerInfoCommand(interaction) {
   }
 
   const embed = new EmbedBuilder()
-    .setTitle(info.Hostname ?? "Astral Vanilla+")
+    .setTitle(info.Hostname ?? "Usely")
     .setColor(0x2ecc71)
     .addFields(
       {
@@ -90,56 +92,96 @@ export async function handlePlayersCommand(interaction) {
 }
 
 export async function handleStatsCommand(interaction) {
-  const name = interaction.options.getString("player", true);
-  const card = await getPlayerCard(name);
+  const sub = interaction.options.getSubcommand(false) || "player";
 
-  if (!card) {
+  if (sub === "panel") {
+    if (!(await requireStaff(interaction))) return;
+    await postStatsPanel(interaction.channel);
+    return interaction.reply({ ephemeral: true, content: "Stats panel posted." });
+  }
+
+  if (sub === "me") {
+    await interaction.deferReply({ ephemeral: true });
+    const link = await getLinkByDiscord(interaction.user.id);
+    if (!link) {
+      return interaction.editReply(
+        "You're not linked. Use the **Link Account** panel, then `/stats me` or **View My Stats**.",
+      );
+    }
+    try {
+      return await replyWithPlayerStats(interaction, link.ign);
+    } catch (error) {
+      return interaction.editReply(`Couldn't render stats: ${error.message}`);
+    }
+  }
+
+  // player lookup
+  const name =
+    interaction.options.getString("ign") ||
+    interaction.options.getString("player");
+  if (!name) {
     return interaction.reply({
       ephemeral: true,
-      content: `No tracked stats for \`${name}\` yet. Stats start counting once they play while the bot is connected.`,
+      content: "Provide an IGN with `/stats player`, or use `/stats me`.",
     });
   }
 
-  const embed = new EmbedBuilder()
-    .setTitle(`📊 ${card.name}`)
-    .setColor(0x9b59b6)
-    .addFields(
-      { name: "Kills", value: String(card.kills), inline: true },
-      { name: "Deaths", value: String(card.deaths), inline: true },
-      { name: "K/D", value: card.kd, inline: true },
-      { name: "NPC kills", value: String(card.npcKills), inline: true },
-      { name: "Suicides", value: String(card.suicides), inline: true },
-      { name: "Playtime", value: formatPlaytime(card.playtimeMs), inline: true },
-    )
-    .setFooter({ text: `Last seen ${new Date(card.lastSeen).toLocaleString()}` });
-
-  return interaction.reply({ embeds: [embed] });
+  await interaction.deferReply({ ephemeral: true });
+  try {
+    return await replyWithPlayerStats(interaction, name);
+  } catch (error) {
+    const card = await getPlayerCard(name);
+    if (!card) {
+      return interaction.editReply(
+        `No tracked stats for \`${name}\` yet. Stats start counting once they play while the bot is connected.`,
+      );
+    }
+    const embed = new EmbedBuilder()
+      .setTitle(`📊 ${card.name}`)
+      .setColor(0xd7dde6)
+      .addFields(
+        { name: "Kills", value: String(card.kills), inline: true },
+        { name: "Deaths", value: String(card.deaths), inline: true },
+        { name: "K/D", value: card.kd, inline: true },
+        { name: "NPC kills", value: String(card.npcKills), inline: true },
+        { name: "Suicides", value: String(card.suicides), inline: true },
+        { name: "Playtime", value: formatPlaytime(card.playtimeMs), inline: true },
+      )
+      .setFooter({ text: `Image failed · ${error.message}` });
+    return interaction.editReply({ embeds: [embed] });
+  }
 }
 
 export async function handleLeaderboardCommand(interaction) {
-  const category = interaction.options.getString("category") ?? "kills";
-  const rows = await getLeaderboard(category, 10);
+  await interaction.deferReply();
 
-  if (!rows.length) {
-    return interaction.reply({
-      ephemeral: true,
-      content: "No stats tracked yet — the leaderboard fills up as players join and fight.",
+  try {
+    const file = await buildLeaderboardAttachment();
+    return interaction.editReply({
+      content: null,
+      files: [file],
     });
+  } catch (error) {
+    // Fallback to text embed if image render fails
+    const category = interaction.options.getString("category") ?? "kills";
+    const rows = await getLeaderboard(category, 10);
+    if (!rows.length) {
+      return interaction.editReply(
+        "No stats tracked yet — the leaderboard fills up as players join and fight.",
+      );
+    }
+    const medals = ["🥇", "🥈", "🥉"];
+    const body = rows
+      .map((row) => `${medals[row.rank - 1] ?? `\`#${row.rank}\``} **${row.name}** — ${row.value}`)
+      .join("\n");
+    const embed = new EmbedBuilder()
+      .setTitle(`🏆 ${CATEGORY_LABELS[category] ?? "Leaderboard"}`)
+      .setDescription(body)
+      .setColor(0xf1c40f)
+      .setFooter({ text: `Usely • image render failed: ${error.message}` })
+      .setTimestamp();
+    return interaction.editReply({ embeds: [embed] });
   }
-
-  const medals = ["🥇", "🥈", "🥉"];
-  const body = rows
-    .map((row) => `${medals[row.rank - 1] ?? `\`#${row.rank}\``} **${row.name}** — ${row.value}`)
-    .join("\n");
-
-  const embed = new EmbedBuilder()
-    .setTitle(`🏆 ${CATEGORY_LABELS[category] ?? "Leaderboard"}`)
-    .setDescription(body)
-    .setColor(0xf1c40f)
-    .setFooter({ text: "Astral Vanilla+ • live from the server" })
-    .setTimestamp();
-
-  return interaction.reply({ embeds: [embed] });
 }
 
 export async function handleRconCommand(interaction) {
@@ -162,9 +204,20 @@ export async function handleRconCommand(interaction) {
   if (sub === "pushstats") {
     await interaction.deferReply({ ephemeral: true });
     const result = await pushLeaderboardToWebsite().catch((error) => ({ error: error.message }));
-    if (!result) return interaction.editReply("No stats to push yet.");
-    if (result.error) return interaction.editReply(`Failed: ${result.error}`);
-    return interaction.editReply(`Pushed ${result.leaderboards.length} board(s) to the website.`);
+    const { publishLeaderboardToDiscord } = await import("../modules/rcon/leaderboard-publish.js");
+    const discord = await publishLeaderboardToDiscord(interaction.client).catch((error) => ({
+      error: error.message,
+    }));
+    if (!result && discord?.error) {
+      return interaction.editReply(`Failed: ${discord.error}`);
+    }
+    if (result?.error) return interaction.editReply(`Website: ${result.error}`);
+    const parts = [];
+    if (result) parts.push(`website ${result.leaderboards.length} board(s)`);
+    if (discord && !discord.error) parts.push("Discord image updated");
+    if (discord?.error) parts.push(`Discord: ${discord.error}`);
+    if (!parts.length) return interaction.editReply("No stats to push yet.");
+    return interaction.editReply(`Pushed: ${parts.join(" · ")}`);
   }
 
   if (!getRconStatus().connected) {

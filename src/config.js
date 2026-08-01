@@ -300,9 +300,15 @@ export const config = {
     logoUrl: optional("BRAND_LOGO_URL") || null,
   },
   vip: {
-    kitId: optional("VIP_KIT_ID", "vip") || "vip",
+    // Defaults; admin panel VIP settings override these at runtime (settings.json).
+    kitId: optional("VIP_KIT_ID", "vipkit") || "vipkit",
     grantCommand: optional("VIP_RCON_GRANT") || null,
     revokeCommand: optional("VIP_RCON_REVOKE") || null,
+    claimEnabled: parseBool("VIP_CLAIM_ENABLED", true),
+    claimPhrase: optional("VIP_CLAIM_PHRASE", "i need water") || "i need water",
+    oncePerWipe: parseBool("VIP_ONCE_PER_WIPE", true),
+    postWipeLockHours: Number(optional("VIP_POST_WIPE_LOCK_HOURS", "4")) || 4,
+    autoGrant: parseBool("VIP_AUTO_GRANT", false),
   },
   wipe: {
     // Fallback if settings.json has no wipeAt; ISO string e.g. 2026-08-01T18:00:00Z

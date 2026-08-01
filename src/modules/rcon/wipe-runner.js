@@ -32,7 +32,13 @@ export const WIPE_STEPS = [
   {
     id: "clearKitCooldowns",
     label: "Kit cooldowns",
-    hint: "RCON KitManager reset",
+    hint: "Best-effort RCON (map wipe already clears these)",
+    defaultOn: true,
+  },
+  {
+    id: "resetVipClaims",
+    label: "VIP kit claims",
+    hint: "Allow one new VIP claim + start 4h post-wipe lock",
     defaultOn: true,
   },
   {
@@ -128,7 +134,12 @@ async function stepClearHomes() {
 
 async function stepClearKitCooldowns() {
   if (!isRconEnabled()) {
-    return { ok: false, skipped: true, reason: "RCON offline" };
+    // Map wipe already clears player kit cooldowns — don't fail the whole run.
+    return {
+      ok: true,
+      skipped: true,
+      reason: "RCON offline — kit CDs clear with the Nitrado map wipe",
+    };
   }
   const attempts = [];
   for (const cmd of KIT_RESET_COMMANDS) {
@@ -136,8 +147,9 @@ async function stepClearKitCooldowns() {
       const result = await sendGameCommand(cmd);
       const text = String(result || "").toLowerCase();
       const looksBad =
-        /unknown|invalid|not found|doesn't exist|does not exist|error/i.test(text) &&
-        text.length < 200;
+        /unknown|invalid|not found|doesn't exist|does not exist|error|command not/i.test(
+          text,
+        );
       attempts.push({ cmd, ok: !looksBad, result: String(result || "").slice(0, 200) });
       if (!looksBad) {
         return { ok: true, command: cmd, result: String(result || "").slice(0, 200), attempts };
@@ -146,10 +158,13 @@ async function stepClearKitCooldowns() {
       attempts.push({ cmd, ok: false, error: error.message });
     }
   }
+  // Console KitManager usually has no global reset command. A fresh map wipe
+  // already zeros kit cooldowns, so treat this as a soft skip — not a red fail.
   return {
-    ok: false,
+    ok: true,
+    skipped: true,
     warning:
-      "No kit reset command succeeded — reset cooldowns in KitManager / Nitrado if needed",
+      "No kit-reset RCON command on this host — fine after a map wipe (cooldowns already cleared)",
     attempts,
   };
 }
@@ -228,6 +243,16 @@ export async function runWipeAutomation({
     return { ok: true };
   });
   await runStep("clearKitCooldowns", () => stepClearKitCooldowns());
+  await runStep("resetVipClaims", async () => {
+    const { startVipWipeWindow } = await import("./vip-claims.js");
+    const state = await startVipWipeWindow(label);
+    return {
+      ok: true,
+      wipeId: state.wipeId,
+      wipeStartedAt: state.wipeStartedAt,
+      lockHours: config.vip.postWipeLockHours ?? 4,
+    };
+  });
   await runStep("clearStreaks", () => {
     clearKillStreaks();
     return { ok: true };

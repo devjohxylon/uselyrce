@@ -75,6 +75,20 @@ export function isRconEnabled() {
   return Boolean(enabled && host && port && password);
 }
 
+/** host:port fingerprint — drop stale kit caches when the RCON target changes. */
+export function getRconEndpointKey(serverId) {
+  const status = getRconStatus(serverId);
+  if (!status?.host || !status?.port) return null;
+  const sid = serverId || getActiveServerId() || "";
+  return `${sid ? `${sid}@` : ""}${String(status.host).toLowerCase()}:${Number(status.port)}`;
+}
+
+/** Clear in-memory KitManager list for the active (or given) server. */
+export function clearServerKitCache(serverId) {
+  const server = getServer(serverId);
+  if (server) server.kits = [];
+}
+
 function serverOptions() {
   return {
     identifier: config.rcon.identifier,

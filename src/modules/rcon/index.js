@@ -32,7 +32,7 @@ import {
 } from "./stats.js";
 import { startScheduler, stopScheduler } from "./scheduler.js";
 import { startWipeScheduler, stopWipeScheduler, syncWipeStatus } from "./wipe.js";
-import { syncVipForDiscord, syncVipOnJoin } from "./vip-sync.js";
+import { syncVipForDiscord, syncVipOnJoin, tryClaimVipFromQuickChat, attachVipClient } from "./vip-sync.js";
 import {
   attachReportsClient,
   checkTeamSize,
@@ -41,6 +41,8 @@ import {
   stopGroupScanner,
 } from "./reports.js";
 import { startPositionPolling, stopPositionPolling } from "./live-map.js";
+import { attachLeaderboardClient, publishLeaderboardToDiscord } from "./leaderboard-publish.js";
+import { formatPopChannelName, getStatusSettingsSync } from "../admin/status-settings.js";
 
 const LEADERBOARD_BOARDS = [
   { category: "kills", title: "Top Kills" },
@@ -62,6 +64,8 @@ export async function startRcon(client) {
   discordClient = client;
   attachFeedClient(client);
   attachReportsClient(client);
+  attachLeaderboardClient(client);
+  attachVipClient(client);
   const manager = await connectRcon();
   if (!manager) {
     startWipeScheduler(client);
@@ -71,6 +75,9 @@ export async function startRcon(client) {
   manager.on(RCEEvent.Ready, () => {
     syncServerStatus(client, getServerInfo(), { force: true }).catch(() => {});
     pushLeaderboardToWebsite().catch(() => {});
+    publishLeaderboardToDiscord(client).catch((e) =>
+      console.error("Leaderboard Discord publish failed:", e.message),
+    );
     syncWipeStatus(client, { force: true }).catch(() => {});
     scanTeamsSoon(manager);
   });
@@ -125,6 +132,9 @@ export async function startRcon(client) {
 
   manager.on(RCEEvent.QuickChat, ({ player, message, type }) => {
     feedQuickChat({ player, message, type });
+    tryClaimVipFromQuickChat({ player, message }).catch((e) =>
+      console.error("VIP quick-chat claim failed:", e.message),
+    );
   });
 
   manager.on(RCEEvent.EventStart, (data) => {
@@ -146,10 +156,14 @@ export async function startRcon(client) {
 
   setInterval(() => flushStats().catch(() => {}), 60_000);
   setInterval(
-    () =>
+    () => {
       pushLeaderboardToWebsite().catch((error) =>
         console.error("Leaderboard push failed:", error.message),
-      ),
+      );
+      publishLeaderboardToDiscord(client).catch((error) =>
+        console.error("Leaderboard Discord publish failed:", error.message),
+      );
+    },
     config.rcon.leaderboardPushMs,
   );
 
@@ -195,8 +209,10 @@ async function updateStatusChannel(client, info, force = false) {
   const channelId = config.channels.popStatus;
   if (!channelId || !client) return;
 
-  const queued = info.Queued ? ` 🕑${info.Queued}` : "";
-  const name = `🌐 ${info.Players ?? 0}/${info.MaxPlayers ?? "?"}${queued}`.slice(0, 90);
+  const popSettings = getStatusSettingsSync().popStatus;
+  if (popSettings?.enabled === false) return;
+
+  const name = formatPopChannelName(info, popSettings);
   if (!force && name === lastStatusName) return;
 
   const now = Date.now();
@@ -279,4 +295,5 @@ export async function shutdownRcon() {
   await flushStats({ force: true }).catch(() => {});
 }
 
+export { publishLeaderboardToDiscord, buildLeaderboardAttachment } from "./leaderboard-publish.js";
 export { getOnlinePlayers, getServerInfo, sendGameCommand };
