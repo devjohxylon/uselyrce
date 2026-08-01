@@ -1609,6 +1609,7 @@ button { transition: all .15s ease; }
         <label for="saasPassword" style="margin-top:.6rem">Password</label>
         <input id="saasPassword" type="password" placeholder="Your password" autocomplete="current-password" />
         <button class="primary" id="saasEmailLoginBtn" style="margin-top:.85rem">Sign In</button>
+        <p id="opsLoginHint" class="login-subtitle hidden" style="margin-top:.85rem;margin-bottom:0;color:var(--chrome)">Sign in with your ops email, then you'll be sent to the platform dashboard.</p>
         <div style="display:flex;align-items:center;gap:.6rem;margin:1rem 0;color:var(--faint);font-size:.75rem">
           <span style="flex:1;height:1px;background:var(--line)"></span>staff<span style="flex:1;height:1px;background:var(--line)"></span>
         </div>
@@ -2109,7 +2110,13 @@ async function boot() {
   if (session.authed) {
     stopLoginScene();
     state.session = session;
-    const botStatus = new URLSearchParams(location.search).get("bot");
+    const params = new URLSearchParams(location.search);
+    const next = params.get("next");
+    if (next === "/ops" || next === "/ops/") {
+      location.replace("/ops");
+      return;
+    }
+    const botStatus = params.get("bot");
     if (botStatus) {
       const msgs = {
         linked: "Discord bot linked to this workspace",
@@ -6388,6 +6395,10 @@ boot().catch((e) => {
       document.getElementById("legacyLogin")?.classList.add("hidden");
       document.getElementById("saasLogin")?.classList.remove("hidden");
       return;
+    }
+    const next = new URLSearchParams(location.search).get("next");
+    if (next === "/ops" || next === "/ops/") {
+      document.getElementById("opsLoginHint")?.classList.remove("hidden");
     }
     const s = await fetch("/admin/api/session", { credentials: "include" }).then((r) => r.json());
     if (s?.saas || s?.session?.saas || s?.authModes?.includes?.("email")) {
