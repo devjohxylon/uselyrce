@@ -34,12 +34,16 @@ export function createBotClient() {
     try {
       const { syncSlashCommands } = await import("./commands/sync.js");
       const appId = client.application?.id || client.user.id;
-      const result = await syncSlashCommands({ clientId: appId });
-      console.log(
-        result.scope === "guild"
-          ? `Slash commands: ${result.count} on guild ${result.guildId}`
-          : `Slash commands: ${result.count} global (app ${result.clientId})`,
-      );
+      const guildIds = [...client.guilds.cache.keys()];
+      const result = await syncSlashCommands({ clientId: appId, guildIds });
+      if (result.scope === "guild") {
+        console.log(`Slash commands: ${result.count} on guild ${result.guildId}`);
+      } else {
+        const ok = (result.guilds || []).filter((g) => g.ok).length;
+        console.log(
+          `Slash commands: ${result.count} global + ${ok}/${guildIds.length} guild(s) (app ${result.clientId})`,
+        );
+      }
     } catch (error) {
       console.error("Slash command sync failed:", error.message);
     }
@@ -87,6 +91,18 @@ export function createBotClient() {
     setInterval(() => checkExpiredGiveaways(client).catch(() => {}), 30_000);
 
     startRcon(client).catch((error) => console.error("RCON startup failed:", error.message));
+  });
+
+  client.on("guildCreate", async (guild) => {
+    console.log(`Joined guild ${guild.name} (${guild.id})`);
+    try {
+      const { syncGuildSlashCommands } = await import("./commands/sync.js");
+      const appId = client.application?.id || client.user.id;
+      const result = await syncGuildSlashCommands(guild.id, { clientId: appId });
+      console.log(`Slash commands: ${result.count} installed on ${guild.name}`);
+    } catch (error) {
+      console.error(`Slash sync on join failed [${guild.id}]:`, error.message);
+    }
   });
 
   client.on("channelUpdate", async (oldChannel, newChannel) => {

@@ -2,23 +2,54 @@ import { REST, Routes } from "discord.js";
 import { config } from "../config.js";
 import { commandDefinitions } from "./definitions.js";
 
+function restClient(token) {
+  return new REST({ version: "10" }).setToken(token || config.discord.token);
+}
+
 /**
- * Push slash command definitions to Discord.
- * SaaS / multi-tenant → global app commands (every guild the bot is in).
- * Legacy single-server → guild commands when GUILD_ID is set (instant).
+ * Instant guild-scoped commands (show up right away in that server).
  */
-export async function syncSlashCommands({ clientId, token } = {}) {
+export async function syncGuildSlashCommands(guildId, { clientId, token } = {}) {
+  const id = clientId || config.discord.clientId;
+  if (!id || !guildId) throw new Error("Missing Discord client id or guild id");
+  await restClient(token).put(Routes.applicationGuildCommands(id, String(guildId)), {
+    body: commandDefinitions,
+  });
+  return { scope: "guild", guildId: String(guildId), count: commandDefinitions.length, clientId: id };
+}
+
+/**
+ * Push slash commands.
+ * SaaS: global (propagates slowly) + every current guild (instant).
+ * Legacy: home GUILD_ID only when set.
+ */
+export async function syncSlashCommands({ clientId, token, guildIds = [] } = {}) {
   const id = clientId || config.discord.clientId;
   const botToken = token || config.discord.token;
   if (!id || !botToken) throw new Error("Missing Discord client id or token");
 
-  const rest = new REST({ version: "10" }).setToken(botToken);
+  const rest = restClient(botToken);
   const body = commandDefinitions;
+  const guilds = [...new Set(guildIds.map(String).filter(Boolean))];
 
-  // Multi-tenant: never pin commands to one home guild.
   if (config.saas.enabled || !config.discord.guildId) {
     await rest.put(Routes.applicationCommands(id), { body });
-    return { scope: "global", count: body.length, clientId: id };
+    const guildResults = [];
+    for (const guildId of guilds) {
+      try {
+        await rest.put(Routes.applicationGuildCommands(id, guildId), { body });
+        guildResults.push({ guildId, ok: true });
+      } catch (error) {
+        guildResults.push({ guildId, ok: false, error: error.message });
+        console.error(`Guild slash sync failed [${guildId}]:`, error.message);
+      }
+    }
+    return {
+      scope: "global+guilds",
+      count: body.length,
+      clientId: id,
+      guilds: guildResults,
+    };
   }
 
   await rest.put(Routes.applicationGuildCommands(id, config.discord.guildId), { body });
