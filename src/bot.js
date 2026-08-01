@@ -31,6 +31,19 @@ export function createBotClient() {
     console.log(`Logged in as ${client.user.tag}`);
     console.log(`Auto-mod: ${config.automod.enabled ? "ON" : "OFF"}`);
 
+    try {
+      const { syncSlashCommands } = await import("./commands/sync.js");
+      const appId = client.application?.id || client.user.id;
+      const result = await syncSlashCommands({ clientId: appId });
+      console.log(
+        result.scope === "guild"
+          ? `Slash commands: ${result.count} on guild ${result.guildId}`
+          : `Slash commands: ${result.count} global (app ${result.clientId})`,
+      );
+    } catch (error) {
+      console.error("Slash command sync failed:", error.message);
+    }
+
     attachWebSocket(websocketModule);
     attachAnalytics(analyticsModule);
 

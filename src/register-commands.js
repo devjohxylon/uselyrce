@@ -1,26 +1,14 @@
-import { REST, Routes } from "discord.js";
-import { config } from "./config.js";
-import { commandDefinitions } from "./commands/definitions.js";
+import { syncSlashCommands } from "./commands/sync.js";
 
-const rest = new REST({ version: "10" }).setToken(config.discord.token);
-
-async function register() {
-  if (config.discord.guildId) {
-    await rest.put(
-      Routes.applicationGuildCommands(config.discord.clientId, config.discord.guildId),
-      { body: commandDefinitions },
-    );
-    console.log(`Registered ${commandDefinitions.length} guild command(s)`);
-    return;
-  }
-
-  await rest.put(Routes.applicationCommands(config.discord.clientId), {
-    body: commandDefinitions,
+syncSlashCommands()
+  .then((r) => {
+    if (r.scope === "guild") {
+      console.log(`Registered ${r.count} guild command(s) on ${r.guildId}`);
+    } else {
+      console.log(`Registered ${r.count} global command(s) for app ${r.clientId}`);
+    }
+  })
+  .catch((error) => {
+    console.error("Failed to register commands:", error);
+    process.exit(1);
   });
-  console.log(`Registered ${commandDefinitions.length} global command(s)`);
-}
-
-register().catch((error) => {
-  console.error("Failed to register commands:", error);
-  process.exit(1);
-});
