@@ -144,6 +144,9 @@ function listRow(entry) {
     created_at: org.created_at,
     owner_email: org.owner_email,
     server_count: servers.length,
+    discord_guild_id: org.discord_guild_id || null,
+    stripe_customer_id: org.stripe_customer_id || null,
+    stripe_subscription_id: org.stripe_subscription_id || null,
   };
 }
 

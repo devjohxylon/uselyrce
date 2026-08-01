@@ -4,271 +4,98 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Usely Ops · Org</title>
+  <title>Ops — Usely</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #050506;
-      --bg2: #0c0d10;
-      --bg3: #12141a;
-      --line: rgba(255,255,255,.07);
-      --line2: rgba(255,255,255,.14);
-      --text: #f0f2f5;
-      --muted: #a3aab6;
-      --faint: #5e646f;
-      --accent: #f0c674;
-      --radius: 4px;
-      --font: "Space Grotesk", system-ui, sans-serif;
-      --mono: "JetBrains Mono", ui-monospace, monospace;
-      --ok: #6ee7b7;
-      --warn: #fbbf24;
-      --bad: #f87171;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: var(--font);
-      color: var(--text);
-      background:
-        radial-gradient(900px 520px at 80% -10%, rgba(240,198,116,.07), transparent 55%),
-        var(--bg);
-      min-height: 100vh;
-    }
-    .wrap { width: min(960px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2rem 0 3.5rem; }
-    header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: .55rem;
-      font-weight: 700;
-      letter-spacing: .16em;
-      font-size: .78rem;
-      text-transform: uppercase;
-      color: var(--accent);
-      text-decoration: none;
-    }
-    .brand img { width: 22px; height: 22px; border-radius: 4px; }
-    .brand span { color: var(--muted); letter-spacing: .08em; font-weight: 500; }
-    h1 {
-      margin: .55rem 0 0;
-      font-size: 1.55rem;
-      font-weight: 600;
-      letter-spacing: -.02em;
-    }
-    .meta {
-      margin: .4rem 0 0;
-      color: var(--muted);
-      font-size: .9rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem .75rem;
-      align-items: center;
-    }
-    .pill {
-      display: inline-block;
-      font-size: .72rem;
-      padding: .15rem .45rem;
-      border-radius: 3px;
-      border: 1px solid var(--line2);
-      color: var(--muted);
-      text-transform: lowercase;
-    }
-    .pill.active, .pill.trialing { color: var(--ok); border-color: rgba(110,231,183,.35); }
-    .pill.past_due, .pill.unpaid { color: var(--warn); border-color: rgba(251,191,36,.35); }
-    .pill.canceled, .pill.inactive { color: var(--faint); }
-    .health-ok { color: var(--ok); }
-    .health-degraded { color: var(--warn); }
-    .health-down { color: var(--bad); }
-    .actions-top { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-    .btn, .ghost {
-      font: inherit;
-      font-size: .8rem;
-      font-weight: 500;
-      border-radius: var(--radius);
-      padding: .45rem .75rem;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-    }
-    .btn {
-      border: 0;
-      background: var(--accent);
-      color: #14110b;
-    }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .ghost {
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid var(--line2);
-    }
-    .ghost:hover { color: var(--text); border-color: var(--muted); }
-    .mock-banner {
-      display: none;
-      margin: 0 0 1.25rem;
-      padding: .65rem .9rem;
-      border: 1px solid rgba(240,198,116,.35);
-      background: rgba(240,198,116,.08);
-      color: var(--accent);
-      font-size: .85rem;
-      border-radius: var(--radius);
-    }
-    .mock-banner.on { display: block; }
-    .section {
-      margin-bottom: 1.75rem;
-    }
-    .section h2 {
-      margin: 0 0 .75rem;
-      font-size: .78rem;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--faint);
-      font-weight: 600;
-    }
-    .checks {
-      display: grid;
-      gap: .5rem;
-    }
-    .check {
-      display: grid;
-      grid-template-columns: 7rem 1fr;
-      gap: .75rem;
-      align-items: baseline;
-      padding: .7rem .9rem;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--bg2);
-      font-size: .9rem;
-    }
-    .check .id { font-family: var(--mono); font-size: .75rem; color: var(--muted); }
-    .check .ok { color: var(--ok); }
-    .check .fail { color: var(--bad); }
-    .check .warn { color: var(--warn); }
-    .check .detail { color: var(--muted); font-size: .85rem; }
-    .toolbar {
-      display: flex;
-      gap: .5rem;
-      flex-wrap: wrap;
-      margin-bottom: .75rem;
-      align-items: center;
-    }
-    input[type="text"] {
-      background: var(--bg2);
-      border: 1px solid var(--line2);
-      color: var(--text);
-      border-radius: var(--radius);
-      padding: .55rem .75rem;
-      font: inherit;
-      font-size: .85rem;
-      min-width: 12rem;
-    }
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--bg2);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .875rem;
-    }
-    th, td {
-      text-align: left;
-      padding: .75rem .9rem;
-      border-bottom: 1px solid var(--line);
-      white-space: nowrap;
-    }
-    th {
-      color: var(--faint);
-      font-size: .7rem;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      font-weight: 500;
-      background: var(--bg3);
-    }
-    tr:last-child td { border-bottom: none; }
-    .mono { font-family: var(--mono); font-size: .8rem; }
-    .muted { color: var(--muted); }
-    .err {
-      color: var(--bad);
-      font-size: .9rem;
-      margin-bottom: 1rem;
-      display: none;
-    }
-    .toast {
-      color: var(--ok);
-      font-size: .85rem;
-      margin-bottom: 1rem;
-      display: none;
-    }
-    .empty {
-      padding: 1.5rem 1rem;
-      text-align: center;
-      color: var(--muted);
-    }
-  </style>
+  <link rel="stylesheet" href="/ops/ui.css" />
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <div>
-        <a class="brand" href="/ops">
-          <img src="/logo.png" alt="" />
-          Usely <span>/ platform ops</span>
-        </a>
-        <h1 id="title">…</h1>
-        <p class="meta" id="meta"></p>
-      </div>
-      <div class="actions-top">
-        <a class="ghost" href="/ops">Back</a>
-        <a class="btn" id="openPanel" href="#" target="_blank" rel="noopener">Open panel</a>
+    <nav class="nav">
+      <a class="brand" href="/ops">
+        <img src="/logo.png" alt="" />
+        Usely <em>/ ops</em>
+      </a>
+      <div class="nav-actions">
+        <a class="btn btn-ghost btn-sm" href="/ops">All orgs</a>
+        <a class="btn btn-primary btn-sm" id="openPanel" href="#" target="_blank" rel="noopener">Open panel</a>
         <form method="POST" action="/ops/logout">
-          <button class="ghost" type="submit">Lock</button>
+          <button class="btn btn-ghost btn-sm" type="submit">Lock</button>
         </form>
       </div>
+    </nav>
+
+    <header class="hero">
+      <p class="label" id="eyebrow">Workspace</p>
+      <h1 id="title">…</h1>
+      <p class="sub" id="sub">Loading health probes…</p>
+      <div class="hero-meta" id="heroMeta"></div>
     </header>
 
-    <p class="mock-banner" id="mockBanner">Mock data — repairs update this process only. Set <code>USELY_OPS_MOCK=false</code> for live customers.</p>
+    <p class="banner" id="mockBanner">Mock data — repairs update this process only. Set <code>USELY_OPS_MOCK=false</code> for live customers.</p>
     <p class="err" id="err"></p>
     <p class="toast" id="toast"></p>
 
+    <section class="section" style="margin-top:0;border-top:0;padding-top:0">
+      <p class="label">Identity</p>
+      <div class="dl" id="identity"></div>
+    </section>
+
     <section class="section">
-      <h2>Health</h2>
+      <p class="label">Health</p>
       <div class="checks" id="checks"></div>
     </section>
 
     <section class="section">
-      <h2>Repairs</h2>
-      <div class="toolbar">
-        <button class="btn" type="button" id="btnStripe">Refresh Stripe</button>
-        <button class="ghost" type="button" id="btnReconnectAll">Reconnect all RCON</button>
-        <button class="ghost" type="button" id="btnClearGuild">Clear guild</button>
-        <input type="text" id="guildId" placeholder="Discord guild ID" autocomplete="off" />
-        <button class="ghost" type="button" id="btnRelink">Relink guild</button>
+      <p class="label">Repairs</p>
+      <div class="actions">
+        <div class="action-card">
+          <h3>Billing</h3>
+          <p>Pull the live Stripe subscription and write plan / status back onto this org.</p>
+          <div class="action-row">
+            <button class="btn btn-primary btn-sm" type="button" id="btnStripe">Refresh Stripe</button>
+          </div>
+        </div>
+        <div class="action-card">
+          <h3>RCON pool</h3>
+          <p>Detach and re-attach stored WebRCON credentials for enabled servers on this host.</p>
+          <div class="action-row">
+            <button class="btn btn-ghost btn-sm" type="button" id="btnReconnectAll">Reconnect all</button>
+          </div>
+        </div>
+        <div class="action-card">
+          <h3>Discord guild</h3>
+          <p>Unlink the guild, or set a new ID only if this bot is already a member.</p>
+          <div class="action-row">
+            <button class="btn btn-ghost btn-sm" type="button" id="btnClearGuild">Clear guild</button>
+            <input type="text" id="guildId" placeholder="Guild ID" autocomplete="off" style="flex:1;min-width:8rem" />
+            <button class="btn btn-ghost btn-sm" type="button" id="btnRelink">Relink</button>
+          </div>
+        </div>
+        <div class="action-card">
+          <h3>Panel</h3>
+          <p>Open the customer admin on their subdomain. Does not impersonate the owner.</p>
+          <div class="action-row">
+            <a class="btn btn-ghost btn-sm" id="openPanel2" href="#" target="_blank" rel="noopener">Open panel</a>
+          </div>
+        </div>
       </div>
     </section>
 
     <section class="section">
-      <h2>Servers</h2>
+      <p class="label" id="serversLabel">Servers</p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Server</th>
               <th>Endpoint</th>
               <th>Enabled</th>
-              <th>RCON</th>
+              <th>Password</th>
+              <th>Pool</th>
+              <th>Last error</th>
               <th></th>
             </tr>
           </thead>
@@ -280,7 +107,6 @@
   </div>
   <script>
     const slug = decodeURIComponent(location.pathname.split("/").pop() || "");
-    let state = null;
 
     function esc(s) {
       return String(s ?? "")
@@ -303,32 +129,76 @@
       if (msg) setTimeout(() => { el.style.display = "none"; }, 3500);
     }
 
-    function checkClass(ok) {
-      if (ok === true) return "ok";
+    function stateClass(ok) {
+      if (ok === true) return "pass";
+      if (ok === false) return "fail";
+      return "warn";
+    }
+    function stateLabel(ok) {
+      if (ok === true) return "pass";
       if (ok === false) return "fail";
       return "warn";
     }
 
-    function checkLabel(ok) {
-      if (ok === true) return "ok";
-      if (ok === false) return "fail";
-      return "warn";
+    function fmtWhen(iso) {
+      if (!iso) return "—";
+      try {
+        return new Date(iso).toLocaleString("en-US", {
+          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+        });
+      } catch {
+        return "—";
+      }
+    }
+
+    function copyBtn(value) {
+      if (!value) return "";
+      return `<button type="button" class="copy" data-copy="${esc(value)}">Copy</button>`;
+    }
+
+    function idRow(label, value, { mono = true, copy = true } = {}) {
+      const v = value || "—";
+      return (
+        `<div class="dl-row">` +
+          `<div class="k">${esc(label)}</div>` +
+          `<div class="v${mono ? " mono" : ""}">${esc(v)}</div>` +
+          (copy && value ? copyBtn(value) : `<span></span>`) +
+        `</div>`
+      );
     }
 
     function render(detail) {
-      state = detail;
       const org = detail.org;
-      document.title = `Usely Ops · ${org.name}`;
+      document.title = `${org.name} — Ops`;
       document.getElementById("title").textContent = org.name;
+      document.getElementById("eyebrow").textContent = `${org.slug}.usely.dev`;
       document.getElementById("mockBanner").classList.toggle("on", Boolean(detail.mock));
       document.getElementById("openPanel").href = org.panelUrl || "#";
+      document.getElementById("openPanel2").href = org.panelUrl || "#";
+      if (org.guildId) document.getElementById("guildId").value = org.guildId;
 
       const overall = detail.health?.overall || "—";
-      document.getElementById("meta").innerHTML =
-        `<span class="mono">${esc(org.slug)}</span>` +
-        `<span class="pill ${esc(org.planStatus)}">${esc(org.plan || "—")} · ${esc(org.planStatus || "—")}</span>` +
-        `<span class="health-${esc(overall)}">health: ${esc(overall)}</span>` +
-        `<span class="muted">${esc(org.ownerEmail || "no owner email")}</span>`;
+      const servers = detail.servers || [];
+      const connected = servers.filter((s) => s.rcon?.connected).length;
+      document.getElementById("sub").textContent =
+        `${servers.length} server${servers.length === 1 ? "" : "s"} · ${connected} RCON connected · health ${overall}`;
+      document.getElementById("heroMeta").innerHTML =
+        `<span>plan <strong>${esc(org.plan || "—")}</strong></span>` +
+        `<span>status <strong>${esc(org.planStatus || "—")}</strong></span>` +
+        `<span>health <strong>${esc(overall)}</strong></span>` +
+        (detail.mock ? `<span><strong>mock</strong></span>` : `<span><strong>live</strong></span>`);
+
+      document.getElementById("identity").innerHTML =
+        idRow("Org ID", org.id) +
+        idRow("Slug", org.slug) +
+        idRow("Owner email", org.ownerEmail, { mono: false }) +
+        idRow("Owner Discord", org.ownerDiscordId) +
+        idRow("Guild ID", org.guildId) +
+        idRow("Stripe customer", org.stripeCustomerId) +
+        idRow("Stripe subscription", org.stripeSubscriptionId) +
+        idRow("Default server", org.defaultServerId) +
+        idRow("Created", org.createdAt ? new Date(org.createdAt).toISOString() : null) +
+        idRow("Panel URL", org.panelUrl, { mono: true });
 
       const checks = document.getElementById("checks");
       checks.innerHTML = "";
@@ -337,30 +207,46 @@
         row.className = "check";
         row.innerHTML =
           `<span class="id">${esc(c.id)}</span>` +
-          `<span><span class="${checkClass(c.ok)}">${checkLabel(c.ok)}</span>` +
-          ` <span class="detail">${esc(c.detail || "")}</span></span>`;
+          `<span class="state ${stateClass(c.ok)}">${stateLabel(c.ok)}</span>` +
+          `<span class="detail">${esc(c.detail || "")}</span>`;
         checks.appendChild(row);
       }
 
+      document.getElementById("serversLabel").textContent =
+        `Servers · ${servers.length}`;
+
       const tbody = document.getElementById("rows");
       const empty = document.getElementById("empty");
-      const servers = detail.servers || [];
       tbody.innerHTML = "";
       empty.hidden = servers.length > 0;
       for (const s of servers) {
-        const rconLabel = s.rcon?.connected
-          ? "connected"
-          : s.rcon?.attached
-            ? "attached / down"
-            : "not attached";
-        const rconClass = s.rcon?.connected ? "ok" : "fail";
+        let pool = "detached";
+        let poolClass = "flag off";
+        if (s.rcon?.connected) {
+          pool = "connected";
+          poolClass = "flag on";
+        } else if (s.rcon?.attached) {
+          pool = "attached / down";
+          poolClass = "flag bad";
+        }
         const tr = document.createElement("tr");
+        tr.style.cursor = "default";
         tr.innerHTML =
-          `<td>${esc(s.name)}</td>` +
+          `<td>` +
+            `<div class="row-main">${esc(s.name)}</div>` +
+            `<div class="row-sub">${esc(s.id)}</div>` +
+          `</td>` +
           `<td class="mono">${esc(s.host || "—")}:${esc(s.port ?? "—")}</td>` +
-          `<td>${s.enabled ? "yes" : "no"}</td>` +
-          `<td class="${rconClass}">${esc(rconLabel)}${s.rcon?.lastError ? ` <span class="muted">· ${esc(s.rcon.lastError)}</span>` : ""}</td>` +
-          `<td><button class="ghost" type="button" data-reconnect="${esc(s.id)}">Reconnect</button></td>`;
+          `<td><span class="flag ${s.enabled ? "on" : "off"}">${s.enabled ? "yes" : "no"}</span></td>` +
+          `<td><span class="flag ${s.hasPassword ? "on" : "off"}">${s.hasPassword ? "set" : "missing"}</span></td>` +
+          `<td>` +
+            `<span class="${poolClass}">${esc(pool)}</span>` +
+            (s.rcon?.connectedAt
+              ? `<div class="row-sub">${esc(fmtWhen(s.rcon.connectedAt))}</div>`
+              : "") +
+          `</td>` +
+          `<td class="muted" style="max-width:16rem;white-space:normal">${esc(s.rcon?.lastError || "—")}</td>` +
+          `<td><button class="btn btn-ghost btn-sm" type="button" data-reconnect="${esc(s.id)}">Reconnect</button></td>`;
         tbody.appendChild(tr);
       }
     }
@@ -391,7 +277,7 @@
       if (!res.ok) throw new Error(body.error || "Fix failed");
       if (body.org) render(body);
       else await load();
-      showToast(`${action.replace(/_/g, " ")} — done`);
+      showToast(`${action.replace(/_/g, " ")} · done`);
     }
 
     document.getElementById("btnStripe").addEventListener("click", () => {
@@ -414,6 +300,16 @@
       fix("reconnect_rcon", { serverId: btn.getAttribute("data-reconnect") }).catch((e) =>
         showErr(e.message),
       );
+    });
+    document.getElementById("identity").addEventListener("click", async (ev) => {
+      const btn = ev.target.closest("[data-copy]");
+      if (!btn) return;
+      try {
+        await navigator.clipboard.writeText(btn.getAttribute("data-copy") || "");
+        showToast("copied");
+      } catch {
+        showErr("Could not copy");
+      }
     });
 
     load().catch((e) => showErr(e.message || "Failed to load"));

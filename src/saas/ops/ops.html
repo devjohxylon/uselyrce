@@ -4,247 +4,60 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Usely Ops</title>
+  <title>Ops — Usely</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #050506;
-      --bg2: #0c0d10;
-      --bg3: #12141a;
-      --line: rgba(255,255,255,.07);
-      --line2: rgba(255,255,255,.14);
-      --text: #f0f2f5;
-      --muted: #a3aab6;
-      --faint: #5e646f;
-      --accent: #f0c674;
-      --radius: 4px;
-      --font: "Space Grotesk", system-ui, sans-serif;
-      --mono: "JetBrains Mono", ui-monospace, monospace;
-      --ok: #6ee7b7;
-      --warn: #fbbf24;
-      --bad: #f87171;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: var(--font);
-      color: var(--text);
-      background:
-        radial-gradient(900px 520px at 80% -10%, rgba(215,221,230,.07), transparent 55%),
-        radial-gradient(640px 360px at 0% 40%, rgba(215,221,230,.025), transparent 50%),
-        var(--bg);
-      min-height: 100vh;
-    }
-    .wrap { width: min(1100px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2rem 0 3.5rem; }
-    header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: .55rem;
-      font-weight: 700;
-      letter-spacing: .16em;
-      font-size: .78rem;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-    .brand img { width: 22px; height: 22px; border-radius: 4px; }
-    .brand span { color: var(--muted); letter-spacing: .08em; font-weight: 500; }
-    h1 {
-      margin: 0;
-      font-size: 1.55rem;
-      font-weight: 600;
-      letter-spacing: -.02em;
-    }
-    .sub {
-      margin: .35rem 0 0;
-      color: var(--muted);
-      font-size: .9rem;
-      max-width: 36rem;
-    }
-    .logout {
-      font: inherit;
-      font-size: .8rem;
-      font-weight: 500;
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid var(--line2);
-      border-radius: var(--radius);
-      padding: .45rem .75rem;
-      cursor: pointer;
-    }
-    .logout:hover { color: var(--text); border-color: var(--muted); }
-    .mock-banner {
-      display: none;
-      margin: -0.5rem 0 1.25rem;
-      padding: .65rem .9rem;
-      border: 1px solid rgba(240,198,116,.35);
-      background: rgba(240,198,116,.08);
-      color: var(--accent);
-      font-size: .85rem;
-      border-radius: var(--radius);
-    }
-    .mock-banner.on { display: block; }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: .85rem;
-      margin-bottom: 1.75rem;
-    }
-    @media (max-width: 720px) {
-      .cards { grid-template-columns: 1fr; }
-    }
-    .card {
-      background: var(--bg2);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 1rem 1.15rem;
-    }
-    .card .label {
-      color: var(--faint);
-      font-size: .72rem;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      margin-bottom: .45rem;
-    }
-    .card .value {
-      font-size: 1.85rem;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -.03em;
-    }
-    .toolbar {
-      display: flex;
-      gap: .75rem;
-      align-items: center;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-    input[type="search"] {
-      flex: 1;
-      min-width: 12rem;
-      background: var(--bg2);
-      border: 1px solid var(--line2);
-      color: var(--text);
-      border-radius: var(--radius);
-      padding: .65rem .85rem;
-      font: inherit;
-      font-size: .9rem;
-    }
-    input[type="search"]:focus {
-      outline: none;
-      border-color: var(--muted);
-    }
-    .err {
-      color: var(--bad);
-      font-size: .9rem;
-      margin-bottom: 1rem;
-      display: none;
-    }
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--bg2);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .875rem;
-    }
-    th, td {
-      text-align: left;
-      padding: .75rem .9rem;
-      border-bottom: 1px solid var(--line);
-      white-space: nowrap;
-    }
-    th {
-      color: var(--faint);
-      font-size: .7rem;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      font-weight: 500;
-      background: var(--bg3);
-    }
-    tr:last-child td { border-bottom: none; }
-    tbody tr:hover td { background: rgba(255,255,255,.02); }
-    .muted { color: var(--muted); }
-    .mono { font-family: var(--mono); font-size: .8rem; }
-    a.panel {
-      color: var(--accent);
-      text-decoration: none;
-      border-bottom: 1px solid transparent;
-    }
-    a.panel:hover { border-bottom-color: var(--muted); }
-    .pill {
-      display: inline-block;
-      font-size: .72rem;
-      padding: .15rem .45rem;
-      border-radius: 3px;
-      border: 1px solid var(--line2);
-      color: var(--muted);
-      text-transform: lowercase;
-    }
-    .pill.active, .pill.trialing { color: var(--ok); border-color: rgba(110,231,183,.35); }
-    .pill.past_due, .pill.unpaid { color: var(--warn); border-color: rgba(251,191,36,.35); }
-    .pill.canceled, .pill.inactive { color: var(--faint); }
-    .empty {
-      padding: 2rem 1rem;
-      text-align: center;
-      color: var(--muted);
-    }
-  </style>
+  <link rel="stylesheet" href="/ops/ui.css" />
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <div>
-        <div class="brand">
-          <img src="/logo.png" alt="" />
-          Usely <span>/ platform ops</span>
-        </div>
-        <h1>Customer workspaces</h1>
-        <p class="sub">Every org on Usely — plans, server counts, and panel links. This is not a game admin panel; open Panel to manage a specific server.</p>
+    <nav class="nav">
+      <a class="brand" href="/ops">
+        <img src="/logo.png" alt="" />
+        Usely <em>/ ops</em>
+      </a>
+      <div class="nav-actions">
+        <form method="POST" action="/ops/logout">
+          <button class="btn btn-ghost btn-sm" type="submit">Lock</button>
+        </form>
       </div>
-      <form method="POST" action="/ops/logout">
-        <button class="logout" type="submit">Lock</button>
-      </form>
+    </nav>
+
+    <header class="hero">
+      <p class="label">Platform console</p>
+      <h1>Customer workspaces</h1>
+      <p class="sub">Every org on Usely — billing state, Discord link, server count, and a path into live health. Click a row for probes and safe repairs.</p>
+      <div class="hero-meta" id="heroMeta">
+        <span>Loading…</span>
+      </div>
     </header>
 
-    <p class="mock-banner" id="mockBanner">Mock data — sample workspaces only. Set <code>USELY_OPS_MOCK=false</code> on Railway for live customers.</p>
+    <p class="banner" id="mockBanner">Mock data — sample workspaces only. Set <code>USELY_OPS_MOCK=false</code> on Railway for live customers.</p>
+    <p class="err" id="err"></p>
 
-    <div class="cards" id="cards">
-      <div class="card"><div class="label">Orgs</div><div class="value" id="cOrgs">—</div></div>
-      <div class="card"><div class="label">Active subs</div><div class="value" id="cSubs">—</div></div>
-      <div class="card"><div class="label">Servers</div><div class="value" id="cServers">—</div></div>
+    <div class="stats" id="stats">
+      <div class="stat"><div class="k">Orgs</div><div class="v" id="cOrgs">—</div></div>
+      <div class="stat"><div class="k">Live subs</div><div class="v" id="cSubs">—</div></div>
+      <div class="stat"><div class="k">Servers</div><div class="v" id="cServers">—</div></div>
     </div>
 
     <div class="toolbar">
-      <input type="search" id="q" placeholder="Search name, slug, email, plan…" autocomplete="off" />
+      <input type="search" id="q" placeholder="Filter by name, slug, email, plan, status…" autocomplete="off" />
     </div>
-    <p class="err" id="err"></p>
 
     <div class="table-wrap">
-      <table>
+      <table class="clickable">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Slug</th>
+            <th>Workspace</th>
             <th>Plan</th>
-            <th>Status</th>
+            <th class="hide-sm">Discord</th>
+            <th class="hide-sm">Billing</th>
             <th>Servers</th>
-            <th>Owner</th>
-            <th>Created</th>
-            <th></th>
+            <th class="hide-sm">Owner</th>
+            <th class="hide-sm">Created</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -254,41 +67,6 @@
   </div>
   <script>
     let allOrgs = [];
-
-    function fmtDate(iso) {
-      if (!iso) return "—";
-      try {
-        return new Date(iso).toLocaleDateString("en-US", {
-          year: "numeric", month: "short", day: "numeric",
-        });
-      } catch {
-        return "—";
-      }
-    }
-
-    function statusClass(s) {
-      return String(s || "inactive").replace(/\s+/g, "_");
-    }
-
-    function render(list) {
-      const tbody = document.getElementById("rows");
-      const empty = document.getElementById("empty");
-      tbody.innerHTML = "";
-      empty.hidden = list.length > 0;
-      for (const o of list) {
-        const tr = document.createElement("tr");
-        tr.innerHTML =
-          `<td><a class="panel" href="/ops/orgs/${escAttr(o.slug)}">${esc(o.name)}</a></td>` +
-          `<td class="mono"><a class="panel" href="/ops/orgs/${escAttr(o.slug)}">${esc(o.slug)}</a></td>` +
-          `<td>${esc(o.plan || "—")}</td>` +
-          `<td><span class="pill ${statusClass(o.planStatus)}">${esc(o.planStatus || "—")}</span></td>` +
-          `<td>${Number(o.serverCount) || 0}</td>` +
-          `<td class="muted">${esc(o.ownerEmail || "—")}</td>` +
-          `<td class="muted">${fmtDate(o.createdAt)}</td>` +
-          `<td><a class="panel" href="/ops/orgs/${escAttr(o.slug)}">Open</a></td>`;
-        tbody.appendChild(tr);
-      }
-    }
 
     function esc(s) {
       return String(s ?? "")
@@ -301,12 +79,82 @@
       return esc(s).replace(/'/g, "&#39;");
     }
 
+    function fmtDate(iso) {
+      if (!iso) return "—";
+      try {
+        return new Date(iso).toLocaleDateString("en-US", {
+          year: "numeric", month: "short", day: "numeric",
+        });
+      } catch {
+        return "—";
+      }
+    }
+
+    function ageLabel(iso) {
+      if (!iso) return "";
+      const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+      if (!Number.isFinite(days) || days < 0) return "";
+      if (days === 0) return "today";
+      if (days === 1) return "1d";
+      if (days < 60) return `${days}d`;
+      return `${Math.floor(days / 30)}mo`;
+    }
+
+    function statusFlag(status) {
+      const s = String(status || "inactive");
+      const live = s === "active" || s === "trialing";
+      const bad = s === "past_due" || s === "unpaid" || s === "canceled";
+      return `<span class="flag ${live ? "on" : bad ? "bad" : "off"}">${esc(s)}</span>`;
+    }
+
+    function render(list) {
+      const tbody = document.getElementById("rows");
+      const empty = document.getElementById("empty");
+      tbody.innerHTML = "";
+      empty.hidden = list.length > 0;
+      for (const o of list) {
+        const tr = document.createElement("tr");
+        tr.dataset.href = `/ops/orgs/${o.slug}`;
+        const billing =
+          o.hasStripeCustomer && o.hasStripeSubscription
+            ? `<span class="flag on">stripe</span>`
+            : o.hasStripeCustomer
+              ? `<span class="flag">customer only</span>`
+              : `<span class="flag off">no stripe</span>`;
+        const discord = o.guildLinked
+          ? `<span class="flag on">guild</span>`
+          : `<span class="flag off">unlinked</span>`;
+        tr.innerHTML =
+          `<td>` +
+            `<div class="row-main">${esc(o.name)}</div>` +
+            `<div class="row-sub">${esc(o.slug)}.usely.dev</div>` +
+          `</td>` +
+          `<td>` +
+            `<div>${esc(o.plan || "—")}</div>` +
+            `<div style="margin-top:.35rem">${statusFlag(o.planStatus)}</div>` +
+          `</td>` +
+          `<td class="hide-sm">${discord}</td>` +
+          `<td class="hide-sm">${billing}</td>` +
+          `<td><span class="mono">${Number(o.serverCount) || 0}</span></td>` +
+          `<td class="hide-sm muted">${esc(o.ownerEmail || "—")}</td>` +
+          `<td class="hide-sm">` +
+            `<div class="muted">${fmtDate(o.createdAt)}</div>` +
+            `<div class="row-sub">${esc(ageLabel(o.createdAt))}</div>` +
+          `</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
     function filter() {
       const q = document.getElementById("q").value.trim().toLowerCase();
       if (!q) return render(allOrgs);
       render(
         allOrgs.filter((o) =>
-          [o.name, o.slug, o.ownerEmail, o.plan, o.planStatus]
+          [
+            o.name, o.slug, o.ownerEmail, o.plan, o.planStatus,
+            o.guildLinked ? "guild" : "unlinked",
+            o.hasStripeSubscription ? "stripe" : "no stripe",
+          ]
             .map((x) => String(x || "").toLowerCase())
             .some((x) => x.includes(q)),
         ),
@@ -321,8 +169,8 @@
           fetch("/api/ops/summary", { credentials: "same-origin" }),
           fetch("/api/ops/orgs", { credentials: "same-origin" }),
         ]);
-        if (sumRes.status === 404 || orgRes.status === 404) {
-          document.body.innerHTML = "";
+        if (sumRes.status === 401 || orgRes.status === 401) {
+          location.href = "/ops";
           return;
         }
         if (!sumRes.ok || !orgRes.ok) throw new Error("Request failed");
@@ -332,6 +180,11 @@
         document.getElementById("cOrgs").textContent = sum.orgCount ?? "—";
         document.getElementById("cSubs").textContent = sum.activeSubs ?? "—";
         document.getElementById("cServers").textContent = sum.serverCount ?? "—";
+        document.getElementById("heroMeta").innerHTML =
+          `<span><strong>${esc(String(sum.orgCount ?? 0))}</strong> orgs</span>` +
+          `<span><strong>${esc(String(sum.activeSubs ?? 0))}</strong> live subs</span>` +
+          `<span><strong>${esc(String(sum.serverCount ?? 0))}</strong> servers</span>` +
+          (sum.mock ? `<span><strong>mock</strong> mode</span>` : `<span><strong>live</strong> data</span>`);
         allOrgs = orgData.orgs || [];
         filter();
       } catch (e) {
@@ -341,6 +194,10 @@
     }
 
     document.getElementById("q").addEventListener("input", filter);
+    document.getElementById("rows").addEventListener("click", (ev) => {
+      const tr = ev.target.closest("tr[data-href]");
+      if (tr?.dataset.href) location.href = tr.dataset.href;
+    });
     load();
   </script>
 </body>

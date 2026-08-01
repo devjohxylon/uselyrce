@@ -159,7 +159,7 @@ export async function listAllOrgsForOps() {
   const { data, error } = await db
     .from("orgs")
     .select(
-      "id, name, slug, plan, plan_status, created_at, owner_account_id, accounts(email), servers(count)",
+      "id, name, slug, plan, plan_status, created_at, owner_account_id, discord_guild_id, stripe_customer_id, stripe_subscription_id, accounts(email), servers(count)",
     )
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -176,6 +176,9 @@ export async function listAllOrgsForOps() {
       created_at: row.created_at,
       owner_email: account?.email || null,
       server_count: Number(serverCountRaw) || 0,
+      discord_guild_id: row.discord_guild_id || null,
+      stripe_customer_id: row.stripe_customer_id || null,
+      stripe_subscription_id: row.stripe_subscription_id || null,
     };
   });
 }

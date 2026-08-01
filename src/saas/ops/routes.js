@@ -18,6 +18,7 @@ import {
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const OPS_HTML = path.resolve(DIR, "ops.html");
 const ORG_HTML = path.resolve(DIR, "org.html");
+const OPS_CSS = path.resolve(DIR, "ops-ui.css");
 
 const COOKIE = "usely_ops";
 const TTL_MS = 14 * 24 * 60 * 60 * 1000;
@@ -120,32 +121,28 @@ function gateHtml({ error = "" } = {}) {
 <title>Usely Ops</title>
 <link rel="icon" href="/logo.png" type="image/png"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/ops/ui.css"/>
 <style>
-:root{--bg:#07080a;--bg2:#10131a;--line:rgba(255,255,255,.08);--text:#f3f1ec;--muted:#9aa3b2;--accent:#f0c674;--bad:#f87171;--font:"Space Grotesk",system-ui,sans-serif}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:var(--font);color:var(--text);
-background:radial-gradient(700px 400px at 50% -10%,rgba(240,198,116,.08),transparent 55%),var(--bg);padding:1.5rem}
-.card{width:min(22rem,100%);border:1px solid var(--line);border-radius:6px;background:var(--bg2);padding:1.75rem}
-.eyebrow{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 .75rem;font-weight:600}
-h1{margin:0 0 .5rem;font-size:1.35rem;font-weight:600}
-p{color:var(--muted);line-height:1.5;margin:0 0 1.25rem;font-size:.9rem}
-label{display:grid;gap:.35rem;font-size:.8rem;color:var(--muted);margin-bottom:1rem}
-input{width:100%;font:inherit;padding:.75rem .85rem;border-radius:4px;border:1px solid var(--line);background:#0a0c10;color:var(--text)}
-button{width:100%;font:inherit;font-weight:600;border:0;border-radius:4px;padding:.85rem;cursor:pointer;background:var(--accent);color:#14110b}
-.err{color:var(--bad);font-size:.85rem;margin:0 0 .85rem}
-.note{font-size:.75rem;color:var(--muted);margin:1rem 0 0}
-code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.85em}
+body{display:grid;place-items:center;padding:1.5rem;min-height:100vh}
+.gate{width:min(24rem,100%);border:1px solid var(--line);border-radius:var(--radius);background:var(--bg2);padding:1.85rem}
+.gate .label{margin-bottom:.9rem}
+.gate h1{margin:0 0 .55rem;font-size:1.65rem;font-weight:700;letter-spacing:-.02em}
+.gate p{color:var(--muted);line-height:1.55;margin:0 0 1.25rem;font-size:.95rem}
+.gate label{display:grid;gap:.4rem;font-size:.8rem;color:var(--chrome-dim);margin-bottom:1rem;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.gate .err{display:block;margin:0 0 .85rem;color:var(--text);font-size:.875rem}
+.gate .note{font-size:.75rem;color:var(--faint);margin:1rem 0 0;font-family:var(--mono);letter-spacing:.04em}
 </style></head><body>
-<form class="card" method="POST" action="/ops/login">
-  <p class="eyebrow">Platform console</p>
-  <h1>Usely ops</h1>
-  <p>Customer workspaces across the platform — not a game server admin panel.</p>
+<form class="gate" method="POST" action="/ops/login">
+  <p class="label">Platform console</p>
+  <h1>Ops</h1>
+  <p>Customer workspaces across Usely — health, Discord, billing, and RCON. Not a game admin panel.</p>
   ${configured ? "" : `<p class="err">Set USELY_OPS_CODE on Railway, then redeploy.</p>`}
   ${err}
   <label>Access code
     <input type="password" name="code" autocomplete="current-password" autofocus ${configured ? "required" : "disabled"} />
   </label>
-  <button type="submit" ${configured ? "" : "disabled"}>Unlock</button>
-  <p class="note">Bookmark <code>/ops</code>. Code lives in Railway env <code>USELY_OPS_CODE</code>.</p>
+  <button class="btn btn-primary" type="submit" style="width:100%" ${configured ? "" : "disabled"}>Unlock</button>
+  <p class="note">/ops · USELY_OPS_CODE</p>
 </form>
 </body></html>`;
 }
@@ -348,6 +345,10 @@ export function attachOpsRoutes(app, client = null) {
     res.type("html").sendFile(OPS_HTML);
   });
 
+  app.get("/ops/ui.css", (_req, res) => {
+    res.type("text/css").sendFile(OPS_CSS);
+  });
+
   app.get("/ops/orgs/:slug", (req, res) => {
     if (!requireOps(req, res, { html: true })) return;
     res.type("html").sendFile(ORG_HTML);
@@ -397,6 +398,10 @@ export function attachOpsRoutes(app, client = null) {
           ownerEmail: org.owner_email,
           createdAt: org.created_at,
           panelUrl: orgPanelUrl(org),
+          guildLinked: Boolean(org.discord_guild_id),
+          guildId: org.discord_guild_id || null,
+          hasStripeCustomer: Boolean(org.stripe_customer_id),
+          hasStripeSubscription: Boolean(org.stripe_subscription_id),
         })),
       });
     } catch (error) {
