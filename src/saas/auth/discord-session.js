@@ -101,8 +101,23 @@ export function discordAuthorizeUrl(state) {
   return `https://discord.com/api/oauth2/authorize?${params}`;
 }
 
-export function botInviteUrl(orgId) {
-  const clientId = config.discord.clientId;
+function resolveBotClientId(discordClient = null) {
+  const live =
+    discordClient?.application?.id ||
+    discordClient?.user?.id ||
+    null;
+  const configured = config.discord.clientId || null;
+  if (live && configured && live !== configured && !resolveBotClientId._warned) {
+    resolveBotClientId._warned = true;
+    console.warn(
+      `DISCORD_CLIENT_ID=${configured} does not match the running bot (${live}). Invite links will use the running bot — update Railway DISCORD_CLIENT_ID to ${live}.`,
+    );
+  }
+  return live || configured || config.saas.discordOAuthClientId || null;
+}
+
+export function botInviteUrl(orgId, discordClient = null) {
+  const clientId = resolveBotClientId(discordClient);
   if (!clientId) return "";
   const redirect = `${String(config.saas.publicUrl || "").replace(/\/$/, "")}/admin/auth/bot-installed`;
   const params = new URLSearchParams({
@@ -118,8 +133,8 @@ export function botInviteUrl(orgId) {
 }
 
 /** Invite URL without redirect — works even before OAuth redirect is registered. */
-export function botInviteUrlSimple() {
-  const clientId = config.discord.clientId;
+export function botInviteUrlSimple(discordClient = null) {
+  const clientId = resolveBotClientId(discordClient);
   if (!clientId) return "";
   const params = new URLSearchParams({
     client_id: clientId,

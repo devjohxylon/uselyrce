@@ -358,8 +358,8 @@ export async function attachAdminPanel(app, client) {
         serverId: session.serverId,
         servers: session.servers || [],
         staffPermissionDefaults: STAFF_PERMISSIONS,
-        botInviteUrl: botInviteUrlSimple() || botInviteUrl(session.orgId),
-        botInviteUrlAutoLink: botInviteUrl(session.orgId),
+        botInviteUrl: botInviteUrlSimple(client) || botInviteUrl(session.orgId, client),
+        botInviteUrlAutoLink: botInviteUrl(session.orgId, client),
       });
     }
     const session = await resolveSession(req);

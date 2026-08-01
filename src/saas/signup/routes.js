@@ -141,7 +141,7 @@ export function attachSignupRoutes(app, client = null) {
       guildId: org.discord_guild_id || null,
       servers: publicServers(servers),
       maxServers: maxServersForPlan(org.plan),
-      botInviteUrl: botInviteUrlSimple(),
+      botInviteUrl: botInviteUrlSimple(client),
       step: inferStep(account, org, servers),
     });
   });
@@ -201,7 +201,7 @@ export function attachSignupRoutes(app, client = null) {
         ok: true,
         step: updated.discord_guild_id ? (ctx.servers.length ? "review" : "server") : "discord",
         org: { id: updated.id, name: updated.name, slug: updated.slug },
-        botInviteUrl: botInviteUrlSimple(),
+        botInviteUrl: botInviteUrlSimple(client),
         maxServers: maxServersForPlan(updated.plan),
       });
     } catch (error) {
@@ -236,7 +236,7 @@ export function attachSignupRoutes(app, client = null) {
           return res.status(400).json({
             ok: false,
             error: "Bot is not in that Discord yet. Click Invite Discord bot, authorize, then try again.",
-            botInviteUrl: botInviteUrlSimple(),
+            botInviteUrl: botInviteUrlSimple(client),
           });
         }
       }

@@ -67,7 +67,7 @@ export function attachSaasRoutes(app, client) {
       saas: true,
       plans: PLAN_LIMITS,
       prices: PLAN_PRICES_USD,
-      botInviteUrl: botInviteUrlSimple(),
+      botInviteUrl: botInviteUrlSimple(client),
     });
   });
 
@@ -184,7 +184,7 @@ export function attachSaasRoutes(app, client) {
       servers: session.servers || [],
       needsOnboarding: session.needsOnboarding,
       staffPermissionDefaults: STAFF_PERMISSIONS,
-      botInviteUrl: botInviteUrl(session.orgId),
+      botInviteUrl: botInviteUrl(session.orgId, client),
     });
   });
 
@@ -252,7 +252,7 @@ export function attachSaasRoutes(app, client) {
       ownerAccountId: cookie.accountId || null,
     });
     setSaasSessionCookie(res, { ...cookie, orgId: org.id });
-    res.json({ ok: true, org, botInviteUrl: botInviteUrl(org.id) });
+    res.json({ ok: true, org, botInviteUrl: botInviteUrl(org.id, client) });
   });
 
   app.post("/admin/api/saas/orgs/:id/guild", async (req, res) => {
@@ -266,7 +266,7 @@ export function attachSaasRoutes(app, client) {
     if (!guild) {
       return res.status(400).json({
         error: "Bot is not in that Discord server yet. Invite the bot first.",
-        botInviteUrl: botInviteUrl(req.params.id),
+        botInviteUrl: botInviteUrl(req.params.id, client),
       });
     }
     const org = await setGuild(req.params.id, guildId);
