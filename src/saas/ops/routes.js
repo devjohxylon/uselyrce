@@ -2,14 +2,22 @@ import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 import { config } from "../../config.js";
-import { listAllOrgsForOps } from "../db/orgs.js";
+import { getAccount } from "../db/accounts.js";
+import { getOrgBySlug, listAllOrgsForOps, setGuild } from "../db/orgs.js";
+import { getServerRaw, listServers, withCredentials } from "../db/servers.js";
+import { syncSubscriptionFromStripe } from "../billing/stripe.js";
+import { attachSaasServer, detachSaasServer, getRconStatus } from "../../modules/rcon/client.js";
 import { orgPanelUrl } from "../tenancy.js";
-import { OPS_MOCK_ORGS } from "./mock-orgs.js";
+import { buildHealth, serializeServerForOps } from "./health.js";
+import {
+  applyMockOpsFix,
+  getMockOpsDetail,
+  listMockOpsOrgs,
+} from "./mock-orgs.js";
 
-const OPS_HTML = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "ops.html",
-);
+const DIR = path.dirname(fileURLToPath(import.meta.url));
+const OPS_HTML = path.resolve(DIR, "ops.html");
+const ORG_HTML = path.resolve(DIR, "org.html");
 
 const COOKIE = "usely_ops";
 const TTL_MS = 14 * 24 * 60 * 60 * 1000;
@@ -142,9 +150,6 @@ code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.85em}
 </body></html>`;
 }
 
-/**
- * @returns {boolean} true when authorized
- */
 function requireOps(req, res, { html = false } = {}) {
   if (!config.saas.enabled) {
     if (html) {
@@ -184,17 +189,168 @@ function summarize(orgs) {
 
 function loadOpsOrgs() {
   if (config.saas.opsMock) {
-    return { orgs: OPS_MOCK_ORGS, mock: true };
+    return { orgs: listMockOpsOrgs(), mock: true };
   }
   return listAllOrgsForOps().then((orgs) => ({ orgs, mock: false }));
 }
 
-export function attachOpsRoutes(app) {
+async function probeBotInGuild(client, guildId) {
+  if (!guildId) return { botInGuild: false, discordReady: Boolean(client?.isReady?.()) };
+  const discordReady = Boolean(client?.isReady?.());
+  if (!discordReady) return { botInGuild: null, discordReady: false };
+  let guild = client.guilds.cache.get(guildId) || null;
+  if (!guild) {
+    guild = await client.guilds.fetch(guildId).catch(() => null);
+  }
+  return { botInGuild: Boolean(guild), discordReady: true, guildName: guild?.name || null };
+}
+
+function publicOrg(org, ownerEmail) {
+  return {
+    id: org.id,
+    name: org.name,
+    slug: org.slug,
+    plan: org.plan,
+    planStatus: org.plan_status,
+    ownerEmail: ownerEmail ?? org.owner_email ?? null,
+    ownerDiscordId: org.owner_discord_id || null,
+    guildId: org.discord_guild_id || null,
+    stripeCustomerId: org.stripe_customer_id || null,
+    stripeSubscriptionId: org.stripe_subscription_id || null,
+    defaultServerId: org.default_server_id || null,
+    panelUrl: orgPanelUrl(org),
+    createdAt: org.created_at,
+  };
+}
+
+async function loadLiveDetail(slug, client) {
+  const org = await getOrgBySlug(String(slug || "").toLowerCase().trim());
+  if (!org) return null;
+  let ownerEmail = null;
+  if (org.owner_account_id) {
+    const account = await getAccount(org.owner_account_id).catch(() => null);
+    ownerEmail = account?.email || null;
+  }
+  const rawServers = await listServers(org.id);
+  const servers = rawServers.map((s) => serializeServerForOps(s, getRconStatus(s.id)));
+  const probe = await probeBotInGuild(client, org.discord_guild_id);
+  const health = buildHealth(org, servers, {
+    botInGuild: probe.botInGuild,
+    discordReady: probe.discordReady,
+  });
+  return {
+    mock: false,
+    org: publicOrg(org, ownerEmail),
+    servers,
+    health,
+    _raw: org,
+  };
+}
+
+async function loadDetail(slug, client) {
+  if (config.saas.opsMock) {
+    const detail = getMockOpsDetail(slug);
+    if (!detail) return null;
+    return {
+      mock: true,
+      org: publicOrg(detail.org),
+      servers: detail.servers,
+      health: detail.health,
+    };
+  }
+  return loadLiveDetail(slug, client);
+}
+
+async function reconnectServer(orgId, serverId) {
+  const raw = await getServerRaw(serverId);
+  if (!raw || raw.org_id !== orgId) {
+    const err = new Error("Server not found for this org");
+    err.status = 404;
+    throw err;
+  }
+  if (!raw.rcon_password_enc) {
+    const err = new Error("Server has no RCON password stored");
+    err.status = 400;
+    throw err;
+  }
+  detachSaasServer(serverId);
+  if (raw.enabled !== false) {
+    await attachSaasServer(withCredentials(raw));
+  }
+  return { serverId, attached: raw.enabled !== false };
+}
+
+async function runLiveFix(org, action, { serverId, guildId }, client) {
+  switch (action) {
+    case "reconnect_rcon": {
+      if (!serverId) {
+        const err = new Error("serverId required");
+        err.status = 400;
+        throw err;
+      }
+      return { result: await reconnectServer(org.id, serverId) };
+    }
+    case "reconnect_all_rcon": {
+      const servers = await listServers(org.id);
+      const results = [];
+      for (const s of servers.filter((x) => x.enabled !== false)) {
+        results.push(await reconnectServer(org.id, s.id));
+      }
+      return { result: { reconnected: results.length, servers: results } };
+    }
+    case "refresh_stripe": {
+      const updated = await syncSubscriptionFromStripe(org);
+      return {
+        result: {
+          plan: updated.plan,
+          plan_status: updated.plan_status,
+        },
+      };
+    }
+    case "clear_guild": {
+      await setGuild(org.id, null);
+      return { result: { guildId: null } };
+    }
+    case "relink_guild": {
+      const id = String(guildId || "").trim();
+      if (!id) {
+        const err = new Error("guildId required");
+        err.status = 400;
+        throw err;
+      }
+      const probe = await probeBotInGuild(client, id);
+      if (!probe.discordReady) {
+        const err = new Error("Discord client not ready");
+        err.status = 503;
+        throw err;
+      }
+      if (!probe.botInGuild) {
+        const err = new Error("Bot is not in that Discord server yet. Invite the bot first.");
+        err.status = 400;
+        throw err;
+      }
+      await setGuild(org.id, id);
+      return { result: { guildId: id, guildName: probe.guildName } };
+    }
+    default: {
+      const err = new Error(`Unknown action: ${action}`);
+      err.status = 400;
+      throw err;
+    }
+  }
+}
+
+export function attachOpsRoutes(app, client = null) {
   if (!config.saas.enabled) return;
 
   app.get("/ops", (req, res) => {
     if (!requireOps(req, res, { html: true })) return;
     res.type("html").sendFile(OPS_HTML);
+  });
+
+  app.get("/ops/orgs/:slug", (req, res) => {
+    if (!requireOps(req, res, { html: true })) return;
+    res.type("html").sendFile(ORG_HTML);
   });
 
   app.post("/ops/login", (req, res) => {
@@ -203,7 +359,9 @@ export function attachOpsRoutes(app) {
       return res.status(401).type("html").send(gateHtml({ error: "Wrong access code." }));
     }
     setOpsCookie(res);
-    res.redirect(302, "/ops");
+    const next = String(req.body?.next || req.query?.next || "/ops");
+    const safe = next.startsWith("/ops") ? next : "/ops";
+    res.redirect(302, safe);
   });
 
   app.post("/ops/logout", (_req, res) => {
@@ -244,6 +402,57 @@ export function attachOpsRoutes(app) {
     } catch (error) {
       console.error("ops orgs failed:", error.message);
       res.status(500).json({ ok: false, error: "Failed to load orgs" });
+    }
+  });
+
+  app.get("/api/ops/orgs/:slug", async (req, res) => {
+    if (!requireOps(req, res)) return;
+    try {
+      const discord = client || req.app?.locals?.discordClient || null;
+      const detail = await loadDetail(req.params.slug, discord);
+      if (!detail) return res.status(404).json({ ok: false, error: "Org not found" });
+      res.json({
+        ok: true,
+        mock: detail.mock,
+        org: detail.org,
+        servers: detail.servers,
+        health: detail.health,
+      });
+    } catch (error) {
+      console.error("ops org detail failed:", error.message);
+      res.status(500).json({ ok: false, error: "Failed to load org" });
+    }
+  });
+
+  app.post("/api/ops/orgs/:slug/fix", async (req, res) => {
+    if (!requireOps(req, res)) return;
+    const action = String(req.body?.action || "").trim();
+    const serverId = req.body?.serverId ? String(req.body.serverId) : null;
+    const guildId = req.body?.guildId ? String(req.body.guildId) : null;
+    try {
+      const discord = client || req.app?.locals?.discordClient || null;
+      let fixResult;
+      if (config.saas.opsMock) {
+        fixResult = applyMockOpsFix(req.params.slug, action, { serverId, guildId });
+      } else {
+        const org = await getOrgBySlug(String(req.params.slug || "").toLowerCase().trim());
+        if (!org) return res.status(404).json({ ok: false, error: "Org not found" });
+        fixResult = await runLiveFix(org, action, { serverId, guildId }, discord);
+      }
+      const detail = await loadDetail(req.params.slug, discord);
+      res.json({
+        ok: true,
+        action,
+        ...fixResult,
+        mock: detail?.mock ?? config.saas.opsMock,
+        org: detail?.org,
+        servers: detail?.servers,
+        health: detail?.health,
+      });
+    } catch (error) {
+      const status = error.status || 500;
+      if (status >= 500) console.error("ops fix failed:", error.message);
+      res.status(status).json({ ok: false, error: error.message || "Fix failed" });
     }
   });
 }

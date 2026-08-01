@@ -85,6 +85,32 @@ export async function createPortalSession(org) {
   return portal.url;
 }
 
+const SUB_STATUS_MAP = {
+  active: "active",
+  trialing: "trialing",
+  past_due: "past_due",
+  canceled: "canceled",
+  unpaid: "past_due",
+  incomplete: "inactive",
+  incomplete_expired: "canceled",
+};
+
+/** Pull live subscription state from Stripe into the org row (ops / support). */
+export async function syncSubscriptionFromStripe(org) {
+  if (!org?.stripe_subscription_id) {
+    throw new Error("No Stripe subscription on this org.");
+  }
+  const s = getStripe();
+  const sub = await s.subscriptions.retrieve(org.stripe_subscription_id);
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  return updateStripe(org.id, {
+    stripe_subscription_id: sub.id,
+    stripe_customer_id: sub.customer || org.stripe_customer_id,
+    plan: planFromPriceId(priceId),
+    plan_status: SUB_STATUS_MAP[sub.status] || "inactive",
+  });
+}
+
 function planFromPriceId(priceId) {
   if (priceId === config.saas.stripePriceBasic) return "basic";
   if (priceId === config.saas.stripePricePro) return "pro";
@@ -134,19 +160,10 @@ export async function handleStripeWebhook(rawBody, signature) {
         (await getOrgByStripeCustomer(sub.customer));
       if (!org) break;
       const priceId = sub.items?.data?.[0]?.price?.id;
-      const statusMap = {
-        active: "active",
-        trialing: "trialing",
-        past_due: "past_due",
-        canceled: "canceled",
-        unpaid: "past_due",
-        incomplete: "inactive",
-        incomplete_expired: "canceled",
-      };
       await updateStripe(org.id, {
         stripe_subscription_id: sub.id,
         plan: planFromPriceId(priceId),
-        plan_status: statusMap[sub.status] || "inactive",
+        plan_status: SUB_STATUS_MAP[sub.status] || "inactive",
       });
       break;
     }

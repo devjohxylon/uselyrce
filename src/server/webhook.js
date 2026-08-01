@@ -71,7 +71,7 @@ export async function createWebhookServer(client) {
     const { attachSignupRoutes } = await import("../saas/signup/routes.js");
     attachSignupRoutes(app, client);
     const { attachOpsRoutes } = await import("../saas/ops/routes.js");
-    attachOpsRoutes(app);
+    attachOpsRoutes(app, client);
   }
 
   app.get("/logo.svg", (_req, res) => {

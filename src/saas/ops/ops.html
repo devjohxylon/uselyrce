@@ -278,14 +278,14 @@
       for (const o of list) {
         const tr = document.createElement("tr");
         tr.innerHTML =
-          `<td>${esc(o.name)}</td>` +
-          `<td class="mono">${esc(o.slug)}</td>` +
+          `<td><a class="panel" href="/ops/orgs/${escAttr(o.slug)}">${esc(o.name)}</a></td>` +
+          `<td class="mono"><a class="panel" href="/ops/orgs/${escAttr(o.slug)}">${esc(o.slug)}</a></td>` +
           `<td>${esc(o.plan || "—")}</td>` +
           `<td><span class="pill ${statusClass(o.planStatus)}">${esc(o.planStatus || "—")}</span></td>` +
           `<td>${Number(o.serverCount) || 0}</td>` +
           `<td class="muted">${esc(o.ownerEmail || "—")}</td>` +
           `<td class="muted">${fmtDate(o.createdAt)}</td>` +
-          `<td><a class="panel" href="${escAttr(o.panelUrl)}" target="_blank" rel="noopener">Panel</a></td>`;
+          `<td><a class="panel" href="/ops/orgs/${escAttr(o.slug)}">Open</a></td>`;
         tbody.appendChild(tr);
       }
     }
