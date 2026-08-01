@@ -10,6 +10,7 @@
     { "source": "/admin", "destination": "https://app.usely.dev/admin" },
     { "source": "/admin/:path*", "destination": "https://app.usely.dev/admin/:path*" },
     { "source": "/demo", "destination": "https://app.usely.dev/demo" },
+    { "source": "/ops", "destination": "https://app.usely.dev/ops" },
     { "source": "/api/:path*", "destination": "https://app.usely.dev/api/:path*" }
   ]
 }

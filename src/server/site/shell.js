@@ -251,6 +251,7 @@ Allow: /
 Disallow: /admin
 Disallow: /signup
 Disallow: /setup
+Disallow: /demo
 Disallow: /api/
 
 Sitemap: ${SITE_URL}/sitemap.xml
