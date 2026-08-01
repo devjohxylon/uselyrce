@@ -145,6 +145,8 @@ const saasConfig = {
   emailFrom: optional("EMAIL_FROM") || "Usely <onboarding@usely.dev>",
   // Shared access code for https://app.usely.dev/ops (platform customer list).
   opsAccessCode: optional("USELY_OPS_CODE") || null,
+  // When true, /ops shows sample workspaces instead of live Supabase rows.
+  opsMock: parseBool("USELY_OPS_MOCK", false),
 };
 
 if (saasEnabled && !saasMock) {

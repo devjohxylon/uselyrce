@@ -83,6 +83,17 @@
       cursor: pointer;
     }
     .logout:hover { color: var(--text); border-color: var(--muted); }
+    .mock-banner {
+      display: none;
+      margin: -0.5rem 0 1.25rem;
+      padding: .65rem .9rem;
+      border: 1px solid rgba(240,198,116,.35);
+      background: rgba(240,198,116,.08);
+      color: var(--accent);
+      font-size: .85rem;
+      border-radius: var(--radius);
+    }
+    .mock-banner.on { display: block; }
     .cards {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -209,6 +220,8 @@
       </form>
     </header>
 
+    <p class="mock-banner" id="mockBanner">Mock data — sample workspaces only. Set <code>USELY_OPS_MOCK=false</code> on Railway for live customers.</p>
+
     <div class="cards" id="cards">
       <div class="card"><div class="label">Orgs</div><div class="value" id="cOrgs">—</div></div>
       <div class="card"><div class="label">Active subs</div><div class="value" id="cSubs">—</div></div>
@@ -315,6 +328,7 @@
         if (!sumRes.ok || !orgRes.ok) throw new Error("Request failed");
         const sum = await sumRes.json();
         const orgData = await orgRes.json();
+        document.getElementById("mockBanner").classList.toggle("on", Boolean(sum.mock || orgData.mock));
         document.getElementById("cOrgs").textContent = sum.orgCount ?? "—";
         document.getElementById("cSubs").textContent = sum.activeSubs ?? "—";
         document.getElementById("cServers").textContent = sum.serverCount ?? "—";

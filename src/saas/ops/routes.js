@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { config } from "../../config.js";
 import { listAllOrgsForOps } from "../db/orgs.js";
 import { orgPanelUrl } from "../tenancy.js";
+import { OPS_MOCK_ORGS } from "./mock-orgs.js";
 
 const OPS_HTML = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -181,6 +182,13 @@ function summarize(orgs) {
   };
 }
 
+function loadOpsOrgs() {
+  if (config.saas.opsMock) {
+    return { orgs: OPS_MOCK_ORGS, mock: true };
+  }
+  return listAllOrgsForOps().then((orgs) => ({ orgs, mock: false }));
+}
+
 export function attachOpsRoutes(app) {
   if (!config.saas.enabled) return;
 
@@ -206,8 +214,8 @@ export function attachOpsRoutes(app) {
   app.get("/api/ops/summary", async (req, res) => {
     if (!requireOps(req, res)) return;
     try {
-      const orgs = await listAllOrgsForOps();
-      res.json({ ok: true, ...summarize(orgs) });
+      const { orgs, mock } = await loadOpsOrgs();
+      res.json({ ok: true, mock, ...summarize(orgs) });
     } catch (error) {
       console.error("ops summary failed:", error.message);
       res.status(500).json({ ok: false, error: "Failed to load summary" });
@@ -217,9 +225,10 @@ export function attachOpsRoutes(app) {
   app.get("/api/ops/orgs", async (req, res) => {
     if (!requireOps(req, res)) return;
     try {
-      const orgs = await listAllOrgsForOps();
+      const { orgs, mock } = await loadOpsOrgs();
       res.json({
         ok: true,
+        mock,
         orgs: orgs.map((org) => ({
           id: org.id,
           name: org.name,
