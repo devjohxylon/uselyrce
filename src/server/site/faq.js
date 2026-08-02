@@ -4,6 +4,7 @@
  */
 export const groups = [
   {
+    id: "getting-started",
     label: "Getting started",
     items: [
       {
@@ -29,6 +30,7 @@ export const groups = [
     ],
   },
   {
+    id: "using-the-panel",
     label: "Using the panel",
     items: [
       {
@@ -54,6 +56,7 @@ export const groups = [
     ],
   },
   {
+    id: "accounts-billing",
     label: "Accounts and billing",
     items: [
       {
@@ -77,27 +80,38 @@ export const groups = [
 ];
 
 export function renderFaq() {
-  let first = true;
-  return groups
+  const nav = groups
+    .map((g) => `        <a href="#${g.id}">${g.label}</a>`)
+    .join("\n");
+
+  let n = 0;
+  const body = groups
     .map((group) => {
       const items = group.items
         .map((item) => {
-          const open = first ? " open" : "";
-          first = false;
-          return `        <details${open}>
-          <summary>${item.q}</summary>
-          <p>${item.a}</p>
+          n += 1;
+          const num = String(n).padStart(2, "0");
+          return `        <details class="faq-card">
+          <summary><span class="faq-num">${num}</span><span class="faq-q">${item.q}</span></summary>
+          <div class="faq-a"><p>${item.a}</p></div>
         </details>`;
         })
-        .join("\n\n");
+        .join("\n");
 
-      return `      <div class="faq-group">
-        <p class="label">${group.label}</p>
-
+      return `      <section class="faq-section" id="${group.id}">
+        <h2>${group.label}</h2>
 ${items}
-      </div>`;
+      </section>`;
     })
     .join("\n\n");
+
+  return `      <nav class="faq-nav" aria-label="FAQ topics">
+        <p class="label">Topics</p>
+${nav}
+      </nav>
+      <div class="faq-main" data-acc>
+${body}
+      </div>`;
 }
 
 /** Google's FAQPage rich result. Tags are stripped from answers. */

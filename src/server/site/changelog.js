@@ -11,6 +11,7 @@ export const entries = [
     title: "Tighter docs, changelog, and panel copy",
     changes: [
       { type: "changed", text: "Docs are a full setup and product guide with a sticky table of contents — from checkout and WebRCON through Discord channels, kits, staff keys, and wipe day." },
+      { type: "changed", text: "Changelog, FAQ, pricing, contact, and status each use a distinct layout instead of the same hero template." },
       { type: "changed", text: "Panel labels and fields drop the extra helper paragraphs — titles and placeholders stay." },
     ],
   },
@@ -258,7 +259,7 @@ ${entry.changes
         </article>`;
 }
 
-/** Month accordion — one open at a time via data-acc in the page shell. */
+/** Month groups as a vertical timeline (not an accordion). */
 export function renderEntries() {
   /** @type {Map<string, typeof entries>} */
   const byMonth = new Map();
@@ -270,12 +271,12 @@ export function renderEntries() {
 
   return [...byMonth.entries()]
     .map(
-      ([ym, list], i) => `      <details${i === 0 ? " open" : ""}>
-        <summary>${formatMonth(ym)}<span class="acc-meta"><span class="acc-count">${list.length} update${list.length === 1 ? "" : "s"}</span></span></summary>
-        <div class="month-body">
+      ([ym, list]) => `      <section class="month">
+        <div class="month-label">${formatMonth(ym)}<span>${list.length} update${list.length === 1 ? "" : "s"}</span></div>
+        <div class="month-entries">
 ${list.map(renderEntry).join("\n")}
         </div>
-      </details>`,
+      </section>`,
     )
     .join("\n");
 }

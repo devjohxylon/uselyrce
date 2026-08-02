@@ -3,13 +3,44 @@
 <head>
 <!--HEAD:status-->
   <style>
+    .status-hero {
+      padding: clamp(2rem, 5vh, 2.75rem) 0 1.5rem;
+      animation: rise .5s ease both;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: .75rem 1.5rem;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 1.5rem;
+    }
+    .status-hero h1 {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .status-hero p {
+      margin: 0;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: .06em;
+      max-width: 42ch;
+      line-height: 1.5;
+    }
+
     .overall {
       display: flex;
       align-items: center;
       gap: 1rem;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: var(--bg2);
+      background:
+        linear-gradient(90deg, rgba(127,209,164,.06), transparent 40%),
+        var(--bg2);
       padding: 1.35rem 1.5rem;
       margin-bottom: 1rem;
       animation: rise .55s ease .05s both;
@@ -77,11 +108,10 @@
   <div class="wrap">
 <!--NAV:-->
 
-    <section class="page-hero">
-      <p class="label">Status</p>
+    <header class="status-hero">
       <h1 id="statusTitle">System status</h1>
-      <p id="statusLead">Live health of the panel, the Discord bot, and RCON connections. Checked when you load this page.</p>
-    </section>
+      <p id="statusLead">Panel · Discord · WebRCON — live check</p>
+    </header>
 
     <div class="overall">
       <span class="dot unknown" id="overallDot"></span>

@@ -3,6 +3,42 @@
 <head>
 <!--HEAD:docs-->
   <style>
+    .docs-hero {
+      padding: clamp(2rem, 5vh, 3rem) 0 1.5rem;
+      animation: rise .5s ease both;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.5rem;
+      align-items: end;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 2.25rem;
+    }
+    .docs-hero .label { margin-bottom: .7rem; }
+    .docs-hero h1 {
+      margin: 0;
+      font-size: clamp(1.85rem, 3.5vw, 2.35rem);
+      font-weight: 700;
+      letter-spacing: -.025em;
+      line-height: 1.15;
+    }
+    .docs-hero p {
+      margin: .65rem 0 0;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.55;
+      max-width: 48ch;
+    }
+    .docs-hero .docs-meta {
+      font-family: var(--mono);
+      font-size: .68rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--faint);
+      text-align: right;
+      padding-bottom: .2rem;
+    }
+    .docs-hero .docs-meta a { color: var(--chrome-dim); text-decoration: underline; }
+
     .docs {
       display: grid;
       grid-template-columns: 12rem minmax(0, 1fr);
@@ -133,6 +169,8 @@
     .callout strong { color: var(--text); }
 
     @media (max-width: 900px) {
+      .docs-hero { grid-template-columns: 1fr; gap: .85rem; }
+      .docs-hero .docs-meta { text-align: left; }
       .docs { grid-template-columns: 1fr; gap: 1.75rem; }
       .toc {
         position: static;
@@ -161,11 +199,14 @@
   <div class="wrap">
 <!--NAV:docs-->
 
-    <section class="page-hero">
-      <p class="label">Documentation</p>
-      <h1>Docs</h1>
-      <p>How Usely works, how to finish setup, and how to run your Rust Console server from the panel and Discord.</p>
-    </section>
+    <header class="docs-hero">
+      <div>
+        <p class="label">Guide</p>
+        <h1>Documentation</h1>
+        <p>How Usely works, how to finish setup, and how to run your Rust Console server from the panel and Discord.</p>
+      </div>
+      <p class="docs-meta">Also see<br /><a href="/faq">FAQ</a> · <a href="/changelog">Changelog</a></p>
+    </header>
 
     <div class="docs">
       <nav class="toc" aria-label="On this page">

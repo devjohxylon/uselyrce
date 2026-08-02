@@ -3,6 +3,28 @@
 <head>
 <!--HEAD:pricing-->
   <style>
+    .price-hero {
+      text-align: center;
+      padding: clamp(2.75rem, 7vh, 4rem) 0 2.25rem;
+      animation: rise .5s ease both;
+      max-width: 36rem;
+      margin: 0 auto;
+    }
+    .price-hero .label { margin-bottom: .85rem; }
+    .price-hero h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 5vw, 3.1rem);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      line-height: 1.08;
+    }
+    .price-hero p {
+      margin: 1rem auto 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -160,11 +182,11 @@
   <div class="wrap">
 <!--NAV:pricing-->
 
-    <section class="page-hero">
-      <p class="label">Plans</p>
-      <h1>Pricing</h1>
-      <p>Every plan includes the admin panel and the Discord bot. You only pay for the number of servers you connect.</p>
-    </section>
+    <header class="price-hero">
+      <p class="label">Simple monthly plans</p>
+      <h1>Pay for servers.<br />Panel and bot included.</h1>
+      <p>Every plan includes the admin panel and Discord bot. Scale when you connect more servers.</p>
+    </header>
 
     <div class="grid">
       <article class="plan">

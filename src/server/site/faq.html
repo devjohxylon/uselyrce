@@ -3,83 +3,160 @@
 <head>
 <!--HEAD:faq-->
   <style>
-    .faq-group { animation: rise .55s ease .05s both; }
-    .faq-group + .faq-group { margin-top: clamp(2.5rem, 6vh, 3.5rem); }
-    .faq-group > .label { margin-bottom: 1rem; }
-
-    details {
-      border-top: 1px solid var(--line);
+    .faq-hero {
+      padding: clamp(2.5rem, 6vh, 3.5rem) 0 0;
+      animation: rise .5s ease both;
     }
-    details:last-of-type { border-bottom: 1px solid var(--line); }
-    summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1.5rem;
-      padding: 1.15rem 0;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 600;
-      letter-spacing: -.01em;
-      list-style: none;
-      transition: color .15s ease;
-    }
-    summary::-webkit-details-marker { display: none; }
-    summary:hover { color: var(--chrome); }
-    summary::after {
-      content: "+";
-      font-family: var(--mono);
-      font-size: 1.1rem;
-      font-weight: 400;
-      color: var(--chrome-dim);
-      flex: none;
-      transition: transform .2s ease;
-    }
-    details[open] > summary::after { content: "−"; }
-    details p {
+    .faq-hero .label { margin-bottom: .85rem; }
+    .faq-hero h1 {
       margin: 0;
-      padding: 0 0 1.35rem;
-      color: var(--muted);
-      font-size: .975rem;
-      line-height: 1.7;
-      max-width: 68ch;
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      line-height: 1.1;
+      max-width: 14ch;
     }
-    details a { color: var(--chrome); text-decoration: underline; }
+    .faq-hero p {
+      margin: .9rem 0 0;
+      color: var(--muted);
+      font-size: .95rem;
+      line-height: 1.6;
+      max-width: 42ch;
+    }
 
-    .still-stuck {
-      margin: clamp(2.5rem, 6vh, 3.5rem) 0 3rem;
+    .faq-layout {
+      display: grid;
+      grid-template-columns: 11rem minmax(0, 1fr);
+      gap: 3rem;
+      align-items: start;
+      margin-top: 2.5rem;
+      padding-bottom: 1rem;
+      animation: rise .55s ease .08s both;
+    }
+
+    .faq-nav {
+      position: sticky;
+      top: 1.5rem;
+      display: grid;
+      gap: .2rem;
+    }
+    .faq-nav .label { margin: 0 0 .55rem; }
+    .faq-nav a {
+      color: var(--muted);
+      font-size: .84rem;
+      padding: .4rem .65rem;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+    }
+    .faq-nav a:hover {
+      color: var(--text);
+      background: rgba(255,255,255,.03);
+    }
+
+    .faq-main { display: grid; gap: 2.75rem; min-width: 0; }
+    .faq-section { scroll-margin-top: 1.5rem; }
+    .faq-section h2 {
+      margin: 0 0 1rem;
+      font-family: var(--mono);
+      font-size: .7rem;
+      font-weight: 500;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--chrome-dim);
+    }
+
+    .faq-card {
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background: var(--bg2);
-      padding: 1.5rem 1.5rem 1.6rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1.5rem;
-      flex-wrap: wrap;
+      margin-bottom: .55rem;
+      overflow: hidden;
     }
-    .still-stuck h2 { margin: 0 0 .3rem; font-size: 1rem; font-weight: 600; }
-    .still-stuck p { margin: 0; color: var(--muted); font-size: .95rem; }
+    .faq-card summary {
+      display: grid;
+      grid-template-columns: 2.4rem 1fr;
+      gap: .85rem;
+      align-items: baseline;
+      padding: 1rem 1.1rem;
+      cursor: pointer;
+      list-style: none;
+    }
+    .faq-card summary::-webkit-details-marker { display: none; }
+    .faq-card summary:hover .faq-q { color: var(--chrome); }
+    .faq-num {
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: .08em;
+      color: var(--faint);
+    }
+    .faq-q {
+      font-size: .975rem;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      line-height: 1.35;
+    }
+    .faq-a {
+      padding: 0 1.1rem 1.1rem 4.25rem;
+    }
+    .faq-a p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .925rem;
+      line-height: 1.65;
+      max-width: 62ch;
+    }
+    .faq-a a { color: var(--chrome); text-decoration: underline; }
+
+    .still-stuck {
+      margin: 2.75rem 0 3rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.25rem;
+      align-items: center;
+      padding: 1.35rem 0 0;
+      border-top: 1px solid var(--line);
+    }
+    .still-stuck h2 { margin: 0 0 .25rem; font-size: 1rem; font-weight: 600; }
+    .still-stuck p { margin: 0; color: var(--muted); font-size: .9rem; }
+
+    @media (max-width: 900px) {
+      .faq-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+      .faq-nav {
+        position: static;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: .35rem;
+      }
+      .faq-nav .label { display: none; }
+      .faq-nav a {
+        flex: none;
+        white-space: nowrap;
+        border-color: var(--line);
+      }
+      .faq-a { padding-left: 1.1rem; }
+      .still-stuck { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
 <!--NAV:faq-->
 
-    <section class="page-hero">
-      <p class="label">Support</p>
-      <h1>Questions</h1>
-      <p>What Usely does, how to connect a server, and how billing and staff access work.</p>
-    </section>
+    <header class="faq-hero">
+      <p class="label">Help</p>
+      <h1>Frequently asked questions</h1>
+      <p>Setup, the panel, Discord, staff access, and billing — short answers.</p>
+    </header>
 
-    <div data-acc>
+    <div class="faq-layout">
 <!--FAQ-->
     </div>
 
     <div class="still-stuck">
       <div>
-        <h2>Still have a question?</h2>
-        <p>Send it over and we'll get back to you.</p>
+        <h2>Still stuck?</h2>
+        <p>Send a note with your panel address and we’ll help.</p>
       </div>
       <a class="btn btn-primary" href="/contact">Contact us</a>
     </div>
