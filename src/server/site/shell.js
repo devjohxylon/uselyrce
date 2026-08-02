@@ -54,7 +54,7 @@ export const PAGES = {
     out: "faq.html",
     title: "FAQ — Usely",
     description:
-      "Answers to common Usely questions about setup, WebRCON, Discord staff access, kits, billing, and multi-server support.",
+      "Answers to common Usely questions about setup, WebRCON, staff access keys, kits, billing, and multi-server support.",
     nav: "faq",
     priority: "0.7",
     changefreq: "monthly",

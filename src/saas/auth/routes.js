@@ -173,7 +173,7 @@ export function attachSaasRoutes(app, client) {
       });
       res.json({ ok: true });
     } catch (error) {
-      res.status(500).json({ ok: false, error: error.message });
+      res.status(500).json({ ok: false, error: "Could not sign in right now. Try again in a moment." });
     }
   });
 
@@ -265,7 +265,7 @@ export function attachSaasRoutes(app, client) {
       }
       res.json({ ok: true });
     } catch (error) {
-      res.status(500).json({ ok: false, error: error.message });
+      res.status(500).json({ ok: false, error: "Could not reset your password right now. Try again in a moment." });
     }
   });
 
@@ -328,7 +328,7 @@ export function attachSaasRoutes(app, client) {
       res.redirect(302, "/admin");
     } catch (error) {
       console.error("Discord OAuth callback failed:", error.message);
-      res.status(500).send(`Login failed: ${error.message}`);
+      res.status(500).send("Login failed. Try again, or sign in with email and password.");
     }
   });
 

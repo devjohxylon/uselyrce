@@ -214,7 +214,7 @@ export function setupEmailHtml({ setupUrl, plan }) {
 <p style="margin:0;">Pick your panel address, invite the Discord bot, and connect WebRCON to get online.</p>`,
     ctaLabel: "Finish setup",
     ctaUrl: setupUrl,
-    footnote: "This link expires in 7 days. If you didn’t expect this email, you can ignore it.",
+    footnote: "This link expires in 7 days. If you didn't expect this email, you can ignore it. Terms and Privacy: https://www.usely.dev/terms · https://www.usely.dev/privacy",
   });
 }
 
@@ -222,9 +222,9 @@ export function resetPasswordEmailHtml({ resetUrl }) {
   return emailShell({
     title: "Reset your password",
     bodyHtml: `<p style="margin:0 0 12px;">We got a request to reset the password for your Usely owner account.</p>
-<p style="margin:0;">If that was you, choose a new password below. If it wasn’t, you can ignore this email.</p>`,
+<p style="margin:0;">If that was you, choose a new password below. If it wasn't, you can ignore this email.</p>`,
     ctaLabel: "Choose a new password",
     ctaUrl: resetUrl,
-    footnote: "This link expires in 1 hour.",
+    footnote: "This link expires in 1 hour. Terms and Privacy: https://www.usely.dev/terms · https://www.usely.dev/privacy",
   });
 }

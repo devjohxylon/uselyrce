@@ -304,7 +304,7 @@ export function attachSignupRoutes(app, client = null) {
         warning: rcon.connected
           ? null
           : rcon.lastError ||
-            "Saved, but WebRCON did not connect yet. Double-check host/port/password — you can fix this in the panel under Workspace → Servers.",
+            "Saved, but WebRCON did not connect yet. Double-check host/port/password — you can fix this in the panel under Workspace → Setup.",
         step: "review",
       });
     } catch (error) {

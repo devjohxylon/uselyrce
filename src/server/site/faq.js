@@ -51,7 +51,7 @@ export const groups = [
       },
       {
         q: "Can I manage more than one server?",
-        a: "Pro supports two connected servers and Network supports 4+. Each server is a separate WebRCON connection, and you switch which one you're managing from the panel header.",
+        a: "Pro supports two connected servers. Network supports up to 20 (meant for networks of 4+). Each server is a separate WebRCON connection, and you switch which one you're managing from the panel header.",
       },
     ],
   },
@@ -65,15 +65,15 @@ export const groups = [
       },
       {
         q: "Why do owners use email and staff use keys?",
-        a: "The owner account controls billing and server credentials. Staff get their own access keys with limited permissions — quick to create, easy to revoke, and never tied to Discord roles.",
+        a: "The owner account controls billing and server credentials. Staff get their own staff access keys with limited permissions — quick to create, easy to revoke, and never tied to Discord roles.",
       },
       {
         q: "Can I change plans or cancel?",
-        a: "Yes. Plans are monthly with no contract — upgrade, downgrade, or cancel whenever you want. If you downgrade below your current server count, disconnect the extra servers first.",
+        a: "Yes. Plans are monthly with no long-term contract. Cancel anytime from the panel via the Stripe portal — that stops future charges, and your workspace stays available until the end of the period you already paid for. We don't automatically refund unused days. If you downgrade below your current server count, disconnect the extra servers first.",
       },
       {
         q: "Is my RCON password safe?",
-        a: "Server credentials are encrypted before they're stored, and each workspace's data is isolated from every other workspace. Only your own account and the staff you authorize can reach your servers.",
+        a: "Server credentials are encrypted before they're stored, never shown back in full in the panel, and each workspace's data is isolated from every other workspace. Only your own account and the staff you authorize can reach your servers.",
       },
     ],
   },

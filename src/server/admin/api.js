@@ -197,9 +197,9 @@ async function requireAuth(req, res, next) {
     const session = await resolvePanelSession(req, req.app?.locals?.discordClient || null);
     if (!session || session.needsOnboarding) {
       if (session?.needsOnboarding) {
-        return res.status(403).json({ error: "Create an organization first", needsOnboarding: true });
+        return res.status(403).json({ error: "Finish workspace setup first", needsOnboarding: true });
       }
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Sign in again to continue." });
     }
     req.session = session;
     try {
@@ -229,14 +229,17 @@ async function requireAuth(req, res, next) {
     }
     return next();
   } catch (error) {
-    return res.status(500).json({ error: error.message || "Auth failed" });
+    return res.status(500).json({ error: "Could not verify your session. Try signing in again." });
   }
 }
 
 function requirePerm(perm) {
   return (req, res, next) => {
     if (!hasPerm(req.session, perm)) {
-      return res.status(403).json({ error: "Missing permission" });
+      return res.status(403).json({
+        error: "Your staff key can't do that — ask the owner to grant the right permission.",
+        perm,
+      });
     }
     return next();
   };
@@ -246,7 +249,10 @@ function requirePerms(...perms) {
   return (req, res, next) => {
     for (const perm of perms) {
       if (!hasPerm(req.session, perm)) {
-        return res.status(403).json({ error: "Missing permission" });
+        return res.status(403).json({
+          error: "Your staff key can't do that — ask the owner to grant the right permission.",
+          perm,
+        });
       }
     }
     return next();

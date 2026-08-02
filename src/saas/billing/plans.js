@@ -1,7 +1,7 @@
 export const PLAN_LIMITS = {
   basic: 1,
   pro: 2,
-  // Marketed as "4+" — soft cap for multi-server networks
+  // Marketed as "up to 20" (for networks of 4+)
   network: 20,
 };
 

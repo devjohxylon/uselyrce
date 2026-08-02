@@ -8,6 +8,17 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Clearer legal copy, Network limits, and setup trust",
+    changes: [
+      { type: "changed", text: "Terms and Privacy cover public beta, Discord data categories, 30-day retention, refunds, and governing law." },
+      { type: "changed", text: "Network is listed as up to 20 servers (for networks of 4+) on pricing, signup, docs, and billing." },
+      { type: "added", text: "Signup asks you to agree to Terms and Privacy before checkout, with a public beta note." },
+      { type: "changed", text: "Setup and the panel say WebRCON passwords are encrypted, and Discord invite permissions are listed in plain language." },
+      { type: "fixed", text: "Staff permission errors and empty Discord settings pages tell you what to do next." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Tighter visual system across site and panel",
     changes: [
       { type: "fixed", text: "Mobile menu Get started button is readable again (dark text on the sky accent)." },
@@ -20,7 +31,7 @@ export const entries = [
     date: "2026-08-02",
     title: "Network plan is 4+ servers",
     changes: [
-      { type: "changed", text: "Network is marketed as <code>4+</code> servers — not an up-to-100 soft unlimited." },
+      { type: "changed", text: "Network is marketed for networks of 4+ with a hard cap of 20 connected servers." },
     ],
   },
   {
@@ -69,7 +80,7 @@ export const entries = [
     title: "Tighter signup, pricing, and docs copy",
     changes: [
       { type: "changed", text: "Signup, login, pricing, setup, docs, and contact drop leftover workspace jargon and repeated helper lines." },
-      { type: "fixed", text: "Panel billing plan limits now match live plans — Pro 2 servers, Network up to 100." },
+      { type: "fixed", text: "Panel billing plan limits now match live plans — Pro 2 servers, Network up to 20." },
       { type: "changed", text: "Signup now says <code>Choose your plan</code>; demo links consistently say Preview the panel." },
     ],
   },
@@ -180,7 +191,7 @@ export const entries = [
     date: "2026-08-01",
     title: "Hardened WebRCON setup",
     changes: [
-      { type: "changed", text: "Setup and Workspace → Servers validate host/port/password, test the WebRCON connection, and warn if it doesn't come up — instead of silently saving bad credentials." },
+      { type: "changed", text: "Setup and Workspace → Setup validate host/port/password, test the WebRCON connection, and warn if it doesn't come up — instead of silently saving bad credentials." },
       { type: "fixed", text: "RCON reconnect after a drop keeps the stored password (watchdog no longer fails open with a blank password)." },
       { type: "changed", text: "Marketing examples and demo labels use Usely naming instead of leftover Astral copy." },
     ],
@@ -189,7 +200,7 @@ export const entries = [
     date: "2026-08-01",
     title: "Clearer SaaS setup guidance",
     changes: [
-      { type: "changed", text: "When WebRCON isn't connected, Discord and the panel now point you to <strong>Workspace → Servers</strong> (or your setup link) instead of asking for <code>.env</code> values." },
+      { type: "changed", text: "When WebRCON isn't connected, Discord and the panel now point you to <strong>Workspace → Setup</strong> (or your setup link) instead of asking for <code>.env</code> values." },
       { type: "changed", text: "VIP revoke and Discord channel/ticket errors also steer you to panel settings, and leftover Astral labels in bot embeds were renamed to Usely." },
     ],
   },

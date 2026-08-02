@@ -1891,7 +1891,7 @@ body.map-mode #view {
     </div>
     <div class="login-card">
       <div id="legacyLogin">
-        <label for="password">Access key</label>
+        <label for="password">Staff access key</label>
         <input id="password" type="password" placeholder="Enter your access key" autocomplete="current-password" />
         <button class="primary" id="loginBtn">Sign In</button>
       </div>
@@ -1903,12 +1903,12 @@ body.map-mode #view {
           <label for="saasPassword">Password</label>
           <input id="saasPassword" class="login-field-tight" type="password" placeholder="Your password" autocomplete="current-password" />
           <p class="login-help"><button type="button" id="saasForgotBtn">Forgot password?</button></p>
-          <button class="primary" id="saasEmailLoginBtn">Sign in</button>
+          <button class="primary" id="saasEmailLoginBtn">Sign in as owner</button>
           <p id="opsLoginHint" class="login-copy hidden" style="margin-top:.9rem;margin-bottom:0;color:var(--chrome)">Sign in with your ops email, then open the platform dashboard.</p>
           <div class="login-divider">Staff</div>
-          <label for="saasStaffKey">Access key</label>
+          <label for="saasStaffKey">Staff access key</label>
           <input id="saasStaffKey" type="password" placeholder="ask_…" autocomplete="current-password" />
-          <button type="button" class="btn-secondary" id="saasKeyLoginBtn">Sign in with key</button>
+          <button type="button" class="btn-secondary" id="saasKeyLoginBtn">Sign in with staff key</button>
           <p class="login-copy" style="margin-top:.65rem;margin-bottom:0">Staff must open your workspace URL (<code>yourslug.usely.dev</code>), not the marketing site.</p>
           <p class="login-foot">New here? <a href="/signup">Choose your plan</a></p>
         </div>
@@ -2000,6 +2000,7 @@ body.map-mode #view {
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12H4M8 8l-4 4 4 4M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>Log out</button>
     <div class="dev-banner" title="Usely public beta">
       <strong>Beta</strong>
+      Public beta — features may change
       <span id="devBannerSub">usely.dev</span>
     </div>
     <div class="nav-foot" id="navMeta">—</div>
@@ -2017,7 +2018,7 @@ body.map-mode #view {
       </div>
       <div class="pills" id="statusPills"></div>
       <div id="saasContext" class="hidden" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        <select id="orgSelect" title="Organization" style="max-width:10rem"></select>
+        <select id="orgSelect" title="Workspace" style="max-width:10rem"></select>
         <select id="serverSelect" title="Server" style="max-width:10rem"></select>
       </div>
     </div>
@@ -2587,7 +2588,7 @@ async function boot() {
     }
     if (window.USELY_DEMO) {
       const sub = document.getElementById("devBannerSub");
-      if (sub) sub.textContent = "DEMO · mock data";
+      if (sub) sub.textContent = "Demo — changes aren't saved";
       document.title = "Usely Demo";
     }
     renderSaasContext(session);
@@ -2863,7 +2864,7 @@ function overviewBanners(o, r) {
       <div class="card" style="border-color:rgba(226,195,122,.4);margin-bottom:1rem">
         <div class="card-head"><h3>WebRCON offline</h3></div>
         <p class="muted" style="margin:0 0 .75rem">${esc(r.lastError || "Not connected to the game server.")} Update host, port, or password under Workspace → Setup.</p>
-        ${can("servers") ? `<button class="primary" data-action="goTab" data-tab="servers">Open servers</button>` : ""}
+        ${can("servers") ? `<button class="primary" data-action="goTab" data-tab="servers">Open Setup</button>` : ""}
       </div>`);
   }
   const dismissed = localStorage.getItem("uselyOnboardDismissed") === "1";
@@ -2871,10 +2872,10 @@ function overviewBanners(o, r) {
     const guildOk = Boolean(org.discord_guild_id || org.guildId || o.bot?.guildId);
     const rconOk = Boolean(r.enabled && r.connected);
     const steps = [
-      { ok: rconOk, label: "Confirm WebRCON is connected", tab: "servers", cta: "Servers", perm: "servers" },
+      { ok: rconOk, label: "Confirm WebRCON is connected", tab: "servers", cta: "Setup", perm: "servers" },
       { ok: guildOk, label: "Link Discord and set channels (killfeed / pop)", tab: "discord", cta: "Discord", perm: "serverCommands" },
       { ok: false, label: "Create a panel kit", tab: "kits", cta: "Kits", perm: "kits", optional: true },
-      { ok: false, label: "Invite staff with an access key", tab: "keys", cta: "Staff keys", perm: "keys", optional: true },
+      { ok: false, label: "Invite staff with a staff access key", tab: "keys", cta: "Staff keys", perm: "keys", optional: true },
     ];
     const requiredPending = steps.filter((s) => !s.optional && !s.ok);
     if (requiredPending.length) {
@@ -3064,7 +3065,7 @@ async function renderPlayers() {
           ${can("kick") && p.online ? `<button data-action="kick" data-ign="${esc(p.ign)}">Kick</button>` : ""}
           ${can("ban") ? `<button class="danger" data-action="ban" data-ign="${esc(p.ign)}">Ban</button>` : ""}
         </td>
-      </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No matches</div></td></tr>`;
+      </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No matches<span class="empty-hint">Try another IGN or check spelling.</span></div></td></tr>`;
 
     return `
       ${searchBlock}
@@ -3562,7 +3563,7 @@ async function renderDiscordChannels() {
             </div>`;
           }).join("")}
         </div>
-      </div>`).join("") || `<div class="card"><div class="empty">No channel slots</div></div>`;
+      </div>`).join("") || `<div class="card"><div class="empty">No channel slots<span class="empty-hint">Invite the Discord bot and link your guild under Workspace → Setup.</span></div></div>`;
     body = `
       ${blocks}`;
   } else if (sub === "status") {
@@ -3586,7 +3587,7 @@ async function renderDiscordChannels() {
         <div class="feed-field-grid">
           ${(feed.fields || []).map((f) => renderFeedField(feed.key, f)).join("")}
         </div>
-      </div>`).join("") || `<div class="card"><div class="empty">No feed settings</div></div>`;
+      </div>`).join("") || `<div class="card"><div class="empty">No feed settings<span class="empty-hint">Link your Discord guild under Workspace → Setup to configure feeds.</span></div></div>`;
     body = `
       <div class="feed-settings-grid">${feedBlocks}</div>`;
   } else if (sub === "vip") {
@@ -3607,7 +3608,7 @@ async function renderDiscordChannels() {
           </div>`;
       }
       return renderSettingField("vip", "vip", { ...field, key: field.key });
-    }).join("") || `<div class="empty">No VIP settings</div>`;
+    }).join("") || `<div class="empty">No VIP settings<span class="empty-hint">Link Discord under Workspace → Setup to assign VIP roles.</span></div>`;
     body = `
       <div class="card"><div class="feed-field-grid">${vipFields}</div></div>`;
   } else {
@@ -3627,7 +3628,7 @@ async function renderDiscordChannels() {
               ${(cmd.fields || []).map((f) => renderCommandField(cmd.key, f)).join("")}
             </div>
           </div>`).join("")}
-      </div>`).join("") || `<div class="card"><div class="empty">No slash commands registered</div></div>`;
+      </div>`).join("") || `<div class="card"><div class="empty">No slash commands registered<span class="empty-hint">Invite the bot with the <code>applications.commands</code> scope from Workspace → Setup.</span></div></div>`;
     body = `
       <div class="cmd-catalog">${commandBlocks}</div>`;
   }
@@ -4594,7 +4595,7 @@ function kitCatalogHtml(catalog) {
   }
   const shown = rows.slice(0, 200);
   if (!shown.length) {
-    return `<div class="empty" style="padding:2rem 1rem">No matches</div>`;
+    return `<div class="empty" style="padding:2rem 1rem">No items match — try another search</div>`;
   }
   return shown.map((i) => `
     <button type="button" class="kit-item" data-action="kitAddItem" data-id="${esc(i.id)}" data-name="${esc(i.name)}">
@@ -5067,7 +5068,7 @@ async function renderKeys() {
         <button type="button" class="danger" data-action="revokeKey" data-id="${esc(k.id)}">Revoke</button>
       </td>
     </tr>`;
-  }).join("") || `<tr><td colspan="5" class="muted">No staff keys yet.</td></tr>`;
+  }).join("") || `<tr><td colspan="5" class="muted">No staff keys yet — create one below for moderators.</td></tr>`;
 
   const chips = permissionGroups.map(([groupName, perms]) => `
       <div>
@@ -5098,7 +5099,7 @@ async function renderKeys() {
         <input id="keyLabel" placeholder="e.g. Mod — Alex" autocomplete="off" />
       </label>
       <div class="perm-grid" id="keyPermGrid">${chips}</div>
-      <button type="button" class="primary" style="margin-top:1.15rem" data-action="createKey">Generate access key</button>
+      <button type="button" class="primary" style="margin-top:1.15rem" data-action="createKey">Generate staff key</button>
     </div>
     <div class="card">
       <h3>Active keys</h3>
@@ -5501,9 +5502,10 @@ async function renderServers() {
             style="display:inline-flex;text-decoration:none">Invite Discord bot</a>
           <div class="form-row" style="grid-template-columns:1fr auto;gap:.5rem">
             <input id="saasGuildId" placeholder="Discord guild ID" />
-            <button type="button" class="primary" data-action="saasLinkGuild">Link</button>
+            <button type="button" class="primary" data-action="saasLinkGuild">Link Discord guild</button>
           </div>
         `}
+        <p class="muted" style="margin:.75rem 0 0;font-size:.75rem">Permissions: manage channels, roles, webhooks; send and manage messages; kick, ban, timeout; mention @everyone — not Administrator.</p>
         </div>
       </section>
       <section class="card ws-panel">
@@ -5522,6 +5524,7 @@ async function renderServers() {
             <input id="saasSrvHost" placeholder="RCON host" />
             <input id="saasSrvPort" placeholder="RCON port" />
             <input id="saasSrvPass" type="password" placeholder="RCON password" />
+            <p class="muted" style="margin:.35rem 0 0;font-size:.75rem">Encrypted at rest and never shown back in full. Only the workspace owner can update it.</p>
           </div>
           <button type="button" class="primary" style="margin-top:.75rem" data-action="saasAddServer">Add server</button>
         </div>
@@ -5530,6 +5533,19 @@ async function renderServers() {
     </div>`;
 }
 
+
+function planStatusLabel(status) {
+  const labels = {
+    past_due: "Payment past due",
+    canceled: "Canceled",
+    active: "Active",
+    trialing: "Trialing",
+    unpaid: "Unpaid",
+    inactive: "Inactive",
+  };
+  const key = String(status || "inactive").toLowerCase();
+  return labels[key] || status || "Inactive";
+}
 
 async function renderBilling() {
   if (!state.session?.saas) return saasDisabledCard("Billing");
@@ -5552,9 +5568,9 @@ async function renderBilling() {
   return `
     <div class="card">
       <h3>Plan &amp; billing</h3>
-      <p class="muted">Current: <strong>${esc(org.plan || "basic")}</strong> · <strong>${esc(org.planStatus || "inactive")}</strong></p>
-      <p class="muted">Basic $20 / 1 server · Pro $49 / 2 · Network $99 / 4+ — <a href="/pricing" style="color:var(--chrome)">pricing</a></p>
-      ${live ? `<p class="hint" style="margin:.65rem 0 0">Manage payment method, invoices, or cancel in the Stripe portal. Cancel stops future charges; access continues until the period ends. WebRCON disconnects if the subscription is past due or canceled.</p>` : ""}
+      <p class="muted">Current: <strong>${esc(org.plan || "basic")}</strong> · <strong>${esc(planStatusLabel(org.planStatus || "inactive"))}</strong></p>
+      <p class="muted">Basic $20 / 1 server · Pro $49 / 2 · Network $99 / up to 20 — <a href="/pricing" style="color:var(--chrome)">pricing</a></p>
+      ${live ? `<p class="hint" style="margin:.65rem 0 0">Manage payment method, invoices, or cancel in the Stripe portal. Cancel stops future charges; access continues until the period ends. WebRCON disconnects if the subscription is past due or canceled.</p>` : (status === "past_due" || status === "canceled" ? `<p class="hint" style="margin:.65rem 0 0">Opens Stripe — cancel applies at period end.</p>` : "")}
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem">
         ${upgradeBtns}
         ${live || status === "past_due" || status === "canceled" ? `<button data-action="saasPortal">Manage subscription</button>` : ""}
@@ -6719,7 +6735,7 @@ function bindView() {
             return;
           }
           state.lastCreatedKey = { key: r.key, secret: r.secret };
-          toast("Staff key created — copy it now");
+          toast("Staff access key created — copy it now");
           render();
           return;
         }

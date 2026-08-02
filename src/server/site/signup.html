@@ -78,8 +78,12 @@
     .done h2 { margin: 0; font-size: 1.2rem; }
     .done p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.55; }
     .done a.setup { color: var(--chrome); text-decoration: underline; word-break: break-all; }
+    .legal-note { margin: 0; color: var(--faint); font-size: .78rem; line-height: 1.5; text-align: center; }
+    .legal-note a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+    .beta-note { margin: -.35rem 0 0; color: var(--chrome-dim); font-size: .78rem; line-height: 1.45; }
     .foot { color: var(--faint); font-size: .8rem; text-align: center; }
     .foot a { color: var(--muted); }
+    .disclaimer { margin: 1rem 0 0; color: var(--faint); font-size: .72rem; line-height: 1.45; text-align: center; }
     @media (max-width: 420px) {
       .plans { grid-template-columns: 1fr; gap: .5rem; }
       .plan {
@@ -105,16 +109,18 @@
     <div id="form" style="display:grid;gap:1.1rem">
       <h1>Choose your plan</h1>
       <p class="sub">Pick a plan and enter your email. After checkout we’ll email you a setup link.</p>
+      <p class="beta-note">Public beta — features may change. Prices in USD; tax may apply at checkout.</p>
       <div class="plans" id="plans">
         <label class="plan" data-plan="basic"><input type="radio" name="plan" value="basic"><span class="nm">Basic</span><span class="pr">$20</span><span class="sv">1 server</span></label>
         <label class="plan sel" data-plan="pro"><input type="radio" name="plan" value="pro" checked><span class="nm">Pro</span><span class="pr">$49</span><span class="sv">2 servers</span></label>
-        <label class="plan" data-plan="network"><input type="radio" name="plan" value="network"><span class="nm">Network</span><span class="pr">$99</span><span class="sv">4+ servers</span></label>
+        <label class="plan" data-plan="network"><input type="radio" name="plan" value="network"><span class="nm">Network</span><span class="pr">$99</span><span class="sv">Up to 20</span></label>
       </div>
       <label>Email
         <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
       </label>
       <div class="err" id="err"></div>
       <button id="go">Continue to checkout</button>
+      <p class="legal-note">By continuing you agree to the <a href="https://www.usely.dev/terms">Terms of Service</a> and <a href="https://www.usely.dev/privacy">Privacy Policy</a>.</p>
     </div>
     <div class="done" id="done">
       <h2>Check your email</h2>
@@ -127,6 +133,7 @@
       <p id="resendMsg" class="err" style="display:none"></p>
     </div>
     <div class="foot">Already set up? <a href="/admin">Sign in to your panel</a></div>
+    <p class="disclaimer">Not affiliated with Facepunch Studios or Double Eleven.</p>
   </div>
   <script>
     const params = new URLSearchParams(location.search);
@@ -213,7 +220,7 @@
         msg.style.color = "var(--ok)";
         msg.style.display = "block";
       } catch (e) {
-        msg.textContent = e.message || "Could not resend";
+        msg.textContent = e.message || "Could not resend setup email. Try again in a minute.";
         msg.style.display = "block";
       } finally {
         btn.disabled = false;

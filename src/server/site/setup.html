@@ -96,6 +96,9 @@
     }
     .actions { display: flex; flex-wrap: wrap; gap: .5rem; }
     .actions > * { flex: 1; min-width: 8rem; }
+    .beta-note { margin: -.25rem 0 .25rem; color: var(--chrome-dim); font-size: .78rem; line-height: 1.45; }
+    .disclaimer { margin: 1rem 0 0; color: var(--faint); font-size: .72rem; line-height: 1.45; text-align: center; }
+    .trust { margin: .35rem 0 0; color: var(--faint); font-size: .78rem; line-height: 1.45; }
   </style>
   <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -113,6 +116,7 @@
         <span data-s="review"></span>
       </div>
       <p class="sub">Signed up as <b id="email"></b> · <span id="plan"></span> plan</p>
+      <p class="beta-note">Public beta — features may change. <a href="https://www.usely.dev/terms" style="color:var(--muted)">Terms</a> · <a href="https://www.usely.dev/privacy" style="color:var(--muted)">Privacy</a></p>
 
       <section class="step" id="step-workspace">
         <h1>1. Your workspace</h1>
@@ -142,7 +146,8 @@
 
       <section class="step" id="step-discord">
         <h1>2. Invite the Discord bot</h1>
-        <p class="sub">Invite the bot (it asks for channel, message, and moderation permissions — not full Administrator), then paste your Discord server ID. You need permission to add bots on that Discord.</p>
+        <p class="sub">Invite the bot, then paste your Discord guild ID. You need permission to add bots on that Discord.</p>
+        <p class="trust">The invite asks for manage channels, roles, and webhooks; send and manage messages; kick, ban, and timeout; and mention @everyone — not full Administrator.</p>
         <div class="actions">
           <a class="btn" id="inviteBtn" href="#" target="_blank" rel="noopener">Invite Discord bot</a>
         </div>
@@ -174,6 +179,7 @@
         <label>RCON password
           <input id="srvPass" type="password" autocomplete="off" />
         </label>
+        <p class="trust">Encrypted at rest and never shown back in full. Only the workspace owner can update it.</p>
         <div class="err" id="err-server"></div>
         <div class="actions">
           <button class="ghost" id="backServer">Back</button>
@@ -198,6 +204,7 @@
       <h1>Link expired or already used</h1>
       <p>This setup link is no longer valid. If you already finished setup, <a href="/admin" style="color:var(--chrome)">sign in here</a>. Otherwise contact support.</p>
     </div>
+    <p class="disclaimer">Not affiliated with Facepunch Studios or Double Eleven.</p>
   </div>
   <script>
     const token = new URLSearchParams(location.search).get("token") || "";

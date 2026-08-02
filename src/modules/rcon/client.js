@@ -195,7 +195,7 @@ async function attachServer() {
   if (!added) {
     console.error(
       config.saas?.enabled
-        ? "Could not reach a Rust server over WebRCON. Check host/port/password in Workspace → Servers."
+        ? "Could not reach a Rust server over WebRCON. Check host/port/password in Workspace → Setup."
         : "Could not reach the Rust server. Double-check RCON_HOST / RCON_PORT / RCON_PASSWORD in your Nitrado panel.",
     );
   }
@@ -244,7 +244,7 @@ export async function connectRcon() {
   if (!isRconEnabled()) {
     console.log(
       config.saas?.enabled
-        ? "Legacy single-server RCON disabled (SaaS uses Workspace → Servers)."
+        ? "Legacy single-server RCON disabled (SaaS uses Workspace → Setup)."
         : "RCON disabled — set RCON_HOST, RCON_PORT, RCON_PASSWORD in .env to connect.",
     );
     return null;

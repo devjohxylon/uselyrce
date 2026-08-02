@@ -39,13 +39,13 @@ export function rconOfflineMessage(status = {}) {
     if (!status.enabled) {
       return (
         "No WebRCON server is connected for this workspace yet. " +
-        "Add one in the Usely panel under **Workspace → Servers** (host, port, password from your game host), " +
+        "Add one in the Usely panel under Workspace > Setup (host, port, password from your game host), " +
         "or finish the setup link you got after signup."
       );
     }
     return (
       `Not connected to the Rust server${status.lastError ? ` — ${status.lastError}` : ""}. ` +
-      "Check the server's WebRCON details in **Workspace → Servers**, or use **Reconnect** from platform ops."
+      "Check the server's WebRCON details in Workspace > Setup, or use Reconnect from platform ops."
     );
   }
 
