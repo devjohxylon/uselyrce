@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.3",
+    "@sentry/node": "^10.69.0",
     "@supabase/supabase-js": "^2.111.0",
     "@vercel/analytics": "^2.0.1",
     "discord.js": "^14.16.3",

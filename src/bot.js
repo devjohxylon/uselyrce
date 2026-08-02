@@ -151,9 +151,9 @@ export async function startBot() {
   // Keep the bot alive on stray Discord API errors (expired interactions, etc.)
   client.on("error", (error) => {
     console.error("Discord client error:", error.message);
-  });
-  process.on("unhandledRejection", (error) => {
-    console.error("Unhandled rejection:", error?.message ?? error);
+    import("./observability/sentry.js")
+      .then(({ captureException }) => captureException(error))
+      .catch(() => {});
   });
 
   // Flush buffered killfeed lines and playtime before exiting

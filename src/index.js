@@ -1,4 +1,14 @@
+import "./observability/sentry.js";
+import { setupProcessHandlers, captureException, isSentryEnabled } from "./observability/sentry.js";
 import { startBot } from "./bot.js";
+
+setupProcessHandlers();
+
+if (isSentryEnabled()) {
+  console.log("Sentry error monitoring enabled");
+} else {
+  console.log("Sentry off — set SENTRY_DSN on Railway to enable");
+}
 
 startBot().catch((error) => {
   if (String(error.message).includes("disallowed intents")) {
@@ -17,6 +27,7 @@ Also re-invite the bot if you added new permissions recently.
 `);
   } else {
     console.error("Usely failed to start:", error);
+    captureException(error);
   }
   process.exit(1);
 });

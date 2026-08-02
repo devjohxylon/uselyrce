@@ -47,6 +47,8 @@ export async function createWebhookServer(client) {
         res.json(result);
       } catch (error) {
         console.error("Stripe webhook failed:", error.message);
+        const { captureException } = await import("../observability/sentry.js");
+        captureException(error);
         res.status(400).json({ error: error.message });
       }
     },
@@ -144,6 +146,9 @@ a{color:#7ec8f5}</style></head><body><div style="text-align:center;padding:2rem"
     }
     res.status(404).json({ ok: false, error: "Not found" });
   });
+
+  const { attachSentryExpress } = await import("../observability/sentry.js");
+  attachSentryExpress(app);
 
   const httpServer = createServer(app);
   createWebSocketServer(httpServer, client);

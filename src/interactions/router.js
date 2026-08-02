@@ -79,6 +79,9 @@ export function attachInteractionRouter(client) {
       }
     } catch (error) {
       console.error("Interaction error:", error);
+      import("../observability/sentry.js")
+        .then(({ captureException }) => captureException(error))
+        .catch(() => {});
       const reply = { content: `Error: ${error.message}`, ephemeral: true };
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp(reply).catch(() => {});
