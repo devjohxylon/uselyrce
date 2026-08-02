@@ -31,7 +31,7 @@ function authorize(req, res, next) {
 export async function createWebhookServer(client) {
   const app = express();
 
-  // Stripe needs the raw body — mount before express.json
+  // Stripe / Resend need the raw body — mount before express.json
   app.post(
     "/billing/stripe/webhook",
     express.raw({ type: "application/json" }),
@@ -50,6 +50,15 @@ export async function createWebhookServer(client) {
         console.error("Stripe webhook failed:", error.message);
         res.status(400).json({ error: error.message });
       }
+    },
+  );
+
+  app.post(
+    "/api/webhooks/resend",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+      const { handleResendInboundWebhook } = await import("../saas/email/inbound.js");
+      return handleResendInboundWebhook(req, res);
     },
   );
 

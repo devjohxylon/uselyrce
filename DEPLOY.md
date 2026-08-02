@@ -53,7 +53,12 @@ ADMIN_PANEL_PASSWORD=...        # long random string; not the default
 BOT_WEBHOOK_SECRET=...
 RESEND_API_KEY=...              # verify usely.dev as a sending domain in Resend
 EMAIL_FROM=Usely <onboarding@usely.dev>
-SUPPORT_EMAIL=support@usely.dev
+SUPPORT_EMAIL=support@inbound.usely.dev
+SUPPORT_FORWARD_TO=you@gmail.com   # where contact + inbound mail is delivered
+RESEND_WEBHOOK_SECRET=...          # Resend webhook signing secret
+# Inbound: Vercel DNS MX on `inbound` → inbound-smtp.us-east-1.amazonaws.com
+# Resend Domains → usely.dev → enable Receiving → Webhook
+#   URL https://app.usely.dev/api/webhooks/resend  event: email.received
 STRIPE_SECRET_KEY=...
 STRIPE_WEBHOOK_SECRET=...
 STRIPE_PRICE_BASIC=price_...

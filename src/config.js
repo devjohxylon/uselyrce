@@ -142,6 +142,7 @@ const saasConfig = {
   // so <slug>.localhost:3847 works in every modern browser.
   baseDomain: optional("SAAS_BASE_DOMAIN") || null,
   resendApiKey: optional("RESEND_API_KEY") || null,
+  resendWebhookSecret: optional("RESEND_WEBHOOK_SECRET") || null,
   emailFrom: optional("EMAIL_FROM") || "Usely <onboarding@usely.dev>",
   // Shared access code for https://app.usely.dev/ops (platform customer list).
   opsAccessCode: optional("USELY_OPS_CODE") || null,
@@ -179,7 +180,10 @@ if (saasEnabled && !saasMock) {
 export const config = {
   saas: saasConfig,
   site: {
-    supportEmail: optional("SUPPORT_EMAIL") || "support@usely.dev",
+    // Public address customers see / mailto (inbound.usely.dev via Resend + Vercel MX).
+    supportEmail: optional("SUPPORT_EMAIL") || "support@inbound.usely.dev",
+    // Where inbound + contact-form messages are delivered (your real inbox).
+    supportForwardTo: optional("SUPPORT_FORWARD_TO") || null,
   },
   discord: {
     token: required("DISCORD_TOKEN"),

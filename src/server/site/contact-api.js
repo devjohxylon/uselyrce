@@ -72,8 +72,9 @@ export function attachContactRoute(app) {
         });
       }
 
+      const deliverTo = config.site.supportForwardTo || config.site.supportEmail;
       await sendEmail({
-        to: config.site.supportEmail,
+        to: deliverTo,
         replyTo: email,
         subject: `[${topic}] ${name}`,
         text: `${name} <${email}>\nTopic: ${topic}\n\n${message}`,

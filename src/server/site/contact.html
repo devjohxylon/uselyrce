@@ -141,7 +141,7 @@
       <aside>
         <div class="card">
           <h2>Email us directly</h2>
-          <p><a href="mailto:support@usely.dev">support@usely.dev</a> — good for anything you'd rather send with attachments or logs.</p>
+          <p><a href="mailto:support@inbound.usely.dev">support@inbound.usely.dev</a> — good for anything you'd rather send with attachments or logs.</p>
         </div>
         <div class="card">
           <h2>Already a customer?</h2>
@@ -177,7 +177,7 @@
     function failWithMailto(text, data) {
       const subject = `[${data.get("topic")}] ${data.get("name")}`;
       const body = `${data.get("message")}\n\n— ${data.get("name")} <${data.get("email")}>`;
-      const href = `mailto:support@usely.dev?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const href = `mailto:support@inbound.usely.dev?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       msg.className = "msg err";
       msg.innerHTML = `${text} <a href="${href}" style="color:var(--chrome)">Send it by email instead</a>.`;
     }

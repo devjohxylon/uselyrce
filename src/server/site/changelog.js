@@ -8,6 +8,13 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Support inbox",
+    changes: [
+      { type: "changed", text: "Contact and legal pages now use <code>support@inbound.usely.dev</code> so mail can be received through Resend and forwarded to the team." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Multi-tenant hardening for launch",
     changes: [
       { type: "fixed", text: "Each workspace’s kits, links, bans, wipe time, and Discord feed channels stay isolated per server — no cross-customer bleed on a shared host." },
