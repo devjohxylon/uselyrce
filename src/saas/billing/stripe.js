@@ -118,6 +118,24 @@ function planFromPriceId(priceId) {
   return "basic";
 }
 
+async function claimStripeEvent(eventId) {
+  if (config.saas.mock) return true;
+  try {
+    const { getServiceClient } = await import("../db/client.js");
+    const db = getServiceClient();
+    const { error } = await db.from("stripe_webhook_events").insert({ id: eventId });
+    if (error) {
+      if (error.code === "23505") return false; // duplicate
+      // Table may not exist until migration — proceed once
+      console.warn("stripe_webhook_events insert:", error.message);
+    }
+    return true;
+  } catch (e) {
+    console.warn("stripe event claim skipped:", e.message);
+    return true;
+  }
+}
+
 export async function handleStripeWebhook(rawBody, signature) {
   const s = getStripe();
   if (!config.saas.stripeWebhookSecret) {
@@ -129,14 +147,28 @@ export async function handleStripeWebhook(rawBody, signature) {
     config.saas.stripeWebhookSecret,
   );
 
+  if (!(await claimStripeEvent(event.id))) {
+    return { received: true, duplicate: true };
+  }
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
+      let plan = session.metadata?.plan || "basic";
+      try {
+        if (session.subscription) {
+          const sub = await s.subscriptions.retrieve(session.subscription);
+          const priceId = sub.items?.data?.[0]?.price?.id;
+          if (priceId) plan = planFromPriceId(priceId);
+        }
+      } catch {
+        /* keep metadata plan */
+      }
       if (session.metadata?.signup_email) {
         const { finalizeSignup } = await import("../signup/finalize.js");
         await finalizeSignup({
           email: session.metadata.signup_email,
-          plan: session.metadata.plan || "basic",
+          plan,
           stripeCustomerId: session.customer,
           stripeSubscriptionId: session.subscription,
         });
@@ -147,7 +179,7 @@ export async function handleStripeWebhook(rawBody, signature) {
       await updateStripe(orgId, {
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
-        plan: session.metadata?.plan || "basic",
+        plan,
         plan_status: "active",
       });
       break;

@@ -48,9 +48,16 @@ import {
 import { createRateLimiter } from "../rate-limit.js";
 import { sendEmail, setupEmailHtml, resetPasswordEmailHtml } from "../email/send.js";
 
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+
 function oauthStates() {
   if (!globalThis.__uselyOAuthStates) globalThis.__uselyOAuthStates = new Map();
-  return globalThis.__uselyOAuthStates;
+  const map = globalThis.__uselyOAuthStates;
+  const now = Date.now();
+  for (const [k, ts] of map) {
+    if (now - ts > OAUTH_STATE_TTL_MS) map.delete(k);
+  }
+  return map;
 }
 
 function requireOwnerServers(session) {
@@ -162,6 +169,7 @@ export function attachSaasRoutes(app, client) {
         accountId: account.id,
         email: account.email,
         username: account.email.split("@")[0],
+        sv: Number(account.session_version ?? 0),
       });
       res.json({ ok: true });
     } catch (error) {
@@ -169,12 +177,10 @@ export function attachSaasRoutes(app, client) {
     }
   });
 
-  function appBaseUrl(req) {
+  function appBaseUrl(_req) {
     const configured = String(config.saas.publicUrl || "").replace(/\/$/, "");
-    if (configured && !/localhost/i.test(configured)) return configured;
-    const host = String(req.get("x-forwarded-host") || req.get("host") || "").split(",")[0].trim();
-    const proto = String(req.get("x-forwarded-proto") || "https").split(",")[0].trim();
-    return host ? `${proto}://${host}` : configured || "https://app.usely.dev";
+    if (configured) return configured;
+    return "https://app.usely.dev";
   }
 
   /**
@@ -207,7 +213,7 @@ export function attachSaasRoutes(app, client) {
           html: resetPasswordEmailHtml({ resetUrl }),
           text: `Reset your Usely password: ${resetUrl}`,
         });
-        return res.json({ ok: true, kind: "reset" });
+        return res.json({ ok: true });
       }
 
       if (account && !account.password_hash) {
@@ -222,12 +228,10 @@ export function attachSaasRoutes(app, client) {
             html: setupEmailHtml({ setupUrl, plan: org.plan || "basic" }),
             text: `Finish setup: ${setupUrl}`,
           });
-          return res.json({ ok: true, kind: "setup" });
         }
       }
 
-      // No matching account — same message as success so we don't leak.
-      res.json({ ok: true, kind: "none" });
+      res.json({ ok: true });
     } catch (error) {
       console.error("forgot-password failed:", error.message, error.detail || "");
       res.status(500).json({
@@ -251,8 +255,14 @@ export function attachSaasRoutes(app, client) {
       if (!row) {
         return res.status(400).json({ ok: false, error: "Reset link is invalid or expired" });
       }
+      if (password.length > 128) {
+        return res.status(400).json({ ok: false, error: "Password must be at most 128 characters" });
+      }
       await setAccountPassword(row.account_id, hashPassword(password));
-      await markPasswordResetTokenUsed(token);
+      const used = await markPasswordResetTokenUsed(token);
+      if (!used) {
+        return res.status(400).json({ ok: false, error: "Reset link is invalid or expired" });
+      }
       res.json({ ok: true });
     } catch (error) {
       res.status(500).json({ ok: false, error: error.message });
@@ -303,10 +313,12 @@ export function attachSaasRoutes(app, client) {
   app.get("/admin/auth/callback", async (req, res) => {
     try {
       const { code, state } = req.query;
-      if (!code || !state || !oauthStates().has(String(state))) {
+      const states = oauthStates();
+      const createdAt = states.get(String(state));
+      if (!code || !state || !createdAt || Date.now() - createdAt > OAUTH_STATE_TTL_MS) {
         return res.status(400).send("Invalid OAuth state. Try logging in again.");
       }
-      oauthStates().delete(String(state));
+      states.delete(String(state));
       const profile = await exchangeDiscordCode(String(code));
       setSaasSessionCookie(res, {
         discordUserId: profile.discordUserId,
@@ -460,7 +472,7 @@ export function attachSaasRoutes(app, client) {
       return res.status(403).json({ error: "Owner only" });
     }
     try {
-      const endpoint = (await import("../rcon/endpoint.js")).normalizeRconEndpoint({
+      const endpoint = await (await import("../rcon/endpoint.js")).normalizeRconEndpoint({
         name: req.body?.name,
         host: req.body?.host,
         port: req.body?.port,

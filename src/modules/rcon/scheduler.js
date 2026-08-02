@@ -2,16 +2,19 @@ import { promises as fs } from "fs";
 import path from "path";
 import { sendGameCommand, isRconEnabled, getRconStatus } from "./client.js";
 import { getAutoMessages, saveAutoMessages } from "../../data/store.js";
+import { resolveDataFile } from "../../saas/data-path.js";
+import { config } from "../../config.js";
+import { forEachAttachedTenant } from "../../saas/tenant-context.js";
 
-const DATA_DIR = process.env.DATA_DIR?.trim()
-  || path.join(process.cwd(), ".data");
-const SCHEDULE_FILE = path.join(DATA_DIR, "scheduled-commands.json");
+function schedulePath() {
+  return resolveDataFile("scheduled-commands.json");
+}
 
 let timer = null;
 
 async function readSchedule() {
   try {
-    const raw = await fs.readFile(SCHEDULE_FILE, "utf8");
+    const raw = await fs.readFile(schedulePath(), "utf8");
     return JSON.parse(raw);
   } catch {
     return { jobs: [] };
@@ -19,8 +22,9 @@ async function readSchedule() {
 }
 
 async function writeSchedule(data) {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(SCHEDULE_FILE, JSON.stringify(data, null, 2), "utf8");
+  const file = schedulePath();
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, JSON.stringify(data, null, 2), "utf8");
 }
 
 export async function listScheduledCommands() {
@@ -138,6 +142,13 @@ async function tickScheduledCommands() {
 }
 
 async function tick() {
+  if (config.saas?.enabled) {
+    await forEachAttachedTenant(async () => {
+      await tickAutoMessages().catch(() => {});
+      await tickScheduledCommands().catch(() => {});
+    });
+    return;
+  }
   await tickAutoMessages().catch(() => {});
   await tickScheduledCommands().catch(() => {});
 }
@@ -153,6 +164,5 @@ export function stopScheduler() {
   timer = null;
 }
 
-// Back-compat aliases
 export const startAutoMessages = startScheduler;
 export const stopAutoMessages = stopScheduler;

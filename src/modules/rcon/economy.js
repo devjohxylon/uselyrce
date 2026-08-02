@@ -1,31 +1,37 @@
 import { config } from "../../config.js";
 import { getEconomy, saveEconomy } from "../../data/store.js";
+import { createTenantCache } from "../../saas/tenant-cache.js";
 import { sendGameCommand } from "./client.js";
 import { findOnlinePlayer, requireLinkedIgn } from "./linking.js";
 
-let cache = null;
-let dirty = false;
+const cache = createTenantCache();
+
+function markDirty() {
+  cache.entry().dirty = true;
+}
 const playtimeTicks = new Map();
 
 async function load() {
-  if (!cache) {
-    cache = await getEconomy();
-    if (!Array.isArray(cache.shop)) cache.shop = [];
-    if (!cache.balances) cache.balances = {};
+  const e = cache.entry();
+  if (!e.data) {
+    e.data = await getEconomy();
+    if (!Array.isArray(e.data.shop)) e.data.shop = [];
+    if (!e.data.balances) e.data.balances = {};
   }
-  return cache;
+  return e.data;
 }
 
 async function persist() {
-  if (!dirty) return;
-  await saveEconomy(cache);
-  dirty = false;
+  const e = cache.entry();
+  if (!e.dirty || !e.data) return;
+  await saveEconomy(e.data);
+  e.dirty = false;
 }
 
 function ensureBalance(data, discordId) {
   if (data.balances[discordId] == null) {
     data.balances[discordId] = config.economy.startingBalance;
-    dirty = true;
+    markDirty();
   }
   return data.balances[discordId];
 }
@@ -40,7 +46,7 @@ export async function addBalance(discordId, amount, reason = "") {
   const data = await load();
   const next = ensureBalance(data, discordId) + amount;
   data.balances[discordId] = Math.max(0, Math.floor(next));
-  dirty = true;
+  markDirty();
   await persist();
   return { balance: data.balances[discordId], reason };
 }
@@ -90,7 +96,7 @@ export async function addShopItem({ id, label, price, item, amount = 1, kit = nu
     kit: kit || null,
   };
   data.shop.push(entry);
-  dirty = true;
+  markDirty();
   await persist();
   return { ok: true, item: entry };
 }
@@ -100,7 +106,7 @@ export async function removeShopItem(id) {
   const before = data.shop.length;
   data.shop = data.shop.filter((s) => s.id !== id);
   if (data.shop.length === before) return { ok: false, error: "Item not found." };
-  dirty = true;
+  markDirty();
   await persist();
   return { ok: true };
 }
@@ -130,7 +136,7 @@ export async function buyItem(discordId, shopId) {
   }
 
   data.balances[discordId] = balance - entry.price;
-  dirty = true;
+  markDirty();
   await persist();
 
   try {
@@ -145,7 +151,7 @@ export async function buyItem(discordId, shopId) {
     }
   } catch (error) {
     data.balances[discordId] = balance;
-    dirty = true;
+    markDirty();
     await persist();
     return { ok: false, error: `Purchase failed, coins refunded: ${error.message}` };
   }
@@ -183,6 +189,6 @@ export async function ensureDefaultShop() {
     },
     { id: "scrap", label: "Scrap x100", price: 150, item: "scrap", amount: 100, kit: null },
   ];
-  dirty = true;
+  markDirty();
   await persist();
 }

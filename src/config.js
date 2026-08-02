@@ -141,11 +141,26 @@ if (saasEnabled && !saasMock) {
   if (!saasConfig.supabaseAnonKey) missing.push("SUPABASE_ANON_KEY");
   if (!saasConfig.rconEncryptionKey) missing.push("RCON_ENCRYPTION_KEY");
   if (!saasConfig.discordOAuthClientSecret) missing.push("DISCORD_OAUTH_CLIENT_SECRET");
+  if (!optional("ADMIN_SESSION_SECRET")) missing.push("ADMIN_SESSION_SECRET");
   if (isProdLike && !saasConfig.resendApiKey) missing.push("RESEND_API_KEY");
   if (missing.length) {
     throw new Error(
       `SAAS_MODE=true requires: ${missing.join(", ")}. See .env.example.`,
     );
+  }
+}
+
+if (isProdLike) {
+  const webhookSecret = optional("BOT_WEBHOOK_SECRET", "change-me-webhook-secret");
+  if (!optional("BOT_WEBHOOK_SECRET") || webhookSecret === "change-me-webhook-secret") {
+    throw new Error("Set BOT_WEBHOOK_SECRET to a strong secret in production.");
+  }
+  if (!saasEnabled) {
+    const panelPw =
+      optional("ADMIN_PANEL_PASSWORD") || optional("BOT_WEBHOOK_SECRET") || "change-me";
+    if (panelPw === "change-me") {
+      throw new Error("Set ADMIN_PANEL_PASSWORD in production.");
+    }
   }
 }
 
@@ -293,6 +308,6 @@ export const config = {
 };
 
 export function isAdmin(userId) {
-  if (config.adminUserIds.size === 0) return true;
+  if (config.adminUserIds.size === 0) return false;
   return config.adminUserIds.has(userId);
 }

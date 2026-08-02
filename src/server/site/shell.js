@@ -22,7 +22,7 @@ export const PAGES = {
     out: "index.html",
     title: "Usely — Rust Console admin panel and Discord bot",
     description:
-      "Usely is a hosted admin panel and Discord bot for Rust Console Edition (public beta). Manage players, kits, bans, and RCON from your browser. Plans from $20/month.",
+      "Usely is a hosted admin panel and Discord bot for Rust Console Edition. Manage players, kits, bans, and RCON from your browser. Plans from $20/month.",
     priority: "1.0",
     changefreq: "weekly",
   },
@@ -43,7 +43,7 @@ export const PAGES = {
     out: "docs.html",
     title: "Docs — Usely",
     description:
-      "How to set up Usely in detail: checkout, workspace wizard, WebRCON, Discord channels and feeds, kits, staff keys, wipe day, and billing.",
+      "How to set up Usely in detail: checkout, setup, WebRCON, Discord channels and feeds, kits, staff keys, wipe day, and billing.",
     nav: "docs",
     priority: "0.8",
     changefreq: "monthly",
@@ -119,7 +119,7 @@ const NAV_LINKS = [
 
 const FOOTER_GROUPS = [
   ["Product", [["/pricing", "Pricing"], ["/docs", "Docs"], ["/changelog", "Changelog"]]],
-  ["Support", [["/faq", "FAQ"], ["/contact", "Contact"], ["/status", "Status"], ["/admin", "Sign in"], [`${APP_URL}/demo`, "Panel demo"]]],
+  ["Support", [["/faq", "FAQ"], ["/contact", "Contact"], ["/status", "Status"], ["/admin", "Sign in"], [`${APP_URL}/demo`, "Preview the panel"]]],
   ["Legal", [["/terms", "Terms"], ["/privacy", "Privacy"]]],
 ];
 
@@ -208,7 +208,7 @@ ${links.map(([href, label]) => `          <a href="${href}">${label}</a>`).join(
       <div class="foot-cols">
         <div class="foot-brand">
           <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
-          <p>Admin panel and Discord bot for Rust Console Edition servers. Currently in beta — <a href="/contact?topic=bug" style="color:var(--chrome);text-decoration:underline">report a bug</a>.</p>
+          <p>Admin panel and Discord bot for Rust Console Edition servers.</p>
         </div>
 ${groups}
       </div>

@@ -70,8 +70,8 @@
   <div class="card">
     <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
     <div id="form" style="display:grid;gap:1.1rem">
-      <h1>Create your workspace</h1>
-      <p class="sub">Pick a plan and enter your email. After checkout we'll email you a setup link to choose your panel address, invite the Discord bot, and add WebRCON.</p>
+      <h1>Choose your plan</h1>
+      <p class="sub">Pick a plan and enter your email. After checkout we’ll email you a setup link.</p>
       <div class="plans" id="plans">
         <label class="plan" data-plan="basic"><input type="radio" name="plan" value="basic"><span class="nm">Basic</span><span class="pr">$20</span><span class="sv">1 server</span></label>
         <label class="plan sel" data-plan="pro"><input type="radio" name="plan" value="pro" checked><span class="nm">Pro</span><span class="pr">$49</span><span class="sv">2 servers</span></label>
@@ -93,7 +93,7 @@
       <button type="button" id="resendSetup" style="display:none;background:transparent;border:1px solid var(--line2);color:var(--text)">Resend setup email</button>
       <p id="resendMsg" class="err" style="display:none"></p>
     </div>
-    <div class="foot">Already set up? <a href="/admin">Sign in to your panel</a> · Paid but no email? Use resend above after checkout.</div>
+    <div class="foot">Already set up? <a href="/admin">Sign in to your panel</a></div>
   </div>
   <script>
     const params = new URLSearchParams(location.search);

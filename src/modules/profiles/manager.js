@@ -1,25 +1,37 @@
 import { getPlayerProfiles, savePlayerProfiles } from "../../data/store.js";
+import { createTenantCache } from "../../saas/tenant-cache.js";
 import { getPlayerCard } from "../rcon/stats.js";
 import { getPlayerActivityData } from "../analytics/tracker.js";
 
-let cache = null;
-let dirty = false;
+const cache = createTenantCache();
+
+function markDirty() {
+  cache.entry().dirty = true;
+}
 
 async function load() {
-  if (!cache) {
-    cache = await getPlayerProfiles();
-    if (!cache.profiles) cache.profiles = {};
+  const e = cache.entry();
+  if (!e.data) {
+    e.data = await getPlayerProfiles();
+    if (!e.data.profiles) e.data.profiles = {};
   }
-  return cache;
+  return e.data;
 }
 
 async function persist() {
-  if (!dirty || !cache) return;
-  await savePlayerProfiles(cache);
-  dirty = false;
+  const e = cache.entry();
+  if (!e.dirty || !e.data) return;
+  await savePlayerProfiles(e.data);
+  e.dirty = false;
 }
 
-setInterval(() => persist().catch(() => {}), 45000);
+setInterval(() => {
+  cache.forEachDirty(async (e) => {
+    if (!e.dirty || !e.data) return;
+    await savePlayerProfiles(e.data);
+    e.dirty = false;
+  }).catch(() => {});
+}, 45000);
 
 export async function getPlayerProfile(ign) {
   const data = await load();
@@ -65,7 +77,7 @@ export async function addPlayerNote(ign, note, author) {
   };
   
   data.profiles[key].notes.push(entry);
-  dirty = true;
+  markDirty();
   await persist();
   
   return entry;
@@ -84,7 +96,7 @@ export async function removePlayerNote(ign, noteId) {
     return { ok: false, error: "Note not found" };
   }
   
-  dirty = true;
+  markDirty();
   await persist();
   return { ok: true };
 }
@@ -106,7 +118,7 @@ export async function addPlayerTag(ign, tag) {
   const normalized = tag.toLowerCase();
   if (!data.profiles[key].tags.includes(normalized)) {
     data.profiles[key].tags.push(normalized);
-    dirty = true;
+    markDirty();
     await persist();
   }
   
@@ -122,7 +134,7 @@ export async function removePlayerTag(ign, tag) {
   const normalized = tag.toLowerCase();
   data.profiles[key].tags = data.profiles[key].tags.filter(t => t !== normalized);
   
-  dirty = true;
+  markDirty();
   await persist();
   return { ok: true, tags: data.profiles[key].tags };
 }
@@ -149,7 +161,7 @@ export async function addPlayerWarning(ign, reason, author) {
   };
   
   data.profiles[key].warnings.push(warning);
-  dirty = true;
+  markDirty();
   await persist();
   
   return warning;

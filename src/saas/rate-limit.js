@@ -11,10 +11,14 @@ export function createRateLimiter({
   const hits = new Map();
 
   function clientIp(req) {
-    const forwarded = String(req.get?.("x-forwarded-for") || "")
-      .split(",")[0]
-      .trim();
-    return forwarded || req.socket?.remoteAddress || "unknown";
+    // Prefer Express trust-proxy req.ip; fall back to rightmost XFF hop.
+    if (req.ip) return String(req.ip);
+    const parts = String(req.get?.("x-forwarded-for") || "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+    return req.socket?.remoteAddress || "unknown";
   }
 
   function check(ip) {
@@ -27,7 +31,10 @@ export function createRateLimiter({
     if (row.lockedUntil && now < row.lockedUntil) {
       return { ok: false, retryAfterSec: Math.ceil((row.lockedUntil - now) / 1000), row };
     }
-    if (hits.size > 10_000) hits.clear();
+    if (hits.size > 10_000) {
+      const oldest = hits.keys().next().value;
+      if (oldest) hits.delete(oldest);
+    }
     return { ok: true, row };
   }
 

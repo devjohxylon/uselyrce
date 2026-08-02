@@ -1,12 +1,17 @@
 import { getPlayerStats, savePlayerStats } from "../../data/store.js";
+import { createTenantCache } from "../../saas/tenant-cache.js";
 
-let cache = null;
-let dirty = false;
+const cache = createTenantCache();
+
+function markDirty() {
+  cache.entry().dirty = true;
+}
 const sessions = new Map();
 
 async function load() {
-  if (!cache) cache = await getPlayerStats();
-  return cache;
+  const e = cache.entry();
+  if (!e.data) e.data = await getPlayerStats();
+  return e.data;
 }
 
 function blankPlayer() {
@@ -47,20 +52,20 @@ export async function recordKill({ killer, victim }) {
     playerRecord(data, victim.name).deaths += 1;
   }
 
-  dirty = true;
+  markDirty();
 }
 
 export async function recordSuicide(name) {
   const data = await load();
   playerRecord(data, name).suicides += 1;
-  dirty = true;
+  markDirty();
 }
 
 export async function startSession(name) {
   const data = await load();
   playerRecord(data, name);
   sessions.set(name, Date.now());
-  dirty = true;
+  markDirty();
 }
 
 export async function endSession(name) {
@@ -70,7 +75,7 @@ export async function endSession(name) {
 
   const data = await load();
   playerRecord(data, name).playtimeMs += Date.now() - started;
-  dirty = true;
+  markDirty();
 }
 
 // Credits time for players still online so playtime survives restarts.
@@ -85,9 +90,10 @@ async function flushOpenSessions() {
 
 export async function flushStats({ force = false } = {}) {
   if (sessions.size) await flushOpenSessions();
-  if (!dirty && !force) return;
-  await savePlayerStats(cache);
-  dirty = false;
+  const e = cache.entry();
+  if (!e.dirty && !force) return;
+  await savePlayerStats(e.data);
+  e.dirty = false;
 }
 
 const CATEGORIES = {
@@ -148,11 +154,11 @@ export async function getPlayerCard(name) {
 }
 
 export async function resetStats(wipeLabel) {
-  cache = { wipe: wipeLabel ?? new Date().toISOString().slice(0, 10), players: {} };
+  cache.entry().data = { wipe: wipeLabel ?? new Date().toISOString().slice(0, 10), players: {} };
   sessions.clear();
-  dirty = true;
+  markDirty();
   await flushStats({ force: true });
-  return cache;
+  return cache.entry().data;
 }
 
 export async function statsSummary() {

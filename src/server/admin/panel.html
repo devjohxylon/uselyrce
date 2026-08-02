@@ -1854,8 +1854,8 @@ button { transition: all .15s ease; }
     </div>
     <div class="login-card">
       <div id="legacyLogin">
-        <label for="password">Access Key</label>
-        <input id="password" type="password" placeholder="Enter your admin password" autocomplete="current-password" />
+        <label for="password">Access key</label>
+        <input id="password" type="password" placeholder="Enter your access key" autocomplete="current-password" />
         <button class="primary" id="loginBtn">Sign In</button>
       </div>
       <div id="saasLogin" class="hidden">
@@ -1872,7 +1872,7 @@ button { transition: all .15s ease; }
           <label for="saasStaffKey">Access key</label>
           <input id="saasStaffKey" type="password" placeholder="ask_…" autocomplete="current-password" />
           <button type="button" class="btn-secondary" id="saasKeyLoginBtn">Sign in with key</button>
-          <p class="login-foot">New here? <a href="/signup">Create a workspace</a></p>
+          <p class="login-foot">New here? <a href="/signup">Choose your plan</a></p>
         </div>
         <div id="saasRecoverView" class="hidden">
           <button type="button" class="login-back" id="saasRecoverBack">← Back</button>
@@ -1892,7 +1892,6 @@ button { transition: all .15s ease; }
       </div>
       <div id="loginError" class="login-error hidden" role="status"></div>
     </div>
-    <p class="login-dev-note">usely.dev — multi-server Rust Console admin</p>
   </div>
 </div>
 
@@ -5182,7 +5181,6 @@ function saasDisabledCard(title) {
   return `<div class="card">
     <h3>${esc(title)}</h3>
     <p class="muted">This workspace isn't available on this host yet. Finish setup from your Usely setup link, or open your panel at <code>yourname.usely.dev</code>.</p>
-    <p class="muted" style="margin-top:.75rem">Until then, this panel is the staff console for a single env-configured server.</p>
   </div>`;
 }
 
@@ -5299,7 +5297,7 @@ async function renderBilling() {
     <div class="card">
       <h3>Plan &amp; billing</h3>
       <p class="muted">Current: <strong>${esc(org.plan || "basic")}</strong> · <strong>${esc(org.planStatus || "inactive")}</strong></p>
-      <p class="muted">Basic $20 / 1 server · Pro $49 / 5 · Network $99 / 15 — <a href="/pricing" style="color:var(--chrome)">pricing</a></p>
+      <p class="muted">Basic $20 / 1 server · Pro $49 / 2 · Network $99 / up to 100 — <a href="/pricing" style="color:var(--chrome)">pricing</a></p>
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem">
         <button class="primary" data-action="saasCheckout" data-plan="basic">Checkout Basic</button>
         <button class="primary" data-action="saasCheckout" data-plan="pro">Checkout Pro</button>

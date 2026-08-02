@@ -39,11 +39,18 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const COOKIE = "usely_admin";
 
 function signingSecret() {
-  return (
-    config.adminPanel.sessionSecret ||
-    config.adminPanel.password ||
-    "usely-admin"
-  );
+  if (config.adminPanel.sessionSecret) return config.adminPanel.sessionSecret;
+  if (config.saas?.enabled) {
+    throw new Error("ADMIN_SESSION_SECRET is required");
+  }
+  if (config.adminPanel.password && config.adminPanel.password !== "change-me") {
+    return config.adminPanel.password;
+  }
+  const isProdLike =
+    Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID) ||
+    process.env.NODE_ENV === "production";
+  if (isProdLike) throw new Error("ADMIN_SESSION_SECRET is required");
+  return "usely-admin-dev-only";
 }
 
 function hashKey(raw) {
@@ -182,14 +189,19 @@ export async function authenticateAccessKey(raw) {
   const password = String(raw ?? "");
   if (!password) return null;
 
-  // Owner master key from env
-  if (password === config.adminPanel.password) {
-    return {
-      role: "owner",
-      label: "Owner",
-      keyId: null,
-      permissions: { ...OWNER_PERMISSIONS },
-    };
+  // Owner master key from env (timing-safe compare)
+  const expected = String(config.adminPanel.password || "");
+  if (expected && expected !== "change-me") {
+    const a = Buffer.from(password);
+    const b = Buffer.from(expected);
+    if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
+      return {
+        role: "owner",
+        label: "Owner",
+        keyId: null,
+        permissions: { ...OWNER_PERMISSIONS },
+      };
+    }
   }
 
   const data = await getAccessKeys();

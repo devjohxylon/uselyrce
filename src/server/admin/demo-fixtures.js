@@ -1,13 +1,8 @@
 /**
  * Server-built fixtures for /demo — shapes match real /admin/api responses
  * so the panel UI can render without a live RCON session.
+ * Pure fixtures only — never read live tenant settings.
  */
-import { getChannelConfig } from "../../modules/admin/channel-settings.js";
-import { getFeedSettingsForPanel } from "../../modules/admin/feed-settings.js";
-import { getCommandSettingsForPanel } from "../../modules/admin/command-settings.js";
-import { getStatusSettingsForPanel } from "../../modules/admin/status-settings.js";
-import { getVipSettingsForPanel } from "../../modules/admin/vip-settings.js";
-import { getWipeAutomationConfig } from "../../modules/rcon/wipe-runner.js";
 import { OWNER_PERMISSIONS } from "../../modules/admin/access-keys.js";
 import { STAFF_PERMISSIONS } from "../../modules/admin/access-keys.js";
 import { listRustItems } from "../../data/rust-items.js";
@@ -43,7 +38,11 @@ function hourlyData() {
 
 export async function buildDemoFixtures() {
   const wipeAt = new Date(Date.now() + 3 * 86400000).toISOString();
-  const wipeAutomation = await getWipeAutomationConfig();
+  const wipeAutomation = {
+    enabled: false,
+    wipeAt,
+    commands: [],
+  };
 
   const discordChannels = [
     { id: "111000000000000001", name: "killfeed", type: "text", parent: "Game" },
@@ -59,13 +58,18 @@ export async function buildDemoFixtures() {
   ];
 
   const channelsPayload = {
-    channels: await getChannelConfig(),
+    channels: [
+      { key: "killfeed", label: "Kill feed", value: null, source: "default" },
+      { key: "popStatus", label: "Population", value: null, source: "default" },
+      { key: "wipeStatus", label: "Wipe status", value: null, source: "default" },
+      { key: "gameChat", label: "Game chat", value: null, source: "default" },
+    ],
     discordChannels,
     discordRoles,
-    ...(await getFeedSettingsForPanel()),
-    ...(await getCommandSettingsForPanel()),
-    ...(await getStatusSettingsForPanel()),
-    ...(await getVipSettingsForPanel()),
+    feeds: {},
+    commands: {},
+    status: {},
+    vip: {},
   };
 
   // Seed a few demo channel picks so dropdowns look live.

@@ -1,26 +1,38 @@
 import { getScheduledEvents, saveScheduledEvents } from "../../data/store.js";
+import { createTenantCache } from "../../saas/tenant-cache.js";
 import { logAction } from "../audit/logger.js";
 import { sendGameCommand } from "../rcon/client.js";
 
-let cache = null;
-let dirty = false;
+const cache = createTenantCache();
+
+function markDirty() {
+  cache.entry().dirty = true;
+}
 let timers = new Map();
 
 async function load() {
-  if (!cache) {
-    cache = await getScheduledEvents();
-    if (!cache.events) cache.events = [];
+  const e = cache.entry();
+  if (!e.data) {
+    e.data = await getScheduledEvents();
+    if (!e.data.events) e.data.events = [];
   }
-  return cache;
+  return e.data;
 }
 
 async function persist() {
-  if (!dirty || !cache) return;
-  await saveScheduledEvents(cache);
-  dirty = false;
+  const e = cache.entry();
+  if (!e.dirty || !e.data) return;
+  await saveScheduledEvents(e.data);
+  e.dirty = false;
 }
 
-setInterval(() => persist().catch(() => {}), 30000);
+setInterval(() => {
+  cache.forEachDirty(async (e) => {
+    if (!e.dirty || !e.data) return;
+    await saveScheduledEvents(e.data);
+    e.dirty = false;
+  }).catch(() => {});
+}, 30000);
 
 export async function createEvent(name, command, schedule, admin, oneTime = false) {
   const data = await load();
@@ -40,7 +52,7 @@ export async function createEvent(name, command, schedule, admin, oneTime = fals
   };
   
   data.events.push(event);
-  dirty = true;
+  markDirty();
   
   await logAction("create_scheduled_event", {
     admin,
@@ -69,7 +81,7 @@ export async function updateEvent(id, updates, admin) {
     event.nextRunAt = calculateNextRun(updates.schedule);
   }
   
-  dirty = true;
+  markDirty();
   
   await logAction("update_scheduled_event", {
     admin,
@@ -93,7 +105,7 @@ export async function deleteEvent(id, admin) {
   const event = data.events[index];
   data.events.splice(index, 1);
   
-  dirty = true;
+  markDirty();
   
   await logAction("delete_scheduled_event", {
     admin,
@@ -123,7 +135,7 @@ export async function runEventNow(id, admin) {
     
     event.lastRunAt = new Date().toISOString();
     event.runCount++;
-    dirty = true;
+    markDirty();
     
     await logAction("run_scheduled_event_manually", {
       admin,
@@ -194,7 +206,7 @@ async function executeEvent(event) {
         scheduleEvent(e);
       }
       
-      dirty = true;
+      markDirty();
       
       await logAction("run_scheduled_event", {
         admin: "System",

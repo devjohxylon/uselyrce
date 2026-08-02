@@ -264,7 +264,7 @@
 
         <section id="get-started">
           <h2>Get started</h2>
-          <p>Usely is buy-first: you pick a plan, pay, then finish setup from an emailed link. That keeps signup to one path.</p>
+          <p>Pick a plan, pay, then finish setup from the emailed link.</p>
 
           <h3>1. Choose a plan and pay</h3>
           <ol>
@@ -312,9 +312,9 @@
           <p>Always use <strong>your</strong> panel URL (<code>yourslug.usely.dev</code>), not the marketing site.</p>
           <dl>
             <dt>Owner</dt>
-            <dd>Email + password on the Owner tab. Use <strong>Forgot password?</strong> for a one-hour reset link. Owners manage billing, WebRCON servers, Discord guild link, staff keys, and audit logs.</dd>
+            <dd>Email + password under <strong>Owner</strong> on the login screen. Use <strong>Forgot password?</strong> for a one-hour reset link. Owners manage billing, WebRCON servers, Discord guild link, staff keys, and audit logs.</dd>
             <dt>Staff</dt>
-            <dd>Paste the full access key (<code>ask_…</code>) on the Staff tab. Keys are permission-scoped and never include billing or key management.</dd>
+            <dd>Paste the full access key (<code>ask_…</code>) under <strong>Staff</strong> on the login screen. Keys are permission-scoped and never include billing or key management.</dd>
           </dl>
         </section>
 
@@ -425,7 +425,7 @@
               </tr>
             </tbody>
           </table>
-          <p>Pick a channel from the dropdown or paste a channel ID. Save when you’re done. Source badges show whether a value came from the panel or env defaults.</p>
+          <p>Pick a channel from the dropdown or paste a channel ID. Save when you’re done.</p>
 
           <h3>Status displays</h3>
           <p>Under <strong>Discord → Status</strong>, control how pop and wipe channel names look (online/max format, queue label, offline label, wipe prefixes like countdown / TBA / Wiped).</p>
@@ -453,7 +453,7 @@
             <li>Optional <strong>Discord role</strong> — only members with that role (and a linked IGN) can claim.</li>
             <li>Add items from the catalog (or a custom shortname) and <strong>Save kit</strong>.</li>
           </ol>
-          <p>Panel kits are workspace-scoped — available on every server under the workspace. Staff can still <strong>Give</strong> a kit even when claims are locked.</p>
+          <p>Kits are available on every server in the workspace. Staff can still <strong>Give</strong> a kit even when claims are locked.</p>
 
           <h3>Kit locks</h3>
           <p>Use locks on wipe day to pause quick-chat claims for boom kits (or any claimable panel kits):</p>
@@ -482,10 +482,10 @@
             <li>Pick a preset (<strong>Helper</strong>, <strong>Moderator</strong>, or <strong>Admin</strong>) or toggle permission chips.</li>
             <li>Give the key a label (for example <code>Mod — Alex</code>).</li>
             <li><strong>Generate access key</strong> — copy the <code>ask_…</code> secret immediately; it’s shown once.</li>
-            <li>Staff open your panel URL → Staff tab → paste the key.</li>
+            <li>Staff open your panel URL → paste the key under Staff on the login screen.</li>
           </ol>
           <p>Disable or revoke anytime. Permissions are checked on every action, not only at login. Keys never unlock billing, staff-key management, or owner audit logs.</p>
-          <p>Useful chips include Dashboard, Player list, Kick, Ban, Teleport, Broadcast, Raw RCON, Leaderboards, Wipe reset, Warps, Discord links, Edit kits, Kits/ranks/Discord, Auto messages, Scheduled jobs, and Combat reports.</p>
+          <p>Toggle permission chips when you create or edit a key — the panel lists every available permission.</p>
         </section>
 
         <section id="wipe">

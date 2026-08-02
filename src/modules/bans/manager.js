@@ -1,29 +1,43 @@
 import { getBans, saveBans } from "../../data/store.js";
 import { listPanelLogs } from "../admin/access-keys.js";
 import { logAction } from "../audit/logger.js";
+import { createTenantCache } from "../../saas/tenant-cache.js";
 
-let cache = null;
-let dirty = false;
+const cache = createTenantCache();
 
 async function load() {
-  if (!cache) {
-    cache = await getBans();
-    if (!cache.bans) cache.bans = [];
+  const e = cache.entry();
+  if (!e.data) {
+    e.data = await getBans();
+    if (!e.data.bans) e.data.bans = [];
   }
-  return cache;
+  return e.data;
 }
 
 async function persist() {
-  if (!dirty || !cache) return;
-  await saveBans(cache);
-  dirty = false;
+  const e = cache.entry();
+  if (!e.dirty || !e.data) return;
+  await saveBans(e.data);
+  e.dirty = false;
+}
+
+function markDirty() {
+  cache.entry().dirty = true;
 }
 
 function newId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-setInterval(() => persist().catch(() => {}), 30000);
+setInterval(() => {
+  cache
+    .forEachDirty(async (e) => {
+      if (!e.dirty || !e.data) return;
+      await saveBans(e.data);
+      e.dirty = false;
+    })
+    .catch(() => {});
+}, 30000);
 
 /** Create or keep an active ban record (idempotent by IGN). */
 export async function upsertActiveBan({
@@ -45,12 +59,12 @@ export async function upsertActiveBan({
   if (existing) {
     if (reason && reason !== "Banned" && (!existing.reason || existing.reason === "Banned")) {
       existing.reason = reason;
-      dirty = true;
+      markDirty();
       await persist();
     }
     if (steamId && !existing.steamId) {
       existing.steamId = steamId;
-      dirty = true;
+      markDirty();
       await persist();
     }
     return { ok: true, ban: existing, created: false };
@@ -72,7 +86,7 @@ export async function upsertActiveBan({
   };
 
   data.bans.unshift(ban);
-  dirty = true;
+  markDirty();
   await persist();
   return { ok: true, ban, created: true };
 }
@@ -116,7 +130,7 @@ export async function unbanPlayer(ign, admin, reason = "Unbanned") {
   ban.unbannedAt = new Date().toISOString();
   ban.unbanReason = reason;
 
-  dirty = true;
+  markDirty();
   await persist();
 
   await logAction("unban_player", {
@@ -140,7 +154,7 @@ export async function isPlayerBanned(ign) {
       const expiry = new Date(b.expiresAt).getTime();
       if (now >= expiry) {
         b.active = false;
-        dirty = true;
+        markDirty();
         return false;
       }
     }
@@ -167,7 +181,7 @@ export async function getAllActiveBans() {
       const expiry = new Date(b.expiresAt).getTime();
       if (now >= expiry) {
         b.active = false;
-        dirty = true;
+        markDirty();
         return false;
       }
     }
@@ -329,7 +343,7 @@ export async function cleanExpiredBans() {
       const expiry = new Date(ban.expiresAt).getTime();
       if (now >= expiry) {
         ban.active = false;
-        dirty = true;
+        markDirty();
         cleaned++;
       }
     }

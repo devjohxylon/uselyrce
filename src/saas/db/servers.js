@@ -49,7 +49,7 @@ export async function createServer(orgId, { name, host, port, password }) {
   const org = await getOrg(orgId);
   if (!org) throw new Error("Org not found");
 
-  const endpoint = normalizeRconEndpoint({ name, host, port, password });
+  const endpoint = await normalizeRconEndpoint({ name, host, port, password });
 
   const existing = await listServers(orgId);
   assertCanAddServer(org, existing.length);
@@ -99,7 +99,7 @@ export async function updateServer(orgId, serverId, patch) {
   const updates = {};
 
   if (patch.host != null || patch.port != null || patch.password) {
-    const endpoint = normalizeRconEndpoint({
+    const endpoint = await normalizeRconEndpoint({
       name: patch.name != null ? patch.name : raw.name,
       host: patch.host != null ? patch.host : raw.rcon_host,
       port: patch.port != null ? patch.port : raw.rcon_port,

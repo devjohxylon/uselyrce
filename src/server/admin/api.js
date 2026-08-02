@@ -236,6 +236,17 @@ function requirePerm(perm) {
   };
 }
 
+function requirePerms(...perms) {
+  return (req, res, next) => {
+    for (const perm of perms) {
+      if (!hasPerm(req.session, perm)) {
+        return res.status(403).json({ error: "Missing permission" });
+      }
+    }
+    return next();
+  };
+}
+
 async function audit(req, action, detail = {}) {
   try {
     await appendPanelLog({
@@ -547,10 +558,21 @@ export async function attachAdminPanel(app, client) {
     }
   });
 
+  const { createRateLimiter } = await import("../../saas/rate-limit.js");
+  const rconLimit = createRateLimiter({ windowMs: 60_000, maxAttempts: 30, lockMs: 60_000 });
+  const { quoteRconArg, assertSafeRconArg } = await import("../../lib/rcon-quote.js");
+
   app.post("/admin/api/rcon", requireAuth, requirePerm("rcon"), async (req, res) => {
     try {
+      const ip = `${rconLimit.clientIp(req)}:${req.session?.orgId || "x"}`;
+      const gate = rconLimit.check(ip);
+      if (!gate.ok) {
+        return res.status(429).json({ ok: false, error: `Slow down — try again in ${gate.retryAfterSec}s.` });
+      }
+      rconLimit.fail(ip);
       const command = String(req.body?.command ?? "").trim();
       if (!command) return res.status(400).json({ ok: false, error: "Missing command" });
+      if (command.length > 500) return res.status(400).json({ ok: false, error: "Command too long" });
       const result = await sendGameCommand(command);
       await audit(req, "rcon", { command });
       res.json({ ok: true, result: result ?? "" });
@@ -711,8 +733,9 @@ export async function attachAdminPanel(app, client) {
 
   app.post("/admin/api/broadcast", requireAuth, requirePerm("broadcast"), async (req, res) => {
     try {
-      const message = String(req.body?.message ?? "").trim();
+      let message = String(req.body?.message ?? "").trim().slice(0, 240);
       if (!message) return res.status(400).json({ ok: false, error: "Missing message" });
+      message = message.replace(/["\r\n]/g, " ");
       const result = await sendGameCommand(`say <color=#00ffcc>[Usely]</color> ${message}`);
       await audit(req, "broadcast", { message });
       res.json({ ok: true, result: result ?? "" });
@@ -723,34 +746,50 @@ export async function attachAdminPanel(app, client) {
 
   app.post("/admin/api/players/:ign/kick", requireAuth, requirePerm("kick"), async (req, res) => {
     try {
-      const reason = String(req.body?.reason ?? "Kicked by admin");
-      const result = await sendGameCommand(`kick "${req.params.ign}" "${reason}"`);
-      await audit(req, "kick", { ign: req.params.ign, reason });
+      const ign = assertSafeRconArg(decodeURIComponent(req.params.ign), "player name");
+      const reason = assertSafeRconArg(String(req.body?.reason ?? "Kicked by admin").slice(0, 120), "reason");
+      const result = await sendGameCommand(`kick ${quoteRconArg(ign)} ${quoteRconArg(reason)}`);
+      await audit(req, "kick", { ign, reason });
       res.json({ ok: true, result: result ?? "" });
     } catch (error) {
-      res.status(500).json({ ok: false, error: error.message });
+      const status = error.code === "RCON_ARG" ? 400 : 500;
+      res.status(status).json({ ok: false, error: error.message });
     }
   });
 
   app.post("/admin/api/players/:ign/ban", requireAuth, requirePerm("ban"), async (req, res) => {
     try {
-      const reason = String(req.body?.reason ?? "Banned by admin");
+      const ign = assertSafeRconArg(decodeURIComponent(req.params.ign), "player name");
+      const reason = assertSafeRconArg(String(req.body?.reason ?? "Banned by admin").slice(0, 120), "reason");
       const { banPlayer } = await import("../../modules/bans/manager.js");
-      const stored = await banPlayer(req.params.ign, reason, req.session.label);
-      // Already banned in our store is fine — still ensure game ban
-      const result = await sendGameCommand(`ban "${req.params.ign}" "${reason}"`).catch((e) => {
-        if (!stored.ok && stored.error !== "Player is already banned") throw e;
-        return e.message;
-      });
-      await audit(req, "ban", { ign: req.params.ign, reason });
+      const stored = await banPlayer(ign, reason, req.session.label);
+      const already = !stored.ok && stored.error === "Player is already banned";
+      if (!stored.ok && !already) {
+        return res.status(400).json({ ok: false, error: stored.error || "Could not store ban" });
+      }
+      let result;
+      try {
+        result = await sendGameCommand(`ban ${quoteRconArg(ign)} ${quoteRconArg(reason)}`);
+      } catch (e) {
+        if (!already) {
+          return res.status(502).json({
+            ok: false,
+            error: `Ban saved in panel but game server rejected it: ${e.message}`,
+            ban: stored.ban || null,
+          });
+        }
+        result = e.message;
+      }
+      await audit(req, "ban", { ign, reason });
       res.json({
         ok: true,
         result: result ?? "",
         ban: stored.ban || null,
-        stored: stored.ok || stored.error === "Player is already banned",
+        stored: true,
       });
     } catch (error) {
-      res.status(500).json({ ok: false, error: error.message });
+      const status = error.code === "RCON_ARG" ? 400 : 500;
+      res.status(status).json({ ok: false, error: error.message });
     }
   });
 
@@ -969,7 +1008,7 @@ export async function attachAdminPanel(app, client) {
     res.json({ ok: true, jobs: await listScheduledCommands() });
   });
 
-  app.post("/admin/api/schedule", requireAuth, requirePerm("schedule"), async (req, res) => {
+  app.post("/admin/api/schedule", requireAuth, requirePerms("schedule", "rcon"), async (req, res) => {
     const { name, command, intervalMinutes } = req.body ?? {};
     if (!command) return res.status(400).json({ ok: false, error: "Missing command" });
     const job = await addScheduledCommand({ name, command, intervalMinutes });
@@ -977,7 +1016,7 @@ export async function attachAdminPanel(app, client) {
     res.json({ ok: true, job });
   });
 
-  app.patch("/admin/api/schedule/:id", requireAuth, requirePerm("schedule"), async (req, res) => {
+  app.patch("/admin/api/schedule/:id", requireAuth, requirePerms("schedule", "rcon"), async (req, res) => {
     const result = await updateScheduledCommand(req.params.id, req.body ?? {});
     if (!result.ok) return res.status(404).json(result);
     res.json(result);
@@ -989,7 +1028,7 @@ export async function attachAdminPanel(app, client) {
     res.json(result);
   });
 
-  app.post("/admin/api/schedule/:id/run", requireAuth, requirePerm("schedule"), async (req, res) => {
+  app.post("/admin/api/schedule/:id/run", requireAuth, requirePerms("schedule", "rcon"), async (req, res) => {
     try {
       const result = await runScheduledCommandNow(req.params.id);
       if (!result.ok) return res.status(400).json(result);
@@ -1000,7 +1039,7 @@ export async function attachAdminPanel(app, client) {
     }
   });
 
-  app.delete("/admin/api/schedule/:id", requireAuth, requirePerm("schedule"), async (req, res) => {
+  app.delete("/admin/api/schedule/:id", requireAuth, requirePerms("schedule", "rcon"), async (req, res) => {
     const result = await removeScheduledCommand(req.params.id);
     if (!result.ok) return res.status(404).json(result);
     await audit(req, "schedule_delete", { id: req.params.id });
@@ -1837,13 +1876,15 @@ export async function attachAdminPanel(app, client) {
       const { ign, reason, duration } = req.body ?? {};
       if (!ign) return res.status(400).json({ ok: false, error: "Missing IGN" });
       if (!reason) return res.status(400).json({ ok: false, error: "Missing reason" });
+      const safeIgn = assertSafeRconArg(ign, "player name");
+      const safeReason = assertSafeRconArg(String(reason).slice(0, 120), "reason");
 
       const durationMs = duration ? Number(duration) * 60 * 1000 : null;
-      const result = await banPlayer(ign, reason, req.session.label, durationMs);
+      const result = await banPlayer(safeIgn, safeReason, req.session.label, durationMs);
 
       if (result.ok || result.error === "Player is already banned") {
-        await sendGameCommand(`ban "${ign}" "${reason}"`).catch(() =>
-          sendGameCommand(`global.ban "${ign}" "${reason}"`),
+        await sendGameCommand(`ban ${quoteRconArg(safeIgn)} ${quoteRconArg(safeReason)}`).catch(() =>
+          sendGameCommand(`global.ban ${quoteRconArg(safeIgn)} ${quoteRconArg(safeReason)}`),
         );
         await audit(req, "ban", { ign, reason, duration: duration || 0 });
       }
@@ -1857,18 +1898,22 @@ export async function attachAdminPanel(app, client) {
   app.delete("/admin/api/bans/:ign", requireAuth, requirePerm("ban"), async (req, res) => {
     try {
       const { reason } = req.body ?? {};
-      const result = await unbanPlayer(req.params.ign, req.session.label, reason || "Unbanned");
+      const ign = assertSafeRconArg(decodeURIComponent(req.params.ign), "player name");
+      const result = await unbanPlayer(ign, req.session.label, reason || "Unbanned");
 
       if (result.ok) {
-        await sendGameCommand(`unban "${req.params.ign}"`).catch(() =>
-          sendGameCommand(`global.unban "${req.params.ign}"`),
-        );
-        await audit(req, "unban", { ign: req.params.ign, reason: reason || "Unbanned" });
+        try {
+          await sendGameCommand(`unban ${quoteRconArg(ign)}`);
+        } catch {
+          await sendGameCommand(`global.unban ${quoteRconArg(ign)}`);
+        }
+        await audit(req, "unban", { ign, reason: reason || "Unbanned" });
       }
 
       res.json(result);
     } catch (error) {
-      res.status(500).json({ ok: false, error: error.message });
+      const status = error.code === "RCON_ARG" ? 400 : 500;
+      res.status(status).json({ ok: false, error: error.message });
     }
   });
 
@@ -1890,7 +1935,7 @@ export async function attachAdminPanel(app, client) {
     }
   });
   
-  app.post("/admin/api/events", requireAuth, requirePerm("schedule"), async (req, res) => {
+  app.post("/admin/api/events", requireAuth, requirePerms("schedule", "rcon"), async (req, res) => {
     try {
       const { name, command, schedule, oneTime } = req.body ?? {};
       if (!name) return res.status(400).json({ ok: false, error: "Missing name" });
@@ -1904,7 +1949,7 @@ export async function attachAdminPanel(app, client) {
     }
   });
   
-  app.patch("/admin/api/events/:id", requireAuth, requirePerm("schedule"), async (req, res) => {
+  app.patch("/admin/api/events/:id", requireAuth, requirePerms("schedule", "rcon"), async (req, res) => {
     try {
       const result = await updateEvent(req.params.id, req.body, req.session.label);
       res.json(result);
@@ -1913,7 +1958,7 @@ export async function attachAdminPanel(app, client) {
     }
   });
   
-  app.delete("/admin/api/events/:id", requireAuth, requirePerm("schedule"), async (req, res) => {
+  app.delete("/admin/api/events/:id", requireAuth, requirePerms("schedule", "rcon"), async (req, res) => {
     try {
       const result = await deleteEvent(req.params.id, req.session.label);
       res.json(result);
@@ -1922,7 +1967,7 @@ export async function attachAdminPanel(app, client) {
     }
   });
   
-  app.post("/admin/api/events/:id/run", requireAuth, requirePerm("schedule"), async (req, res) => {
+  app.post("/admin/api/events/:id/run", requireAuth, requirePerms("schedule", "rcon"), async (req, res) => {
     try {
       const result = await runEventNow(req.params.id, req.session.label);
       res.json(result);

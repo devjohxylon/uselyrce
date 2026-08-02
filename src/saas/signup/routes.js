@@ -8,6 +8,7 @@ import {
   getValidSetupToken,
   markSetupTokenUsed,
   setAccountPassword,
+  shortenSetupToken,
 } from "../db/accounts.js";
 import { getOrg, getOrgBySlug, setGuild, updateOrgFields } from "../db/orgs.js";
 import {
@@ -169,7 +170,7 @@ export function attachSignupRoutes(app, client = null) {
       const problem = slugProblem(slug);
       if (problem) return res.status(400).json({ ok: false, error: problem });
 
-      const { account, org } = ctx;
+      let { account, org } = ctx;
       if (slug !== org.slug) {
         const taken = await getOrgBySlug(slug);
         if (taken && taken.id !== org.id) {
@@ -181,7 +182,11 @@ export function attachSignupRoutes(app, client = null) {
         if (!password || String(password).length < 8) {
           return res.status(400).json({ ok: false, error: "Password must be at least 8 characters" });
         }
-        await setAccountPassword(account.id, hashPassword(password));
+        if (String(password).length > 128) {
+          return res.status(400).json({ ok: false, error: "Password must be at most 128 characters" });
+        }
+        account = await setAccountPassword(account.id, hashPassword(password));
+        await shortenSetupToken(req.body?.token);
       }
 
       const updated = await updateOrgFields(org.id, { name: orgName, slug });
@@ -190,6 +195,7 @@ export function attachSignupRoutes(app, client = null) {
         email: account.email,
         username: account.email.split("@")[0],
         orgId: org.id,
+        sv: Number(account.session_version ?? 0),
       });
 
       res.json({
@@ -262,7 +268,7 @@ export function attachSignupRoutes(app, client = null) {
         return res.status(400).json({ ok: false, error: "Link your Discord guild first" });
       }
 
-      const endpoint = (await import("../rcon/endpoint.js")).normalizeRconEndpoint({
+      const endpoint = await (await import("../rcon/endpoint.js")).normalizeRconEndpoint({
         name: req.body?.name,
         host: req.body?.host,
         port: req.body?.port,

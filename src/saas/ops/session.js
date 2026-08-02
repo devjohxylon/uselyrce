@@ -9,11 +9,16 @@ function configuredCode() {
 }
 
 function signingSecret() {
-  return (
-    configuredCode() ||
-    config.adminPanel.sessionSecret ||
-    "usely-ops"
-  );
+  const dedicated = String(process.env.USELY_OPS_SESSION_SECRET || "").trim();
+  if (dedicated) return dedicated;
+  if (config.adminPanel.sessionSecret) return config.adminPanel.sessionSecret;
+  const isProdLike =
+    Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID) ||
+    process.env.NODE_ENV === "production";
+  if (isProdLike) {
+    throw new Error("USELY_OPS_SESSION_SECRET or ADMIN_SESSION_SECRET is required");
+  }
+  return "usely-ops-dev-only";
 }
 
 function sign(payload) {
@@ -24,8 +29,13 @@ function sign(payload) {
 
 function verify(token) {
   if (!token || !token.includes(".")) return null;
+  let expected;
+  try {
+    expected = crypto.createHmac("sha256", signingSecret()).update(token.split(".")[0]).digest("base64url");
+  } catch {
+    return null;
+  }
   const [body, sig] = token.split(".");
-  const expected = crypto.createHmac("sha256", signingSecret()).update(body).digest("base64url");
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;

@@ -1,27 +1,39 @@
 import { getAnalytics, saveAnalytics } from "../../data/store.js";
+import { createTenantCache } from "../../saas/tenant-cache.js";
 
-let cache = null;
-let dirty = false;
+const cache = createTenantCache();
+
+function markDirty() {
+  cache.entry().dirty = true;
+}
 
 async function load() {
-  if (!cache) {
-    cache = await getAnalytics();
-    if (!cache.hourly) cache.hourly = {};
-    if (!cache.daily) cache.daily = {};
-    if (!cache.playerActivity) cache.playerActivity = {};
-    if (!cache.weaponStats) cache.weaponStats = {};
-    if (!cache.serverPerformance) cache.serverPerformance = [];
+  const e = cache.entry();
+  if (!e.data) {
+    e.data = await getAnalytics();
+    if (!e.data.hourly) e.data.hourly = {};
+    if (!e.data.daily) e.data.daily = {};
+    if (!e.data.playerActivity) e.data.playerActivity = {};
+    if (!e.data.weaponStats) e.data.weaponStats = {};
+    if (!e.data.serverPerformance) e.data.serverPerformance = [];
   }
-  return cache;
+  return e.data;
 }
 
 async function persist() {
-  if (!dirty || !cache) return;
-  await saveAnalytics(cache);
-  dirty = false;
+  const e = cache.entry();
+  if (!e.dirty || !e.data) return;
+  await saveAnalytics(e.data);
+  e.dirty = false;
 }
 
-setInterval(() => persist().catch(() => {}), 60000);
+setInterval(() => {
+  cache.forEachDirty(async (e) => {
+    if (!e.dirty || !e.data) return;
+    await saveAnalytics(e.data);
+    e.dirty = false;
+  }).catch(() => {});
+}, 60000);
 
 function getHourKey() {
   const d = new Date();
@@ -46,7 +58,7 @@ export async function trackPlayerCount(count) {
   data.daily[day].peak = Math.max(data.daily[day].peak, count);
 
   cleanOldData(data);
-  dirty = true;
+  markDirty();
 }
 
 export async function trackPlayerActivity(ign, action) {
@@ -72,7 +84,7 @@ export async function trackPlayerActivity(ign, action) {
   if (action === "kill") data.playerActivity[ign].totalKills += 1;
   if (action === "death") data.playerActivity[ign].totalDeaths += 1;
 
-  dirty = true;
+  markDirty();
 }
 
 export async function trackWeaponKill(weapon) {
@@ -84,7 +96,7 @@ export async function trackWeaponKill(weapon) {
   }
   
   data.weaponStats[normalized].kills += 1;
-  dirty = true;
+  markDirty();
 }
 
 export async function trackServerPerformance(fps, entities, players) {
@@ -101,7 +113,7 @@ export async function trackServerPerformance(fps, entities, players) {
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
   data.serverPerformance = data.serverPerformance.filter(s => s.timestamp > oneHourAgo);
   
-  dirty = true;
+  markDirty();
 }
 
 function cleanOldData(data) {

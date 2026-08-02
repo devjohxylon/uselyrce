@@ -117,7 +117,7 @@
       <span class="dot unknown" id="overallDot"></span>
       <div class="text">
         <h2 id="overallText">Checking…</h2>
-        <p id="overallSub">Contacting the application.</p>
+        <p id="overallSub">Checking status…</p>
       </div>
     </div>
 
@@ -145,8 +145,8 @@
       </div>
       <div class="component hidden" data-row="persistence">
         <div>
-          <h3>Data persistence</h3>
-          <p>Whether keys and wipe settings survive redeploys.</p>
+          <h3>Saved settings</h3>
+          <p>Whether keys and wipe settings are stored safely.</p>
         </div>
         <span class="state"><span class="dot unknown" data-dot="persistence"></span><span data-state="persistence">Checking</span></span>
       </div>
@@ -174,7 +174,7 @@
       operational: ["All systems operational", "Everything is running normally."],
       degraded: ["Partial degradation", "Some components are not fully healthy."],
       down: ["Major outage", "One or more core components are down."],
-      unknown: ["Status unavailable", "We couldn't reach the application to check."],
+      unknown: ["Status unavailable", "We couldn't reach Usely to check."],
     };
 
     function paint(key, state, detail) {
@@ -218,7 +218,7 @@
       } catch {
         setOverall("unknown");
         for (const key of ["panel", "discord", "rcon"]) paint(key, "unknown");
-        document.getElementById("checkedAt").textContent = "Could not reach the application.";
+        document.getElementById("checkedAt").textContent = "Could not reach Usely.";
       }
     }
 

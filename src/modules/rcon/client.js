@@ -14,7 +14,6 @@ import {
   getActiveServerId,
   runWithServer,
   getPoolManager,
-  listAttachedServerIds,
   waitForPoolConnection,
 } from "../../saas/rcon/pool.js";
 import { listAllEnabledForPool } from "../../saas/db/servers.js";
@@ -107,7 +106,7 @@ function serverOptions() {
 
 function socketIsOpen() {
   if (saasOn()) {
-    const id = getActiveServerId() || listAttachedServerIds()[0];
+    const id = getActiveServerId();
     if (!id) return false;
     const socket = getPoolServer(id)?.socket;
     return Boolean(socket && socket.readyState === 1);
@@ -118,7 +117,7 @@ function socketIsOpen() {
 
 export function getRconStatus(serverId) {
   if (saasOn()) {
-    const id = serverId || getActiveServerId() || listAttachedServerIds()[0];
+    const id = serverId || getActiveServerId();
     if (mockOn() && id) {
       return {
         enabled: true,
@@ -162,7 +161,7 @@ export function getManager() {
 
 export function getServer(serverId) {
   if (saasOn()) {
-    const id = serverId || getActiveServerId() || listAttachedServerIds()[0];
+    const id = serverId || getActiveServerId();
     return id ? getPoolServer(id) : null;
   }
   return manager?.getServer(config.rcon.identifier) ?? null;
@@ -170,7 +169,7 @@ export function getServer(serverId) {
 
 export function getServerInfo(serverId) {
   if (saasOn()) {
-    const id = serverId || getActiveServerId() || listAttachedServerIds()[0];
+    const id = serverId || getActiveServerId();
     if (mockOn() && id) return mockServerInfo();
     return id ? getPoolServerInfo(id) : null;
   }
@@ -179,7 +178,7 @@ export function getServerInfo(serverId) {
 
 export function getOnlinePlayers(serverId) {
   if (saasOn()) {
-    const id = serverId || getActiveServerId() || listAttachedServerIds()[0];
+    const id = serverId || getActiveServerId();
     if (mockOn() && id) return [...MOCK_PLAYERS];
     return id ? getPoolOnlinePlayers(id) : [];
   }

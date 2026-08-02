@@ -1,10 +1,21 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR } from "../../data/store.js";
+import { resolveDataFile, getDataContext } from "../../saas/data-path.js";
 
-const MAPS_DIR = path.join(DATA_DIR, "maps");
-const CURRENT_IMAGE = path.join(MAPS_DIR, "current.jpg");
-const CURRENT_META = path.join(MAPS_DIR, "current.json");
+function mapsDir() {
+  const c = getDataContext();
+  if (c?.orgId && c?.serverId) {
+    return path.dirname(resolveDataFile("maps/current.jpg"));
+  }
+  return path.join(DATA_DIR, "maps");
+}
+function currentImage() {
+  return path.join(mapsDir(), "current.jpg");
+}
+function currentMeta() {
+  return path.join(mapsDir(), "current.json");
+}
 const API = "https://api.rustmaps.com/v4/maps";
 
 function apiKey() {
@@ -18,11 +29,11 @@ function rustmapsEnabled() {
 }
 
 function cachePath(seed, size) {
-  return path.join(MAPS_DIR, `${seed}_${size}.jpg`);
+  return path.join(mapsDir(), `${seed}_${size}.jpg`);
 }
 
 async function ensureMapsDir() {
-  await fs.mkdir(MAPS_DIR, { recursive: true });
+  await fs.mkdir(mapsDir(), { recursive: true });
 }
 
 async function fileExists(p) {
@@ -35,19 +46,20 @@ async function fileExists(p) {
 }
 
 export async function hasCachedMapImage(_seed, _size) {
-  return fileExists(CURRENT_IMAGE);
+  return fileExists(currentImage());
 }
 
 export async function readCachedMapImage(_seed, _size) {
-  if (await fileExists(CURRENT_IMAGE)) {
-    return fs.readFile(CURRENT_IMAGE);
+  const img = currentImage();
+  if (await fileExists(img)) {
+    return fs.readFile(img);
   }
   return null;
 }
 
 export async function getMapImageMeta() {
   try {
-    const raw = await fs.readFile(CURRENT_META, "utf8");
+    const raw = await fs.readFile(currentMeta(), "utf8");
     return JSON.parse(raw);
   } catch {
     return null;
@@ -56,12 +68,12 @@ export async function getMapImageMeta() {
 
 async function writeImageFiles(buf, seed, size, meta = {}) {
   await ensureMapsDir();
-  await fs.writeFile(CURRENT_IMAGE, buf);
+  await fs.writeFile(currentImage(), buf);
   if (seed && size) {
     await fs.writeFile(cachePath(seed, size), buf);
   }
   await fs.writeFile(
-    CURRENT_META,
+    currentMeta(),
     JSON.stringify(
       {
         seed: seed || null,
@@ -102,7 +114,7 @@ export async function saveUploadedMapImage(buffer, { seed = null, size = null, f
 
 export async function clearMapImage(seed, size) {
   await ensureMapsDir();
-  for (const p of [CURRENT_IMAGE, CURRENT_META, seed && size ? cachePath(seed, size) : null]) {
+  for (const p of [currentImage(), currentMeta(), seed && size ? cachePath(seed, size) : null]) {
     if (!p) continue;
     try {
       await fs.unlink(p);

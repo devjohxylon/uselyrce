@@ -16,7 +16,7 @@ export function maxServersForPlan(plan) {
 }
 
 export function isPlanLive(status) {
-  return status === "active" || status === "trialing" || status === "past_due";
+  return status === "active" || status === "trialing";
 }
 
 export function assertCanAddServer(org, currentCount) {

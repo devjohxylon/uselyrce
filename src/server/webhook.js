@@ -61,9 +61,25 @@ export async function createWebhookServer(client) {
     },
   );
 
-  app.use(express.json({ limit: "10mb" }));
+  app.set("trust proxy", 1);
+
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+    if (process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT) {
+      res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+    }
+    next();
+  });
+
+  app.use(express.json({ limit: "1mb" }));
   // The contact form posts urlencoded so it stays a simple cross-origin request.
   app.use(express.urlencoded({ extended: false, limit: "64kb" }));
+
+  const { requireSameOrigin } = await import("../saas/csrf.js");
+  app.use(requireSameOrigin);
 
   // Per-org subdomain tenancy: myserver.usely.dev serves that org's panel.
   if (config.saas?.enabled) {
@@ -116,8 +132,21 @@ export async function createWebhookServer(client) {
     }
   });
 
+  app.use((req, res) => {
+    if (req.accepts("html")) {
+      res.status(404).type("html").send(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>Not found — Usely</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0f14;color:#e8eef5;font-family:system-ui,sans-serif}
+a{color:#7ec8f5}</style></head><body><div style="text-align:center;padding:2rem">
+<h1 style="font-weight:600;margin:0 0 .5rem">Page not found</h1>
+<p style="color:#9aa0ab">That URL isn’t part of Usely.</p>
+<p><a href="/">Back to usely.dev</a></p></div></body></html>`);
+      return;
+    }
+    res.status(404).json({ ok: false, error: "Not found" });
+  });
+
   const httpServer = createServer(app);
-  createWebSocketServer(httpServer);
+  createWebSocketServer(httpServer, client);
 
   return httpServer;
 }

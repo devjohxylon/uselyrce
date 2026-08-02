@@ -1,5 +1,13 @@
 import { EmbedBuilder } from "discord.js";
-import { requireStaff } from "../lib/permissions.js";
+import { requireStaff, requireGameAdmin } from "../lib/permissions.js";
+import { assertSafeRconArg, quoteRconArg } from "../lib/rcon-quote.js";
+import { createRateLimiter } from "../saas/rate-limit.js";
+
+const discordRconLimit = createRateLimiter({
+  windowMs: 60_000,
+  maxAttempts: 20,
+  lockMs: 60_000,
+});
 import { sendModLog } from "../lib/modlog.js";
 import { rconOfflineMessage } from "../lib/rcon-messages.js";
 import { okEmbed, errEmbed, staffEmbed, STAFF_OK_COLOR, STAFF_WARN_COLOR } from "../lib/staff-embed.js";
@@ -191,9 +199,18 @@ export async function handleLeaderboardCommand(interaction) {
 }
 
 export async function handleRconCommand(interaction) {
-  if (!(await requireStaff(interaction))) return;
+  if (!(await requireGameAdmin(interaction))) return;
 
   const sub = interaction.options.getSubcommand();
+  const gateKey = interaction.user.id;
+  const gate = discordRconLimit.check(gateKey);
+  if (!gate.ok) {
+    return interaction.reply({
+      ephemeral: true,
+      content: `Slow down — try again in ${gate.retryAfterSec}s.`,
+    });
+  }
+  discordRconLimit.fail(gateKey);
 
   if (sub === "resetstats") {
     await interaction.deferReply({ ephemeral: true });
@@ -243,31 +260,37 @@ export async function handleRconCommand(interaction) {
   let title = "RCON";
 
   if (sub === "say") {
-    const message = interaction.options.getString("message", true);
+    const message = interaction.options.getString("message", true).replace(/["\r\n]/g, " ").slice(0, 240);
     command = `say <color=#00ffcc>[Usely]</color> ${message}`;
     summary = message;
     title = "Broadcast";
   } else if (sub === "console") {
-    command = interaction.options.getString("command", true);
+    command = interaction.options.getString("command", true).slice(0, 500);
     summary = `\`${command}\``;
     title = "Console";
   } else if (sub === "kick") {
-    command = `kick "${player}" "${reason}"`;
-    summary = `\`${player}\` — ${reason}`;
+    const ign = assertSafeRconArg(player, "player name");
+    const why = assertSafeRconArg(reason.slice(0, 120), "reason");
+    command = `kick ${quoteRconArg(ign)} ${quoteRconArg(why)}`;
+    summary = `\`${ign}\` — ${why}`;
     title = "Kick";
   } else if (sub === "ban") {
-    command = `ban "${player}" "${reason}"`;
-    summary = `\`${player}\` — ${reason}`;
+    const ign = assertSafeRconArg(player, "player name");
+    const why = assertSafeRconArg(reason.slice(0, 120), "reason");
+    command = `ban ${quoteRconArg(ign)} ${quoteRconArg(why)}`;
+    summary = `\`${ign}\` — ${why}`;
     title = "Ban";
   } else if (sub === "unban") {
-    command = `unban "${player}"`;
-    summary = `\`${player}\``;
+    const ign = assertSafeRconArg(player, "player name");
+    command = `unban ${quoteRconArg(ign)}`;
+    summary = `\`${ign}\``;
     title = "Unban";
   } else if (sub === "give") {
-    const item = interaction.options.getString("item", true);
+    const ign = assertSafeRconArg(player, "player name");
+    const item = assertSafeRconArg(interaction.options.getString("item", true), "item");
     const amount = interaction.options.getInteger("amount") ?? 1;
-    command = `inventory.giveto "${player}" "${item}" ${amount}`;
-    summary = `\`${amount}× ${item}\` → \`${player}\``;
+    command = `inventory.giveto ${quoteRconArg(ign)} ${quoteRconArg(item)} ${amount}`;
+    summary = `\`${amount}× ${item}\` → \`${ign}\``;
     title = "Give item";
   } else {
     return interaction.editReply({ embeds: [errEmbed("Unknown subcommand")] });

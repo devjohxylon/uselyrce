@@ -2,6 +2,7 @@
  * Shared WebRCON endpoint checks for setup + panel.
  * Returns normalized fields or throws Error with a customer-facing message.
  */
+import dns from "dns/promises";
 
 function isBlockedHost(host) {
   const h = String(host || "").toLowerCase().replace(/\.$/, "");
@@ -16,7 +17,6 @@ function isBlockedHost(host) {
     return true;
   }
 
-  // IPv4
   const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (m) {
     const parts = m.slice(1).map(Number);
@@ -28,10 +28,9 @@ function isBlockedHost(host) {
     if (a === 169 && b === 254) return true;
     if (a === 172 && b >= 16 && b <= 31) return true;
     if (a === 192 && b === 168) return true;
-    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+    if (a === 100 && b >= 64 && b <= 127) return true;
   }
 
-  // IPv6 condensed checks
   if (h === "::1" || h.startsWith("fc") || h.startsWith("fd") || h.startsWith("fe80")) {
     return true;
   }
@@ -39,7 +38,18 @@ function isBlockedHost(host) {
   return false;
 }
 
-export function normalizeRconEndpoint({ name, host, port, password } = {}) {
+function isBlockedIp(address) {
+  const a = String(address || "").toLowerCase();
+  if (a.includes(":")) {
+    if (a === "::1" || a.startsWith("fc") || a.startsWith("fd") || a.startsWith("fe80")) {
+      return true;
+    }
+    return false;
+  }
+  return isBlockedHost(a);
+}
+
+export function normalizeRconEndpointSync({ name, host, port, password } = {}) {
   const displayName = String(name || "").trim();
   let h = String(host || "").trim();
   let p = port;
@@ -62,7 +72,6 @@ export function normalizeRconEndpoint({ name, host, port, password } = {}) {
     throw err;
   }
 
-  // Common paste: "1.2.3.4:28016" in the host field
   if (/^[^/\s]+:\d{1,5}$/.test(h) && !h.includes("://")) {
     const i = h.lastIndexOf(":");
     const maybePort = Number(h.slice(i + 1));
@@ -116,4 +125,44 @@ export function normalizeRconEndpoint({ name, host, port, password } = {}) {
     port: portNum,
     password: pw,
   };
+}
+
+/** Normalize + resolve DNS; reject private/metadata addresses after lookup. */
+export async function normalizeRconEndpoint(input = {}) {
+  const endpoint = normalizeRconEndpointSync(input);
+  const h = endpoint.host;
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(h) || h.includes(":")) {
+    if (isBlockedIp(h)) {
+      const err = new Error(
+        "That host looks like a private or local address. Use your game host’s public WebRCON IP or hostname.",
+      );
+      err.code = "RCON_INVALID";
+      throw err;
+    }
+    return endpoint;
+  }
+
+  let records;
+  try {
+    records = await dns.lookup(h, { all: true, verbatim: true });
+  } catch {
+    const err = new Error("Could not resolve that WebRCON hostname.");
+    err.code = "RCON_INVALID";
+    throw err;
+  }
+  if (!records?.length) {
+    const err = new Error("Could not resolve that WebRCON hostname.");
+    err.code = "RCON_INVALID";
+    throw err;
+  }
+  for (const rec of records) {
+    if (isBlockedIp(rec.address)) {
+      const err = new Error(
+        "That hostname resolves to a private or local address. Use your game host’s public WebRCON endpoint.",
+      );
+      err.code = "RCON_INVALID";
+      throw err;
+    }
+  }
+  return endpoint;
 }

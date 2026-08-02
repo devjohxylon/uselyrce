@@ -13,7 +13,7 @@ export const groups = [
       },
       {
         q: "Is Usely in beta?",
-        a: "Yes — public beta. New features ship often, and the occasional rough edge is expected. If something breaks, <a href=\"/contact?topic=bug\">report a bug</a> with your panel address and what you were doing. We read every report.",
+        a: "Yes — public beta. New features ship often, and the occasional rough edge is expected. If something breaks, <a href=\"/contact?topic=bug\">report a bug</a> with your panel address and what you were doing.",
       },
       {
         q: "How do I get set up?",

@@ -14,11 +14,11 @@ const COOKIE = "usely_saas";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function signingSecret() {
-  return (
-    config.adminPanel.sessionSecret ||
-    config.saas.discordOAuthClientSecret ||
-    "usely-saas"
-  );
+  const secret = config.adminPanel.sessionSecret;
+  if (!secret) {
+    throw new Error("ADMIN_SESSION_SECRET is required for SaaS sessions");
+  }
+  return secret;
 }
 
 function sign(payload) {
@@ -30,7 +30,12 @@ function sign(payload) {
 function verify(token) {
   if (!token || !token.includes(".")) return null;
   const [body, sig] = token.split(".");
-  const expected = crypto.createHmac("sha256", signingSecret()).update(body).digest("base64url");
+  let expected;
+  try {
+    expected = crypto.createHmac("sha256", signingSecret()).update(body).digest("base64url");
+  } catch {
+    return null;
+  }
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
@@ -266,6 +271,17 @@ export async function resolveSaasSession(req, discordClient) {
   }
 
   if (!cookie.discordUserId && !cookie.accountId) return null;
+
+  if (cookie.accountId && cookie.sv != null) {
+    try {
+      const { getAccount } = await import("../db/accounts.js");
+      const account = await getAccount(cookie.accountId);
+      const current = Number(account?.session_version ?? 0);
+      if (Number(cookie.sv) !== current) return null;
+    } catch {
+      /* column may be missing until migration — allow session */
+    }
+  }
 
   let accessible;
   if (cookie.accountId) {

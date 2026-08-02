@@ -1,23 +1,35 @@
 import { getAuditLog, saveAuditLog } from "../../data/store.js";
+import { createTenantCache } from "../../saas/tenant-cache.js";
 
-let cache = null;
-let dirty = false;
+const cache = createTenantCache();
+
+function markDirty() {
+  cache.entry().dirty = true;
+}
 
 async function load() {
-  if (!cache) {
-    cache = await getAuditLog();
-    if (!cache.entries) cache.entries = [];
+  const e = cache.entry();
+  if (!e.data) {
+    e.data = await getAuditLog();
+    if (!e.data.entries) e.data.entries = [];
   }
-  return cache;
+  return e.data;
 }
 
 async function persist() {
-  if (!dirty || !cache) return;
-  await saveAuditLog(cache);
-  dirty = false;
+  const e = cache.entry();
+  if (!e.dirty || !e.data) return;
+  await saveAuditLog(e.data);
+  e.dirty = false;
 }
 
-setInterval(() => persist().catch(() => {}), 30000);
+setInterval(() => {
+  cache.forEachDirty(async (e) => {
+    if (!e.dirty || !e.data) return;
+    await saveAuditLog(e.data);
+    e.dirty = false;
+  }).catch(() => {});
+}, 30000);
 
 export async function logAction(action, details = {}) {
   const data = await load();
@@ -36,7 +48,7 @@ export async function logAction(action, details = {}) {
   
   data.entries = data.entries.slice(0, 10000);
   
-  dirty = true;
+  markDirty();
   return entry;
 }
 
@@ -81,7 +93,7 @@ export async function clearOldEntries(daysToKeep = 90) {
   data.entries = data.entries.filter(e => new Date(e.timestamp).getTime() > cutoff);
   
   if (before !== data.entries.length) {
-    dirty = true;
+    markDirty();
     await persist();
   }
   

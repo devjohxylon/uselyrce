@@ -121,17 +121,14 @@
 
       <section class="step" id="step-discord">
         <h1>2. Invite the Discord bot</h1>
-        <p class="sub">The bot powers kill feeds, population channels, and Discord tools. You need <strong>Manage Server</strong> on that Discord. Staff panel access uses keys you create after setup.</p>
-        <div class="callout">
-          Click invite, pick your Discord server, authorize with Administrator, then paste the guild ID below.
-        </div>
+        <p class="sub">Invite the bot, then paste your Discord server ID below. You need permission to add bots on that Discord.</p>
         <div class="actions">
           <a class="btn" id="inviteBtn" href="#" target="_blank" rel="noopener">Invite Discord bot</a>
         </div>
         <label>Discord guild ID
-          <input id="guildId" placeholder="Right-click server → Copy Server ID (Developer Mode on)" inputmode="numeric" />
+          <input id="guildId" placeholder="Right-click server → Copy Server ID" inputmode="numeric" />
         </label>
-        <p class="hint">Developer Mode: Discord User Settings → Advanced → Developer Mode</p>
+        <p class="hint">Turn on Developer Mode in Discord User Settings → Advanced to copy IDs.</p>
         <div class="err" id="err-discord"></div>
         <div class="actions">
           <button class="ghost" id="backDiscord">Back</button>
@@ -165,7 +162,7 @@
 
       <section class="step" id="step-review">
         <h1>You're ready</h1>
-        <p class="sub">Discord is linked and at least one WebRCON server is saved. Open your panel to finish kits, roles, and channels.</p>
+        <p class="sub">Discord is linked and at least one WebRCON server is saved. Open your panel to finish kits and channels.</p>
         <ul class="server-list" id="serverList"></ul>
         <p class="hint" id="rconHint" style="display:none"></p>
         <p class="hint" id="moreHint"></p>
@@ -220,7 +217,7 @@
       const canMore = state.servers.length < state.maxServers;
       document.getElementById("addAnother").style.display = canMore ? "" : "none";
       document.getElementById("moreHint").textContent = canMore
-        ? `Your ${document.getElementById("plan").textContent} plan allows ${state.maxServers} server(s). You can add more now or later in the panel.`
+        ? ""
         : "You've reached your plan's server limit.";
     }
 

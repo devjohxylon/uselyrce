@@ -8,6 +8,24 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Security hardening for multi-tenant panels",
+    changes: [
+      { type: "fixed", text: "Tenant data stores, scheduled commands, and live panel feeds stay isolated per workspace — no cross-server bleed." },
+      { type: "fixed", text: "Public signup and staff tools harden session secrets, Discord game-admin checks, RCON argument safety, and Stripe webhook retries." },
+      { type: "changed", text: "Past-due subscriptions no longer keep WebRCON attached until payment succeeds again." },
+    ],
+  },
+  {
+    date: "2026-08-02",
+    title: "Tighter signup, pricing, and docs copy",
+    changes: [
+      { type: "changed", text: "Signup, login, pricing, setup, docs, and contact drop leftover workspace jargon and repeated helper lines." },
+      { type: "fixed", text: "Panel billing plan limits now match live plans — Pro 2 servers, Network up to 100." },
+      { type: "changed", text: "Signup now says <code>Choose your plan</code>; demo links consistently say Preview the panel." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Signup always requires checkout",
     changes: [
       { type: "fixed", text: "Public signup no longer skips Stripe when an ops session cookie is present — checkout is required for every new account." },
