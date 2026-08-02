@@ -8,6 +8,13 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Signup always requires checkout",
+    changes: [
+      { type: "fixed", text: "Public signup no longer skips Stripe when an ops session cookie is present — checkout is required for every new account." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Tighter docs, changelog, and panel copy",
     changes: [
       { type: "changed", text: "Docs are a full setup and product guide with a sticky table of contents — from checkout and WebRCON through Discord channels, kits, staff keys, and wipe day." },

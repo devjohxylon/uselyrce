@@ -24,8 +24,6 @@ import {
 import { baseDomain, orgPanelUrl, slugProblem } from "../tenancy.js";
 import { maxServersForPlan } from "../billing/plans.js";
 import { finalizeSignup } from "./finalize.js";
-import { hasOpsSession } from "../ops/session.js";
-
 const SITE_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../server/site",
@@ -103,18 +101,15 @@ export function attachSignupRoutes(app, client = null) {
         return res.status(400).json({ ok: false, error: "Enter a valid email address." });
       }
 
-      if (config.saas.mock || hasOpsSession(req)) {
+      // Local SAAS_MOCK only — never skip Stripe on the public signup path
+      // (ops free preview lives at POST /api/ops/preview-setup).
+      if (config.saas.mock) {
         const { setupUrl } = await finalizeSignup({
           email,
           plan,
           skipEmail: true,
         });
-        return res.json({
-          ok: true,
-          mock: Boolean(config.saas.mock),
-          preview: !config.saas.mock,
-          setupUrl,
-        });
+        return res.json({ ok: true, mock: true, setupUrl });
       }
 
       const { createSignupCheckout } = await import("../billing/stripe.js");
