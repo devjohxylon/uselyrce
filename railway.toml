@@ -2,6 +2,7 @@
 builder = "NIXPACKS"
 
 [deploy]
+# --import loads Sentry before Express/Discord so request errors are instrumented.
 startCommand = "npm start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10

@@ -1,4 +1,4 @@
-import "./observability/sentry.js";
+// Sentry must load first via `node --import ./src/observability/sentry.js` (see npm start).
 import { setupProcessHandlers, captureException, isSentryEnabled } from "./observability/sentry.js";
 import { startBot } from "./bot.js";
 
