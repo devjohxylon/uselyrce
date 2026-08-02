@@ -148,6 +148,10 @@ const saasConfig = {
   opsAccessCode: optional("USELY_OPS_CODE") || null,
   // When true, /ops shows sample workspaces instead of live Supabase rows.
   opsMock: parseBool("USELY_OPS_MOCK", false),
+  // Vercel Web Analytics for ops traffic (www.usely.dev). Token from vercel.com/account/tokens.
+  vercelToken: optional("VERCEL_TOKEN") || optional("USELY_VERCEL_TOKEN") || null,
+  vercelProjectId: optional("VERCEL_PROJECT_ID") || optional("USELY_VERCEL_PROJECT_ID") || null,
+  vercelTeamId: optional("VERCEL_TEAM_ID") || optional("USELY_VERCEL_TEAM_ID") || null,
 };
 
 const onRailway = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);

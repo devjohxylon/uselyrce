@@ -219,11 +219,20 @@ ${groups}
     </footer>`;
 }
 
+/** Vercel Web Analytics — only loads on www (script is served after Analytics is enabled). */
+function renderAnalytics() {
+  return `  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>`;
+}
+
 export function applyShell(html) {
   return html
     .replace(/^[ \t]*<!--HEAD:([a-z]+)-->/m, (_m, key) => renderHead(key))
     .replace(/^[ \t]*<!--NAV:([a-z]*)-->/m, (_m, active) => renderNav(active))
-    .replace(/^[ \t]*<!--FOOTER-->/m, renderFooter());
+    .replace(/^[ \t]*<!--FOOTER-->/m, renderFooter())
+    .replace(/<\/body>/i, `${renderAnalytics()}\n</body>`);
 }
 
 export function renderSitemap() {

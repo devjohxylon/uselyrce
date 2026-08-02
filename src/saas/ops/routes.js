@@ -22,6 +22,7 @@ import {
   setOpsCookie,
 } from "./session.js";
 import { createRateLimiter } from "../rate-limit.js";
+import { getOpsWebAnalytics } from "./web-analytics.js";
 
 const opsLoginLimit = createRateLimiter({
   maxAttempts: 8,
@@ -427,6 +428,19 @@ export function attachOpsRoutes(app, client = null) {
         detail: error.detail || null,
         ...(await import("../email/send.js").then((m) => m.getEmailConfigPublic()).catch(() => ({}))),
       });
+    }
+  });
+
+  /** Marketing-site traffic from Vercel Web Analytics (www.usely.dev). */
+  app.get("/api/ops/analytics", async (req, res) => {
+    if (!requireOps(req, res)) return;
+    try {
+      const days = Number(req.query?.days) || 7;
+      const payload = await getOpsWebAnalytics({ days });
+      res.json(payload);
+    } catch (error) {
+      console.error("ops analytics failed:", error.message);
+      res.status(500).json({ ok: false, configured: true, error: error.message });
     }
   });
 

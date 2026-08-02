@@ -197,6 +197,100 @@ input:focus {
   margin-top: 1.75rem;
 }
 .section > .label { margin-bottom: 1.1rem; }
+.section-title {
+  margin: .55rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -.02em;
+}
+.section-sub {
+  margin: .45rem 0 0;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.5;
+  max-width: 52ch;
+}
+.traffic { margin-bottom: 2.25rem; padding-top: 0; border-top: 0; }
+.traffic-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.15rem;
+}
+.traffic-controls { display: flex; gap: .55rem; align-items: center; }
+.traffic-controls select {
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: .45rem .65rem;
+  font: inherit;
+  font-size: .8rem;
+}
+.traffic-stats { margin-bottom: 1.15rem; }
+.traffic-stats .stat .v.sm { font-size: 1.35rem; padding-top: .35rem; }
+.traffic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .85rem;
+  margin-bottom: .85rem;
+}
+.traffic-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg2);
+  padding: 1rem 1.1rem 1.05rem;
+}
+.traffic-panel h3 {
+  margin: 0 0 .75rem;
+  font-size: .72rem;
+  font-family: var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--chrome-dim);
+  font-weight: 500;
+}
+.traffic-panel.daily { margin-bottom: 0; }
+.rank {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: .55rem;
+}
+.rank li {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+  align-items: baseline;
+  font-size: .84rem;
+  line-height: 1.35;
+}
+.rank .rank-k {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.rank .rank-v {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--muted);
+  letter-spacing: .02em;
+}
+.rank .rank-v strong { color: var(--chrome); font-weight: 500; }
+.rank.daily { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .45rem .85rem; }
+.rank.daily li { flex-direction: column; gap: .15rem; }
+@media (max-width: 720px) {
+  .traffic-grid { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr; }
+  .stat { border-right: 0; border-bottom: 1px solid var(--line); }
+  .stat:last-child { border-bottom: 0; }
+}
 
 .table-wrap {
   overflow-x: auto;

@@ -43,6 +43,52 @@
       <div class="stat"><div class="k">Servers</div><div class="v" id="cServers">—</div></div>
     </div>
 
+    <section class="section traffic" id="traffic">
+      <div class="traffic-head">
+        <div>
+          <p class="label">Marketing site</p>
+          <h2 class="section-title">www.usely.dev traffic</h2>
+          <p class="section-sub">Vercel Web Analytics — visitors and what they open.</p>
+        </div>
+        <div class="traffic-controls">
+          <select id="trafficDays" aria-label="Date range">
+            <option value="7" selected>Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" type="button" id="trafficRefresh">Refresh</button>
+        </div>
+      </div>
+      <p class="banner" id="trafficBanner"></p>
+      <div class="stats traffic-stats" id="trafficStats">
+        <div class="stat"><div class="k">Visitors</div><div class="v" id="tVisitors">—</div></div>
+        <div class="stat"><div class="k">Pageviews</div><div class="v" id="tViews">—</div></div>
+        <div class="stat"><div class="k">Range</div><div class="v sm" id="tRange">—</div></div>
+      </div>
+      <div class="traffic-grid" id="trafficGrid" hidden>
+        <div class="traffic-panel">
+          <h3>Top pages</h3>
+          <ul class="rank" id="tPages"></ul>
+        </div>
+        <div class="traffic-panel">
+          <h3>Referrers</h3>
+          <ul class="rank" id="tReferrers"></ul>
+        </div>
+        <div class="traffic-panel">
+          <h3>Countries</h3>
+          <ul class="rank" id="tCountries"></ul>
+        </div>
+        <div class="traffic-panel">
+          <h3>Devices</h3>
+          <ul class="rank" id="tDevices"></ul>
+        </div>
+      </div>
+      <div class="traffic-panel daily" id="trafficDailyWrap" hidden>
+        <h3>Daily</h3>
+        <ul class="rank daily" id="tDaily"></ul>
+      </div>
+    </section>
+
     <div class="toolbar">
       <input type="search" id="q" placeholder="Filter by name, slug, email, plan, status…" autocomplete="off" />
       <button class="btn btn-ghost" type="button" id="previewSetup">Free setup preview</button>
@@ -163,6 +209,94 @@
       );
     }
 
+    function fmtNum(n) {
+      const x = Number(n);
+      if (!Number.isFinite(x)) return "—";
+      return x.toLocaleString("en-US");
+    }
+
+    function shortDay(iso) {
+      try {
+        return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      } catch {
+        return String(iso).slice(0, 10);
+      }
+    }
+
+    function renderRank(el, rows, labelFn) {
+      if (!rows?.length) {
+        el.innerHTML = `<li class="muted">No data yet</li>`;
+        return;
+      }
+      el.innerHTML = rows
+        .slice(0, 12)
+        .map(
+          (r) =>
+            `<li><span class="rank-k">${esc(labelFn(r))}</span>` +
+            `<span class="rank-v"><strong>${esc(fmtNum(r.pageviews))}</strong> views · ${esc(fmtNum(r.visitors))} vis</span></li>`,
+        )
+        .join("");
+    }
+
+    async function loadTraffic() {
+      const banner = document.getElementById("trafficBanner");
+      const grid = document.getElementById("trafficGrid");
+      const dailyWrap = document.getElementById("trafficDailyWrap");
+      const days = document.getElementById("trafficDays").value || "7";
+      banner.classList.remove("on");
+      banner.textContent = "";
+      try {
+        const res = await fetch(`/api/ops/analytics?days=${encodeURIComponent(days)}`, {
+          credentials: "same-origin",
+        });
+        if (res.status === 401) {
+          location.href = "/ops";
+          return;
+        }
+        const data = await res.json();
+        if (!data.configured) {
+          document.getElementById("tVisitors").textContent = "—";
+          document.getElementById("tViews").textContent = "—";
+          document.getElementById("tRange").textContent = "setup";
+          grid.hidden = true;
+          dailyWrap.hidden = true;
+          banner.classList.add("on");
+          banner.textContent = data.error || "Analytics not configured.";
+          return;
+        }
+        if (!data.ok) {
+          banner.classList.add("on");
+          banner.textContent = data.error || "Could not load analytics.";
+          grid.hidden = true;
+          dailyWrap.hidden = true;
+          return;
+        }
+        document.getElementById("tVisitors").textContent = fmtNum(data.totals?.visitors);
+        document.getElementById("tViews").textContent = fmtNum(data.totals?.pageviews);
+        document.getElementById("tRange").textContent = `${data.days}d`;
+        renderRank(document.getElementById("tPages"), data.pages, (r) => r.key || "/");
+        renderRank(document.getElementById("tReferrers"), data.referrers, (r) => r.key || "(direct)");
+        renderRank(document.getElementById("tCountries"), data.countries, (r) => r.key || "—");
+        renderRank(document.getElementById("tDevices"), data.devices, (r) => r.key || "—");
+        const daily = document.getElementById("tDaily");
+        const daysRows = (data.daily || []).slice().reverse();
+        daily.innerHTML = daysRows.length
+          ? daysRows
+              .map(
+                (r) =>
+                  `<li><span class="rank-k">${esc(shortDay(r.key))}</span>` +
+                  `<span class="rank-v"><strong>${esc(fmtNum(r.pageviews))}</strong> · ${esc(fmtNum(r.visitors))} vis</span></li>`,
+              )
+              .join("")
+          : `<li class="muted">No daily breakdown yet</li>`;
+        grid.hidden = false;
+        dailyWrap.hidden = false;
+      } catch (e) {
+        banner.classList.add("on");
+        banner.textContent = e.message || "Failed to load traffic";
+      }
+    }
+
     async function load() {
       const err = document.getElementById("err");
       err.style.display = "none";
@@ -189,12 +323,15 @@
           (sum.mock ? `<span><strong>mock</strong> mode</span>` : `<span><strong>live</strong> data</span>`);
         allOrgs = orgData.orgs || [];
         filter();
+        loadTraffic();
       } catch (e) {
         err.textContent = e.message || "Failed to load";
         err.style.display = "block";
       }
     }
 
+    document.getElementById("trafficDays").addEventListener("change", loadTraffic);
+    document.getElementById("trafficRefresh").addEventListener("click", loadTraffic);
     document.getElementById("q").addEventListener("input", filter);
     document.getElementById("rows").addEventListener("click", (ev) => {
       const tr = ev.target.closest("tr[data-href]");
