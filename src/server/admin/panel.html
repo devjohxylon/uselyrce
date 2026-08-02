@@ -4800,7 +4800,7 @@ async function renderBans() {
       <tr>
         <td data-label="Player"><strong>${esc(b.ign)}</strong></td>
         <td data-label="Reason"><strong style="font-weight:600">${esc(reason)}</strong>${unbanNote}</td>
-        <td data-label="Admin">${esc(b.admin || "—")}</td>
+        <td data-label="Banned by"><strong>${esc(b.admin || "—")}</strong>${b.source && b.source !== "panel" ? `<div class="muted" style="font-size:.65rem">${esc(b.source)}</div>` : ""}</td>
         <td data-label="Banned">${esc(when)}</td>
         <td data-label="${inactive ? "Unbanned" : "Expires"}">${inactive ? esc(b.unbannedAt ? new Date(b.unbannedAt).toLocaleString() : "—") : esc(expires)}</td>
         <td data-label="Actions" class="actions">
@@ -4819,9 +4819,9 @@ async function renderBans() {
           <button data-action="syncBans" style="padding:.3rem .6rem;font-size:.72rem">Sync from server</button>
         </div>
       </div>
-      <p class="card-desc">Reason is saved with every panel ban. Synced server bans show whatever the banlist returns (often just “Banned” if the game didn’t store a note).</p>
+      <p class="card-desc"><strong>Banned by</strong> is the staff key label or owner name from the panel. Synced game-banlist entries may show “Server banlist” when the actor isn’t known.</p>
       <div class="table-wrap"><table class="table">
-        <thead><tr><th>Player</th><th>Reason</th><th>Admin</th><th>Banned</th><th>Expires</th><th></th></tr></thead>
+        <thead><tr><th>Player</th><th>Reason</th><th>Banned by</th><th>Banned</th><th>Expires</th><th></th></tr></thead>
         <tbody>${banRows(bans)}</tbody>
       </table></div>
     </div>
@@ -4850,9 +4850,9 @@ async function renderBans() {
         <h3>Ban history</h3>
         <span class="pill info">${history.length}</span>
       </div>
-      <p class="card-desc">Inactive / past bans with the original reason. Open a player profile for that player’s full dossier.</p>
+      <p class="card-desc">Past bans with who issued them and who unbanned (when known).</p>
       <div class="table-wrap"><table class="table">
-        <thead><tr><th>Player</th><th>Reason</th><th>Admin</th><th>Banned</th><th>Unbanned</th><th></th></tr></thead>
+        <thead><tr><th>Player</th><th>Reason</th><th>Banned by</th><th>Banned</th><th>Unbanned</th><th></th></tr></thead>
         <tbody>${banRows(history.slice(0, 50), { inactive: true })}</tbody>
       </table></div>
     </div>`;

@@ -8,6 +8,16 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Status page, RCON alerts, and clearer bans",
+    changes: [
+      { type: "added", text: "Workspace status at <code>yourslug.usely.dev/status</code> shows that workspace’s Discord and WebRCON health (with a Powered by Usely mark)." },
+      { type: "added", text: "Discord alerts when WebRCON drops or comes back (Announcements / Wipes channel), so you’re not guessing from silence." },
+      { type: "changed", text: "Compact killfeed lines now include weapon, headshot, and distance." },
+      { type: "changed", text: "Bans table labels who issued each ban as <strong>Banned by</strong> (staff key label or owner)." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Wipe countdown Discord posts",
     changes: [
       { type: "added", text: "When a wipe time is set, Usely posts to your Wipes channel (or Announcements) at <strong>24 hours</strong>, <strong>1 hour</strong>, and wipe time — with Discord timestamps so everyone sees local time." },

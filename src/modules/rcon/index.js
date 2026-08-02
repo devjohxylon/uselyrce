@@ -32,6 +32,7 @@ import {
 } from "./stats.js";
 import { startScheduler, stopScheduler } from "./scheduler.js";
 import { startWipeScheduler, stopWipeScheduler, syncWipeStatus } from "./wipe.js";
+import { startConnectionAlerts } from "./connection-alerts.js";
 import { syncVipForDiscord, syncVipOnJoin, tryClaimVipFromQuickChat, attachVipClient } from "./vip-sync.js";
 import {
   attachReportsClient,
@@ -55,6 +56,7 @@ let lastStatusRenameAt = 0;
 let discordClient = null;
 
 export async function startRcon(client) {
+  startConnectionAlerts(client);
   if (!isRconEnabled()) {
     console.log(
       config.saas?.enabled

@@ -24,6 +24,32 @@ async function writeJson(file, data) {
 }
 
 /**
+ * Whether customer data (keys, wipe time, links, etc.) will survive redeploys.
+ * On Railway this requires DATA_DIR on a volume mount.
+ */
+export function getPersistenceHealth() {
+  const onRailway = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
+  const volumeMount = process.env.RAILWAY_VOLUME_MOUNT_PATH?.trim() || null;
+  const dataOnVolume = Boolean(
+    volumeMount &&
+      (DATA_DIR === volumeMount || DATA_DIR.startsWith(volumeMount.replace(/\/$/, "") + "/")),
+  );
+  const ok = !onRailway || dataOnVolume;
+  return {
+    ok,
+    onRailway,
+    dataDir: DATA_DIR,
+    volumeMount,
+    dataOnVolume,
+    detail: ok
+      ? onRailway
+        ? "Data directory is on a Railway volume"
+        : "Local data directory"
+      : `No volume on ${DATA_DIR} — keys, wipe time, and links reset on redeploy`,
+  };
+}
+
+/**
  * Log where data lives and warn hard on Railway if there's no volume.
  * Without a volume, links / kits / stats / keys reset on every deploy.
  */
@@ -42,15 +68,11 @@ export async function assertDataPersistence() {
 
   const links = await getLinks();
   const linkCount = Object.keys(links.byDiscord || {}).length;
-  const onRailway = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
-  const volumeMount = process.env.RAILWAY_VOLUME_MOUNT_PATH?.trim() || null;
-  const dataOnVolume =
-    volumeMount &&
-    (DATA_DIR === volumeMount || DATA_DIR.startsWith(volumeMount.replace(/\/$/, "") + "/"));
+  const health = getPersistenceHealth();
 
   console.log(`Data directory: ${DATA_DIR} (${linkCount} linked account(s))`);
 
-  if (onRailway && !dataOnVolume) {
+  if (!health.ok) {
     console.error(
       "⚠️  PERSISTENCE WARNING: No Railway volume mounted on the data directory.\n" +
         `   Links, kits, stats, wipe time, and access keys will RESET on every redeploy.\n` +

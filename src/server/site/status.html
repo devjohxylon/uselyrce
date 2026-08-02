@@ -70,6 +70,7 @@
       flex-wrap: wrap;
     }
     .meta-line a { color: var(--muted); text-decoration: underline; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -78,8 +79,8 @@
 
     <section class="page-hero">
       <p class="label">Status</p>
-      <h1>System status</h1>
-      <p>Live health of the panel, the Discord bot, and RCON connections. Checked when you load this page.</p>
+      <h1 id="statusTitle">System status</h1>
+      <p id="statusLead">Live health of the panel, the Discord bot, and RCON connections. Checked when you load this page.</p>
     </section>
 
     <div class="overall">
@@ -91,31 +92,39 @@
     </div>
 
     <div class="components" id="components">
-      <div class="component">
+      <div class="component" data-row="panel">
         <div>
           <h3>Admin panel</h3>
           <p>The web panel and its API.</p>
         </div>
         <span class="state"><span class="dot unknown" data-dot="panel"></span><span data-state="panel">Checking</span></span>
       </div>
-      <div class="component">
+      <div class="component" data-row="discord">
         <div>
           <h3>Discord bot</h3>
-          <p>Population channels, kill feeds, and Discord sign-in.</p>
+          <p>Population channels, kill feeds, and bot link.</p>
         </div>
         <span class="state"><span class="dot unknown" data-dot="discord"></span><span data-state="discord">Checking</span></span>
       </div>
-      <div class="component">
+      <div class="component" data-row="rcon">
         <div>
-          <h3>RCON connections</h3>
+          <h3>WebRCON</h3>
           <p>Live links to connected game servers.</p>
         </div>
         <span class="state"><span class="dot unknown" data-dot="rcon"></span><span data-state="rcon">Checking</span></span>
+      </div>
+      <div class="component hidden" data-row="persistence">
+        <div>
+          <h3>Data persistence</h3>
+          <p>Whether keys and wipe settings survive redeploys.</p>
+        </div>
+        <span class="state"><span class="dot unknown" data-dot="persistence"></span><span data-state="persistence">Checking</span></span>
       </div>
     </div>
 
     <p class="meta-line">
       <span id="checkedAt"></span>
+      <span id="poweredBy" class="hidden">Powered by <a href="https://www.usely.dev">Usely</a></span>
       <span>Problem not shown here? <a href="/contact">Let us know</a>.</span>
     </p>
 
@@ -123,9 +132,13 @@
   </div>
 
   <script>
-    const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ||
-      location.hostname.endsWith(".localhost");
-    const API = LOCAL || location.hostname === "app.usely.dev" ? "" : "https://app.usely.dev";
+    const host = location.hostname;
+    const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(host) || host.endsWith(".localhost");
+    const isOrgHost =
+      (host.endsWith(".usely.dev") && host !== "www.usely.dev" && host !== "app.usely.dev" && host !== "usely.dev") ||
+      (host.endsWith(".localhost") && host !== "localhost");
+    // Org panels serve /api/status on the same host; marketing site proxies to the app.
+    const API = isOrgHost || LOCAL || host === "app.usely.dev" ? "" : "https://app.usely.dev";
 
     const OVERALL = {
       operational: ["All systems operational", "Everything is running normally."],
@@ -135,11 +148,13 @@
     };
 
     function paint(key, state, detail) {
+      const row = document.querySelector(`[data-row="${key}"]`);
+      if (row) row.classList.remove("hidden");
       const dot = document.querySelector(`[data-dot="${key}"]`);
       const label = document.querySelector(`[data-state="${key}"]`);
       if (dot) dot.className = `dot ${state}`;
       if (label) label.textContent = state;
-      if (detail) label.closest(".component").querySelector("p").textContent = detail;
+      if (detail && row) row.querySelector("p").textContent = detail;
     }
 
     function setOverall(state) {
@@ -155,8 +170,15 @@
         if (!res.ok) throw new Error("bad response");
         const data = await res.json();
 
+        if (data.scope === "org" && data.org?.name) {
+          document.getElementById("statusTitle").textContent = `${data.org.name} status`;
+          document.getElementById("statusLead").textContent =
+            "Live health for this workspace — panel, Discord, and WebRCON.";
+          document.getElementById("poweredBy")?.classList.remove("hidden");
+        }
+
         setOverall(data.overall);
-        for (const [key, value] of Object.entries(data.components)) {
+        for (const [key, value] of Object.entries(data.components || {})) {
           paint(key, value.state, value.detail);
         }
 

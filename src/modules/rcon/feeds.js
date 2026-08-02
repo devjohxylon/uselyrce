@@ -172,9 +172,20 @@ function compactKillEmbed({ line }) {
     .setTimestamp();
 }
 
-function formatCompactPvp({ victim, killer, distance, showDistance = true }) {
-  let line = `${clean(killer.name)} killed ${clean(victim.name)}`;
-  if (showDistance && distance != null) line += ` · ${distance}m`;
+function formatCompactPvp({
+  victim,
+  killer,
+  distance,
+  weapon,
+  headshot,
+  showDistance = true,
+}) {
+  let line = `**${clean(killer.name)}** → **${clean(victim.name)}**`;
+  const bits = [];
+  if (weapon) bits.push(clean(weapon));
+  if (headshot) bits.push("HS");
+  if (showDistance && distance != null) bits.push(`${distance}m`);
+  if (bits.length) line += ` · ${bits.join(" · ")}`;
   return line;
 }
 
@@ -263,6 +274,8 @@ export function feedKill(data) {
               victim,
               killer,
               distance,
+              weapon,
+              headshot,
               showDistance: kf.showDistance !== false,
             }) + streakSuffix,
         }),

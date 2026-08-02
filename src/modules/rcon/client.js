@@ -18,6 +18,7 @@ import {
   waitForPoolConnection,
 } from "../../saas/rcon/pool.js";
 import { listAllEnabledForPool } from "../../saas/db/servers.js";
+import { noteRconState } from "./connection-alerts.js";
 
 export { runWithServer, getActiveServerId };
 
@@ -204,6 +205,11 @@ async function attachServer() {
 
 async function watchdogTick() {
   if (reattaching || socketIsOpen()) return;
+  await noteRconState(config.rcon.identifier || "default", false, {
+    name: config.rcon.identifier || "Server",
+    host: config.rcon.host,
+    port: config.rcon.port,
+  }).catch(() => {});
   reattaching = true;
   reconnectAttempts += 1;
   try {
@@ -251,6 +257,11 @@ export async function connectRcon() {
     connectedAt = new Date();
     reconnectAttempts = 0;
     console.log(`RCON connected to ${config.rcon.host}:${config.rcon.port}`);
+    noteRconState(config.rcon.identifier || "default", true, {
+      name: config.rcon.identifier || "Server",
+      host: config.rcon.host,
+      port: config.rcon.port,
+    }).catch(() => {});
   });
 
   manager.on(RCEEvent.Error, ({ error }) => {

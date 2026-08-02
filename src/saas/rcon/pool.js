@@ -1,11 +1,12 @@
 import { AsyncLocalStorage } from "async_hooks";
 import { RCEManager, LogLevel, RCEEvent, RCEIntent } from "rce.js";
+import { noteRconState } from "../../modules/rcon/connection-alerts.js";
 
 const WATCHDOG_MS = 12_000;
 const serverContext = new AsyncLocalStorage();
 
 let manager = null;
-/** @type {Map<string, { host: string, port: number, lastError: string|null, connectedAt: Date|null, reattaching: boolean, reconnectAttempts: number }>} */
+/** @type {Map<string, { host: string, port: number, lastError: string|null, connectedAt: Date|null, reattaching: boolean, reconnectAttempts: number, name?: string }>} */
 const states = new Map();
 let watchdog = null;
 
@@ -32,6 +33,7 @@ function ensureManager() {
       st.connectedAt = new Date();
       st.reconnectAttempts = 0;
       console.log(`RCON connected [${id}] ${st.host}:${st.port}`);
+      noteRconState(id, true, { name: st.name, host: st.host, port: st.port }).catch(() => {});
     });
     manager.on(RCEEvent.Error, ({ error, server }) => {
       const id = server?.identifier;
@@ -74,6 +76,7 @@ async function attachOne(server) {
   states.set(server.id, {
     host: server.host,
     port: server.port,
+    name: server.name || prev?.name || server.id,
     lastError: null,
     connectedAt: null,
     reattaching: false,
@@ -97,6 +100,11 @@ async function attachOne(server) {
 async function watchdogTick(serverId) {
   const st = states.get(serverId);
   if (!st || st.reattaching || socketIsOpen(serverId)) return;
+  await noteRconState(serverId, false, {
+    name: st.name,
+    host: st.host,
+    port: st.port,
+  }).catch(() => {});
   st.reattaching = true;
   st.reconnectAttempts += 1;
   try {
@@ -133,6 +141,7 @@ export async function startPool(servers) {
     states.set(server.id, {
       host: server.host,
       port: server.port,
+      name: server.name || server.id,
       lastError: null,
       connectedAt: null,
       reattaching: false,
@@ -156,6 +165,7 @@ export async function attachServer(server) {
   states.set(server.id, {
     host: server.host,
     port: server.port,
+    name: server.name || server.id,
     lastError: null,
     connectedAt: null,
     reattaching: false,

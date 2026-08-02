@@ -84,8 +84,14 @@ export async function createWebhookServer(client) {
   attachMarketingSite(app, client);
   await attachAdminPanel(app, client);
 
-  app.get("/health", (_req, res) => {
-    res.json({ ok: true, discordReady: client.isReady() });
+  app.get("/health", async (_req, res) => {
+    const { getPersistenceHealth } = await import("../data/store.js");
+    const persistence = getPersistenceHealth();
+    res.json({
+      ok: persistence.ok,
+      discordReady: client.isReady(),
+      persistence,
+    });
   });
 
   app.get("/status", authorize, async (_req, res) => {
