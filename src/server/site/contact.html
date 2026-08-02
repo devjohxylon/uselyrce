@@ -95,7 +95,7 @@
     <section class="page-hero">
       <p class="label">Contact</p>
       <h1>Get in touch</h1>
-      <p>Questions about setup, WebRCON, billing, or whether Usely fits your community — send a message and we'll reply by email.</p>
+      <p>Usely is in public beta. Questions about setup, WebRCON, billing — or a bug you hit — send a message and we’ll reply by email.</p>
     </section>
 
     <div class="cols">
@@ -123,7 +123,7 @@
           </div>
           <div class="field">
             <label for="message">Message</label>
-            <textarea id="message" name="message" maxlength="4000" required placeholder="Tell us what you need. If it's a setup issue, include your host and panel address."></textarea>
+            <textarea id="message" name="message" maxlength="4000" required placeholder="What happened, what you expected, and your panel address (e.g. myserver.usely.dev). Screenshots welcome by email."></textarea>
           </div>
           <div class="actions">
             <button class="btn btn-primary btn-lg" type="submit" id="submitBtn">Send message</button>
@@ -142,6 +142,10 @@
         <div class="card">
           <h2>Email us directly</h2>
           <p><a href="mailto:support@inbound.usely.dev">support@inbound.usely.dev</a> — good for anything you'd rather send with attachments or logs.</p>
+        </div>
+        <div class="card">
+          <h2>Reporting a bug</h2>
+          <p>Pick <strong>Bug report</strong>, include your panel URL, and what you were doing when it failed. That helps us fix it faster during beta.</p>
         </div>
         <div class="card">
           <h2>Already a customer?</h2>
@@ -167,6 +171,10 @@
     const btn = document.getElementById("submitBtn");
     const msg = document.getElementById("msg");
     const sent = document.getElementById("sent");
+    const topicParam = new URLSearchParams(location.search).get("topic");
+    if (topicParam === "bug") {
+      document.getElementById("topic").value = "Bug report";
+    }
 
     function fail(text) {
       msg.textContent = text;

@@ -29,6 +29,36 @@ body {
 a { color: inherit; text-decoration: none; }
 .wrap { width: min(1060px, calc(100% - 3rem)); margin: 0 auto; }
 
+/* ——— beta notice ——— */
+.beta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .55rem 1.25rem;
+  margin: 0.85rem 0 0;
+  padding: .65rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: .875rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.beta-bar strong {
+  font-family: var(--mono);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--chrome);
+  margin-right: .55rem;
+}
+.beta-bar a {
+  color: var(--chrome);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.beta-bar a:hover { color: var(--text); }
+
 /* ——— nav ——— */
 .nav {
   display: flex;

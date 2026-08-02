@@ -8,8 +8,9 @@
 export const entries = [
   {
     date: "2026-08-01",
-    title: "Support inbox",
+    title: "Public beta",
     changes: [
+      { type: "added", text: "Site-wide beta notice with a direct <strong>Report a bug</strong> link to the contact form." },
       { type: "changed", text: "Contact and legal pages now use <code>support@inbound.usely.dev</code> so mail can be received through Resend and forwarded to the team." },
     ],
   },

@@ -11,6 +11,10 @@ export const groups = [
         a: "Usely is a hosted admin panel and Discord bot for Rust Console Edition servers. You connect your server's WebRCON details once, then manage players, kits, bans, and broadcasts from your browser instead of typing raw console commands.",
       },
       {
+        q: "Is Usely in beta?",
+        a: "Yes — public beta. New features ship often, and the occasional rough edge is expected. If something breaks, <a href=\"/contact?topic=bug\">report a bug</a> with your panel address and what you were doing. We read every report.",
+      },
+      {
         q: "How do I get set up?",
         a: "Pick a plan and pay. We email you a setup link where you choose your panel address, create a password, invite the Discord bot, and enter your WebRCON host, port, and password. Once the connection is live, the panel starts showing your players.",
       },

@@ -22,7 +22,7 @@ export const PAGES = {
     out: "index.html",
     title: "Usely — Rust Console admin panel and Discord bot",
     description:
-      "Usely is a hosted admin panel and Discord bot for Rust Console Edition. Manage players, kits, bans, and RCON from your browser. Plans from $20/month.",
+      "Usely is a hosted admin panel and Discord bot for Rust Console Edition (public beta). Manage players, kits, bans, and RCON from your browser. Plans from $20/month.",
     priority: "1.0",
     changefreq: "weekly",
   },
@@ -182,7 +182,11 @@ function renderNav(active) {
       `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${label}</a>`,
   ).join("\n        ");
 
-  return `    <header class="nav">
+  return `    <p class="beta-bar" role="status">
+      <span><strong>Beta</strong> Usely is early — features ship fast and things may change.</span>
+      <a href="/contact?topic=bug">Report a bug</a>
+    </p>
+    <header class="nav">
       <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
       <nav class="nav-links">
         ${links}
@@ -204,12 +208,12 @@ ${links.map(([href, label]) => `          <a href="${href}">${label}</a>`).join(
       <div class="foot-cols">
         <div class="foot-brand">
           <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
-          <p>Admin panel and Discord bot for Rust Console Edition servers.</p>
+          <p>Admin panel and Discord bot for Rust Console Edition servers. Currently in beta — <a href="/contact?topic=bug" style="color:var(--chrome);text-decoration:underline">report a bug</a>.</p>
         </div>
 ${groups}
       </div>
       <div class="foot-bar">
-        <span>&copy; ${new Date().getFullYear()} Usely</span>
+        <span>&copy; ${new Date().getFullYear()} Usely · Beta</span>
         <span>Not affiliated with Facepunch Studios or Double Eleven.</span>
       </div>
     </footer>`;
