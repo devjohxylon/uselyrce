@@ -8,13 +8,6 @@
 export const entries = [
   {
     date: "2026-08-02",
-    title: "Ops site traffic",
-    changes: [
-      { type: "added", text: "Ops shows www.usely.dev visitors, pageviews, top pages, referrers, countries, and devices from Vercel Web Analytics." },
-    ],
-  },
-  {
-    date: "2026-08-02",
     title: "Clearer Discord link errors",
     changes: [
       { type: "fixed", text: "Linking a Discord server that’s already tied to another workspace now shows a clear message instead of a database error." },
