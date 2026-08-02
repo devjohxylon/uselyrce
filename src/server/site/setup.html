@@ -71,7 +71,8 @@
     }
     button.ghost:hover, .btn.ghost:hover { border-color: var(--chrome-dim); background: var(--bg3); }
     .err { color: var(--bad); font-size: .85rem; display: none; }
-    .invalid { display: none; color: var(--muted); line-height: 1.55; }
+    .invalid { display: none; gap: .8rem; color: var(--muted); line-height: 1.55; }
+    .invalid h1 { margin: 0; font-size: 1.35rem; color: var(--text); }
     .steps { display: flex; gap: .4rem; margin: .25rem 0 .5rem; }
     .steps span {
       flex: 1; height: 3px; border-radius: 2px; background: var(--line2);
@@ -132,6 +133,7 @@
           <label>Confirm password
             <input id="pw2" type="password" autocomplete="new-password" />
           </label>
+          <p class="hint">After you set a password, this setup link stays valid for about 2 hours — finish Discord and WebRCON in that window.</p>
         </div>
         <div class="err" id="err-workspace"></div>
         <button id="goWorkspace">Continue — invite Discord bot</button>
@@ -139,7 +141,7 @@
 
       <section class="step" id="step-discord">
         <h1>2. Invite the Discord bot</h1>
-        <p class="sub">Invite the bot, then paste your Discord server ID below. You need permission to add bots on that Discord.</p>
+        <p class="sub">Invite the bot (it asks for channel, message, and moderation permissions — not full Administrator), then paste your Discord server ID. You need permission to add bots on that Discord.</p>
         <div class="actions">
           <a class="btn" id="inviteBtn" href="#" target="_blank" rel="noopener">Invite Discord bot</a>
         </div>
@@ -252,6 +254,7 @@
       const r = await fetch("/api/setup/info?token=" + encodeURIComponent(token)).then((r) => r.json());
       if (!r.ok) {
         track("setup_invalid");
+        document.getElementById("wizard").style.display = "none";
         document.getElementById("invalid").style.display = "grid";
         return;
       }

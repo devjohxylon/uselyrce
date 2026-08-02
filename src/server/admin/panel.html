@@ -1907,6 +1907,7 @@ button { transition: all .15s ease; }
           <label for="saasStaffKey">Access key</label>
           <input id="saasStaffKey" type="password" placeholder="ask_…" autocomplete="current-password" />
           <button type="button" class="btn-secondary" id="saasKeyLoginBtn">Sign in with key</button>
+          <p class="login-copy" style="margin-top:.65rem;margin-bottom:0">Staff must open your workspace URL (<code>yourslug.usely.dev</code>), not the marketing site.</p>
           <p class="login-foot">New here? <a href="/signup">Choose your plan</a></p>
         </div>
         <div id="saasRecoverView" class="hidden">
@@ -1995,9 +1996,9 @@ button { transition: all .15s ease; }
     </div>
     <button class="ghost" id="logoutBtn" style="margin-top:.45rem;justify-content:flex-start;gap:.5rem">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12H4M8 8l-4 4 4 4M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>Log out</button>
-    <div class="dev-banner" title="Usely is under active development">
-      <strong>In development</strong>
-      <span id="devBannerSub">usely.dev · ALPHA</span>
+    <div class="dev-banner" title="Usely public beta">
+      <strong>Beta</strong>
+      <span id="devBannerSub">usely.dev</span>
     </div>
     <div class="nav-foot" id="navMeta">—</div>
   </aside>
@@ -2042,6 +2043,7 @@ button { transition: all .15s ease; }
 const state = {
   tab: "overview",
   overview: null,
+  renderGen: 0,
   consoleLog: [],
   loginFx: null,
   session: null,
@@ -2778,7 +2780,9 @@ function setTab(tab) {
 }
 
 async function render({ animate = false } = {}) {
-  document.body.classList.toggle("map-mode", state.tab === "map");
+  const gen = ++state.renderGen;
+  const tab = state.tab;
+  document.body.classList.toggle("map-mode", tab === "map");
   const view = document.getElementById("view");
   if (animate) {
     view.style.animation = "none";
@@ -2788,42 +2792,107 @@ async function render({ animate = false } = {}) {
     view.style.animation = "none";
   }
   try {
-    if (state.tab === "overview") view.innerHTML = renderOverview();
-    if (state.tab === "map") view.innerHTML = await renderMap();
-    if (state.tab === "players") view.innerHTML = await renderPlayers();
-    if (state.tab === "profiles") view.innerHTML = await renderProfiles();
-    if (state.tab === "commands") view.innerHTML = await renderServerCommands();
-    if (state.tab === "discord") view.innerHTML = await renderDiscordChannels();
-    if (state.tab === "console") view.innerHTML = renderConsole();
-    if (state.tab === "stats") view.innerHTML = await renderStats();
-    if (state.tab === "status") view.innerHTML = await renderServerStatus();
-    if (state.tab === "wipe") view.innerHTML = await renderWipe();
-    if (state.tab === "analytics") view.innerHTML = await renderAnalytics();
-    if (state.tab === "servers") view.innerHTML = await renderServers();
-    if (state.tab === "billing") view.innerHTML = await renderBilling();
-    if (state.tab === "warps") view.innerHTML = await renderWarps();
-    if (state.tab === "links") view.innerHTML = await renderLinks();
-    if (state.tab === "automation") view.innerHTML = await renderAutomation();
-    if (state.tab === "kits") view.innerHTML = await renderKits();
-    if (state.tab === "reports") view.innerHTML = await renderReports();
-    if (state.tab === "bans") view.innerHTML = await renderBans();
-    if (state.tab === "events") view.innerHTML = await renderEvents();
-    if (state.tab === "keys") view.innerHTML = await renderKeys();
-    if (state.tab === "logs") view.innerHTML = await renderLogs();
+    let html = "";
+    if (tab === "overview") html = renderOverview();
+    else if (tab === "map") html = await renderMap();
+    else if (tab === "players") html = await renderPlayers();
+    else if (tab === "profiles") html = await renderProfiles();
+    else if (tab === "commands") html = await renderServerCommands();
+    else if (tab === "discord") html = await renderDiscordChannels();
+    else if (tab === "console") html = renderConsole();
+    else if (tab === "stats") html = await renderStats();
+    else if (tab === "status") html = await renderServerStatus();
+    else if (tab === "wipe") html = await renderWipe();
+    else if (tab === "analytics") html = await renderAnalytics();
+    else if (tab === "servers") html = await renderServers();
+    else if (tab === "billing") html = await renderBilling();
+    else if (tab === "warps") html = await renderWarps();
+    else if (tab === "links") html = await renderLinks();
+    else if (tab === "automation") html = await renderAutomation();
+    else if (tab === "kits") html = await renderKits();
+    else if (tab === "reports") html = await renderReports();
+    else if (tab === "bans") html = await renderBans();
+    else if (tab === "events") html = await renderEvents();
+    else if (tab === "keys") html = await renderKeys();
+    else if (tab === "logs") html = await renderLogs();
+    if (gen !== state.renderGen || state.tab !== tab) return;
+    view.innerHTML = html;
+    if (gen !== state.renderGen || state.tab !== tab) return;
     bindView();
-    if (state.tab === "analytics") {
+    if (tab === "analytics") {
       requestAnimationFrame(() => {
+        if (gen !== state.renderGen || state.tab !== tab) return;
         void ensureChart().then(() => initAnalyticsCharts()).catch(() => {});
       });
     }
   } catch (e) {
-    view.innerHTML = `<div class="card"><p class="muted">${e.message}</p></div>`;
+    if (gen !== state.renderGen || state.tab !== tab) return;
+    view.innerHTML = `<div class="card"><p class="muted">${esc(e.message)}</p></div>`;
   }
 }
 
 function statCard(value, label, liveKey) {
   const inner = liveKey ? `<span data-live="${liveKey}">${value}</span>` : value;
   return `<div class="card stat"><div class="metric">${inner}<small>${esc(label)}</small></div></div>`;
+}
+
+function planNeedsAttention(status) {
+  const s = String(status || "").toLowerCase();
+  return s === "past_due" || s === "canceled" || s === "unpaid" || s === "incomplete";
+}
+
+function overviewBanners(o, r) {
+  const org = state.session?.org || {};
+  const status = org.planStatus || org.plan_status || "";
+  const parts = [];
+  if (state.session?.saas && can("billing") && planNeedsAttention(status)) {
+    parts.push(`
+      <div class="card" style="border-color:rgba(229,143,143,.45);margin-bottom:1rem">
+        <div class="card-head"><h3 style="color:var(--bad)">Billing needs attention</h3></div>
+        <p class="muted" style="margin:0 0 .75rem">Plan status is <strong>${esc(status)}</strong>. WebRCON stays disconnected until payment succeeds again.</p>
+        <button class="primary" data-action="goTab" data-tab="billing">Fix billing</button>
+      </div>`);
+  }
+  if (state.session?.saas && r.enabled && !r.connected && !planNeedsAttention(status)) {
+    parts.push(`
+      <div class="card" style="border-color:rgba(226,195,122,.4);margin-bottom:1rem">
+        <div class="card-head"><h3>WebRCON offline</h3></div>
+        <p class="muted" style="margin:0 0 .75rem">${esc(r.lastError || "Not connected to the game server.")} Update host, port, or password under Workspace → Setup.</p>
+        ${can("servers") ? `<button class="primary" data-action="goTab" data-tab="servers">Open servers</button>` : ""}
+      </div>`);
+  }
+  const dismissed = localStorage.getItem("uselyOnboardDismissed") === "1";
+  if (state.session?.saas && state.session?.role === "owner" && !dismissed && !window.USELY_DEMO) {
+    const guildOk = Boolean(org.discord_guild_id || org.guildId || o.bot?.guildId);
+    const rconOk = Boolean(r.enabled && r.connected);
+    const steps = [
+      { ok: rconOk, label: "Confirm WebRCON is connected", tab: "servers", cta: "Servers", perm: "servers" },
+      { ok: guildOk, label: "Link Discord and set channels (killfeed / pop)", tab: "discord", cta: "Discord", perm: "serverCommands" },
+      { ok: false, label: "Create a panel kit", tab: "kits", cta: "Kits", perm: "kits", optional: true },
+      { ok: false, label: "Invite staff with an access key", tab: "keys", cta: "Staff keys", perm: "keys", optional: true },
+    ];
+    const requiredPending = steps.filter((s) => !s.optional && !s.ok);
+    if (requiredPending.length) {
+      parts.push(`
+        <div class="card" style="margin-bottom:1rem" id="onboardCard">
+          <div class="card-head">
+            <h3>Finish setup</h3>
+            <button type="button" class="ghost" data-action="dismissOnboard" style="font-size:.72rem">Dismiss</button>
+          </div>
+          <p class="muted" style="margin:0 0 .75rem">A short checklist so the panel and Discord bot actually do something for your players.</p>
+          <ul style="margin:0;padding-left:1.1rem;display:grid;gap:.45rem;color:var(--muted);font-size:.88rem">
+            ${steps.map((s) => `
+              <li style="${s.ok ? "opacity:.55;text-decoration:line-through" : ""}">
+                ${esc(s.label)}${s.optional ? " <span class=\"hint\">(optional)</span>" : ""}
+                ${!s.ok && can(s.perm)
+                  ? ` — <button type="button" class="ghost" style="padding:0;display:inline;font-size:inherit;color:var(--accent)" data-action="goTab" data-tab="${esc(s.tab)}">${esc(s.cta)}</button>`
+                  : ""}
+              </li>`).join("")}
+          </ul>
+        </div>`);
+    }
+  }
+  return parts.join("");
 }
 
 function renderOverview() {
@@ -2873,14 +2942,18 @@ function renderOverview() {
       ${can("broadcast") ? "" : ""}
     </div>`;
 
+  const onlineEmpty = r.enabled && !r.connected
+    ? `<tr><td colspan="3"><div class="empty">Nobody online — WebRCON is offline${can("servers") ? `. <button type="button" class="ghost" style="padding:0;display:inline;color:var(--accent)" data-action="goTab" data-tab="servers">Check servers</button>` : ""}</div></td></tr>`
+    : `<tr><td colspan="3"><div class="empty">Nobody online right now</div></td></tr>`;
   const onlineRows = online.slice(0, 8).map((p) => `
     <tr>
       <td data-label="IGN"><button class="ghost" style="padding:0;justify-content:flex-start;font-weight:700" data-action="viewPlayer" data-ign="${esc(p.ign)}">${esc(p.ign)}</button></td>
       <td data-label="Platform">${esc(p.platform || "—")}</td>
       <td data-label="Ping">${p.ping ?? "—"}${p.ping != null ? " ms" : ""}</td>
-    </tr>`).join("") || `<tr><td colspan="3"><div class="empty">Nobody online right now</div></td></tr>`;
+    </tr>`).join("") || onlineEmpty;
 
   return `
+    ${overviewBanners(o, r)}
     ${healthStrip}
     ${quick}
     <div class="grid stats">
@@ -4598,21 +4671,23 @@ function bindKitBuilderEvents() {
             amount: Math.max(1, Number(i.amount) || 1),
           }));
           if (!items.length) { toast("Add at least one item", true); return; }
-          await api("/kits", {
-            method: "POST",
-            body: {
-              id: state.kitDraft.id || document.getElementById("kitId").value,
-              label: state.kitDraft.label || document.getElementById("kitLabel").value,
-              cooldownMinutes: state.kitDraft.cooldownMinutes,
-              claimPhrase: state.kitDraft.claimPhrase || "",
-              claimRoleId: state.kitDraft.claimRoleId || "",
-              items,
-            },
+          await withBusy(el, async () => {
+            await api("/kits", {
+              method: "POST",
+              body: {
+                id: state.kitDraft.id || document.getElementById("kitId").value,
+                label: state.kitDraft.label || document.getElementById("kitLabel").value,
+                cooldownMinutes: state.kitDraft.cooldownMinutes,
+                claimPhrase: state.kitDraft.claimPhrase || "",
+                claimRoleId: state.kitDraft.claimRoleId || "",
+                items,
+              },
+            });
+            toast("Kit saved");
+            state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
+            state.kitBuilderOpen = false;
+            render();
           });
-          toast("Kit saved");
-          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
-          state.kitBuilderOpen = false;
-          render();
         }
       } catch (e) {
         toast(e.message, true);
@@ -5457,16 +5532,27 @@ async function renderBilling() {
     return `<div class="card"><p class="muted">Only the workspace owner can manage billing.</p></div>`;
   }
   const org = state.session.org || {};
+  const plan = String(org.plan || "basic").toLowerCase();
+  const status = String(org.planStatus || "inactive").toLowerCase();
+  const live = status === "active" || status === "trialing";
+  const rank = { basic: 1, pro: 2, network: 3 };
+  const cur = rank[plan] || 0;
+  const upgrades = [];
+  if (!live || cur < 1) upgrades.push(["basic", "Checkout Basic"]);
+  if (!live || cur < 2) upgrades.push(["pro", live && plan === "basic" ? "Upgrade to Pro" : "Checkout Pro"]);
+  if (!live || cur < 3) upgrades.push(["network", live && cur >= 1 ? "Upgrade to Network" : "Checkout Network"]);
+  const upgradeBtns = upgrades.map(([p, label]) =>
+    `<button class="primary" data-action="saasCheckout" data-plan="${esc(p)}">${esc(label)}</button>`
+  ).join("");
   return `
     <div class="card">
       <h3>Plan &amp; billing</h3>
       <p class="muted">Current: <strong>${esc(org.plan || "basic")}</strong> · <strong>${esc(org.planStatus || "inactive")}</strong></p>
       <p class="muted">Basic $20 / 1 server · Pro $49 / 2 · Network $99 / up to 100 — <a href="/pricing" style="color:var(--chrome)">pricing</a></p>
+      ${live ? `<p class="hint" style="margin:.65rem 0 0">Manage payment method, invoices, or cancel in the Stripe portal. Cancel stops future charges; access continues until the period ends. WebRCON disconnects if the subscription is past due or canceled.</p>` : ""}
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem">
-        <button class="primary" data-action="saasCheckout" data-plan="basic">Checkout Basic</button>
-        <button class="primary" data-action="saasCheckout" data-plan="pro">Checkout Pro</button>
-        <button class="primary" data-action="saasCheckout" data-plan="network">Checkout Network</button>
-        <button data-action="saasPortal">Manage subscription</button>
+        ${upgradeBtns}
+        ${live || status === "past_due" || status === "canceled" ? `<button data-action="saasPortal">Manage subscription</button>` : ""}
       </div>
     </div>`;
 }
@@ -6386,21 +6472,23 @@ function bindView() {
             amount: Math.max(1, Number(i.amount) || 1),
           }));
           if (!items.length) { toast("Add at least one item", true); return; }
-          await api("/kits", {
-            method: "POST",
-            body: {
-              id: state.kitDraft.id || document.getElementById("kitId").value,
-              label: state.kitDraft.label || document.getElementById("kitLabel").value,
-              cooldownMinutes: state.kitDraft.cooldownMinutes,
-              claimPhrase: state.kitDraft.claimPhrase || "",
-              claimRoleId: state.kitDraft.claimRoleId || "",
-              items,
-            },
+          await withBusy(el, async () => {
+            await api("/kits", {
+              method: "POST",
+              body: {
+                id: state.kitDraft.id || document.getElementById("kitId").value,
+                label: state.kitDraft.label || document.getElementById("kitLabel").value,
+                cooldownMinutes: state.kitDraft.cooldownMinutes,
+                claimPhrase: state.kitDraft.claimPhrase || "",
+                claimRoleId: state.kitDraft.claimRoleId || "",
+                items,
+              },
+            });
+            toast("Kit saved");
+            state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
+            state.kitBuilderOpen = false;
+            render();
           });
-          toast("Kit saved");
-          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
-          state.kitBuilderOpen = false;
-          render();
         }
         if (a === "editKit") {
           const kits = await api("/kits?refresh=0");
@@ -6720,6 +6808,13 @@ function bindView() {
 
           if (!ign) { toast("Player IGN required", true); return; }
           if (!reason) { toast("Ban reason required", true); return; }
+          const ok = await uiConfirm({
+            title: `Ban ${ign}?`,
+            message: `Reason: ${reason}${duration > 0 ? `\nDuration: ${duration} minutes` : "\nDuration: permanent"}`,
+            okLabel: "Ban player",
+            danger: true,
+          });
+          if (!ok) return;
 
           await withBusy(el, async () => {
             const r = await api("/bans", { method: "POST", body: { ign, reason, duration } });
@@ -6730,6 +6825,11 @@ function bindView() {
               toast(r.error || "Ban failed", true);
             }
           });
+          return;
+        }
+        if (a === "dismissOnboard") {
+          localStorage.setItem("uselyOnboardDismissed", "1");
+          document.getElementById("onboardCard")?.remove();
           return;
         }
         
@@ -6839,13 +6939,15 @@ function bindView() {
             if (!port) port = host.slice(i + 1);
             host = host.slice(0, i);
           }
-          const r = await saasFetch("/servers", {
-            method: "POST",
-            body: { name, host, port: Number(port), password },
+          await withBusy(el, async () => {
+            const r = await saasFetch("/servers", {
+              method: "POST",
+              body: { name, host, port: Number(port), password },
+            });
+            if (r.warning) toast(r.warning, true);
+            else toast(r.connected ? "Server added — WebRCON connected" : "Server added");
+            location.reload();
           });
-          if (r.warning) toast(r.warning, true);
-          else toast(r.connected ? "Server added — WebRCON connected" : "Server added");
-          location.reload();
           return;
         }
         if (a === "saasDeleteServer") {

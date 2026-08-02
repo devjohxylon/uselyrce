@@ -2,6 +2,9 @@
  * Fast smoke checks with no Discord/Supabase/Stripe network calls.
  */
 import assert from "assert/strict";
+import { readFileSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { assertCanAddServer, isPlanLive, maxServersForPlan } from "../src/saas/billing/plans.js";
 import {
   applyShell,
@@ -10,6 +13,8 @@ import {
   renderRobots,
 } from "../src/server/site/shell.js";
 import { entries } from "../src/server/site/changelog.js";
+import { BOT_INVITE_PERMISSIONS } from "../src/saas/auth/discord-session.js";
+import { friendlyRconError } from "../src/lib/rcon-messages.js";
 
 // Plan gate
 assert.equal(isPlanLive("active"), true);
@@ -54,9 +59,20 @@ assert.match(html, /nav-drawer/);
 assert.match(html, /AggregateOffer/);
 assert.doesNotMatch(html, /fonts\.googleapis\.com/);
 
+const css = readFileSync(
+  path.join(path.dirname(fileURLToPath(import.meta.url)), "../src/server/site/site.css"),
+  "utf8",
+);
+assert.match(css, /\.nav-drawer\[hidden\]/);
+assert.match(css, /display:\s*none\s*!important/);
+
 assert.match(renderRobots(), /Sitemap:/);
 assert.doesNotMatch(renderRobots(), /^Host:/m);
 assert.match(renderAppRobots(), /Disallow: \//);
+
+assert.notEqual(BOT_INVITE_PERMISSIONS, "8");
+assert.match(friendlyRconError("ECONNREFUSED"), /refused|WebRCON/i);
+assert.match(friendlyRconError("x", { timedOut: true }), /Timed out/);
 
 // Changelog shape
 assert.ok(Array.isArray(entries) && entries.length > 0);

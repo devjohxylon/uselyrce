@@ -334,10 +334,11 @@ export async function attachSaasServerAndWait(server, { timeoutMs = 12_000 } = {
   const added = await poolAttach(server);
   if (!added) {
     const status = getPoolStatus(server.id);
+    const { friendlyRconError } = await import("../../lib/rcon-messages.js");
     return {
       ok: false,
       connected: false,
-      lastError: status.lastError || "Could not reach WebRCON — check host, port, and password.",
+      lastError: friendlyRconError(status.lastError),
     };
   }
   return waitForPoolConnection(server.id, { timeoutMs });

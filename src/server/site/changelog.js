@@ -8,6 +8,17 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Launch QA fixes for nav, billing, and first-run setup",
+    changes: [
+      { type: "fixed", text: "The marketing mobile menu no longer stays stuck open on desktop and phone." },
+      { type: "fixed", text: "Billing only offers upgrades you don’t already have, plus clearer cancel/portal copy." },
+      { type: "added", text: "Home shows a short finish-setup checklist and a billing warning when payment fails." },
+      { type: "fixed", text: "Switching panel tabs no longer briefly shows the previous page’s content." },
+      { type: "changed", text: "Discord bot invite asks for specific permissions instead of full Administrator." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Faster site, clearer panel, quieter live map",
     changes: [
       { type: "added", text: "Marketing pages get a mobile menu, skip link, self-hosted fonts, and a proper share image." },

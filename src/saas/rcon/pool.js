@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "async_hooks";
 import { RCEManager, LogLevel, RCEEvent, RCEIntent } from "rce.js";
 import { noteRconState } from "../../modules/rcon/connection-alerts.js";
+import { friendlyRconError } from "../../lib/rcon-messages.js";
 
 const WATCHDOG_MS = 12_000;
 const serverContext = new AsyncLocalStorage();
@@ -208,7 +209,7 @@ export function waitForPoolConnection(serverId, { timeoutMs = 12_000 } = {}) {
         return resolve({
           ok: false,
           connected: false,
-          lastError: status.lastError || "Timed out waiting for WebRCON — check host, port, and password.",
+          lastError: friendlyRconError(status.lastError, { timedOut: true }),
         });
       }
       setTimeout(tick, 400);

@@ -118,14 +118,35 @@ function resolveBotClientId(discordClient = null) {
   return live || configured || config.saas.discordOAuthClientId || null;
 }
 
+/**
+ * Bot invite permissions (not Administrator).
+ * Manage channels/roles + messaging + kick/ban/timeout for feeds, pop rename, tickets, moderation.
+ */
+export const BOT_INVITE_PERMISSIONS = String(
+  16 + // MANAGE_CHANNELS
+    2 + // KICK_MEMBERS
+    4 + // BAN_MEMBERS
+    64 + // ADD_REACTIONS
+    1024 + // VIEW_CHANNEL
+    2048 + // SEND_MESSAGES
+    8192 + // MANAGE_MESSAGES
+    16384 + // EMBED_LINKS
+    32768 + // ATTACH_FILES
+    65536 + // READ_MESSAGE_HISTORY
+    131072 + // MENTION_EVERYONE
+    262144 + // USE_EXTERNAL_EMOJIS
+    268435456 + // MANAGE_ROLES
+    536870912 + // MANAGE_WEBHOOKS
+    1099511627776, // MODERATE_MEMBERS
+);
+
 export function botInviteUrl(orgId, discordClient = null) {
   const clientId = resolveBotClientId(discordClient);
   if (!clientId) return "";
   const redirect = `${String(config.saas.publicUrl || "").replace(/\/$/, "")}/admin/auth/bot-installed`;
   const params = new URLSearchParams({
     client_id: clientId,
-    // Administrator — tickets, channel rename, feeds, moderation need broad guild access.
-    permissions: "8",
+    permissions: BOT_INVITE_PERMISSIONS,
     scope: "bot applications.commands",
     redirect_uri: redirect,
     response_type: "code",
@@ -140,7 +161,7 @@ export function botInviteUrlSimple(discordClient = null) {
   if (!clientId) return "";
   const params = new URLSearchParams({
     client_id: clientId,
-    permissions: "8",
+    permissions: BOT_INVITE_PERMISSIONS,
     scope: "bot applications.commands",
   });
   return `https://discord.com/api/oauth2/authorize?${params}`;
