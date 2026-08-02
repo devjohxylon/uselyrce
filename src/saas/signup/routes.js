@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -9,6 +8,8 @@ import {
   markSetupTokenUsed,
   setAccountPassword,
   shortenSetupToken,
+  createExchangeToken,
+  consumeExchangeToken,
 } from "../db/accounts.js";
 import { getOrg, getOrgBySlug, setGuild, updateOrgFields } from "../db/orgs.js";
 import {
@@ -31,15 +32,6 @@ const SITE_DIR = path.resolve(
 );
 const SIGNUP_HTML = readFileSync(path.join(SITE_DIR, "signup.html"), "utf8");
 const SETUP_HTML = readFileSync(path.join(SITE_DIR, "setup.html"), "utf8");
-
-const exchangeTokens = new Map();
-const EXCHANGE_TTL_MS = 5 * 60 * 1000;
-
-export function createExchangeToken({ accountId, email }) {
-  const token = crypto.randomBytes(24).toString("base64url");
-  exchangeTokens.set(token, { accountId, email, exp: Date.now() + EXCHANGE_TTL_MS });
-  return token;
-}
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -329,7 +321,11 @@ export function attachSignupRoutes(app, client = null) {
       }
 
       await markSetupTokenUsed(row.token);
-      const hop = createExchangeToken({ accountId: account.id, email: account.email });
+      const hop = await createExchangeToken({
+        accountId: account.id,
+        orgId: org.id,
+        email: account.email,
+      });
       const redirect = `${orgPanelUrl(org).replace(/\/admin$/, "")}/admin/auth/exchange?t=${hop}`;
       res.json({ ok: true, redirect, panelUrl: orgPanelUrl(org) });
     } catch (error) {
@@ -340,27 +336,30 @@ export function attachSignupRoutes(app, client = null) {
 
   /** Back-compat for any old setup page still posting here. */
   app.post("/api/setup/complete", (req, res) => {
-    // Delegate to the workspace handler by rewriting the path for this request cycle.
-    const handlers = app._router?.stack || [];
-    void handlers;
     res.status(410).json({
       ok: false,
       error: "Reload this page — setup is now multi-step (workspace → Discord → server).",
     });
   });
 
-  app.get("/admin/auth/exchange", (req, res) => {
-    const token = String(req.query.t || "");
-    const entry = exchangeTokens.get(token);
-    exchangeTokens.delete(token);
-    if (!entry || entry.exp < Date.now()) {
-      return res.redirect(302, "/admin");
+  app.get("/admin/auth/exchange", async (req, res) => {
+    try {
+      const token = String(req.query.t || "");
+      const entry = token ? await consumeExchangeToken(token) : null;
+      if (!entry) return res.redirect(302, "/admin");
+
+      const account = await getAccount(entry.account_id);
+      setSaasSessionCookie(res, {
+        accountId: entry.account_id,
+        email: entry.email,
+        username: String(entry.email).split("@")[0],
+        orgId: entry.org_id,
+        sv: Number(account?.session_version ?? 0),
+      });
+      res.redirect(302, "/admin");
+    } catch (error) {
+      console.error("Setup exchange failed:", error.message);
+      res.redirect(302, "/admin");
     }
-    setSaasSessionCookie(res, {
-      accountId: entry.accountId,
-      email: entry.email,
-      username: entry.email.split("@")[0],
-    });
-    res.redirect(302, "/admin");
   });
 }

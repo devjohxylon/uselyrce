@@ -8,6 +8,9 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "build:site": "node scripts/build-site.js",
+    "check": "node scripts/check.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "ci": "npm run check && npm run build:site && npm run smoke",
     "register-commands": "node src/register-commands.js",
     "debug:leaderboard": "node scripts/debug-leaderboard.js"
   },

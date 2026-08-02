@@ -8,6 +8,17 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Ban honesty, plan gates, and smoother setup finish",
+    changes: [
+      { type: "fixed", text: "The Bans tab no longer reports a successful ban when the game server rejected the command." },
+      { type: "changed", text: "Opening Bans loads your saved list immediately — sync from the game server is on demand via Sync." },
+      { type: "fixed", text: "Canceled and past-due workspaces can no longer add new WebRCON servers." },
+      { type: "fixed", text: "Finishing setup signs you into the panel reliably even if the app restarts mid-hop." },
+      { type: "changed", text: "Privacy Policy notes that the marketing site uses Vercel Web Analytics." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Security hardening for multi-tenant panels",
     changes: [
       { type: "fixed", text: "Tenant data stores, scheduled commands, and live panel feeds stay isolated per workspace — no cross-server bleed." },

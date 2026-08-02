@@ -6,6 +6,7 @@ import { getServiceClient } from "./client.js";
 const useMock = () => config.saas.mock;
 const SETUP_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const EXCHANGE_TOKEN_TTL_MS = 5 * 60 * 1000;
 
 function hashToken(raw) {
   return crypto.createHash("sha256").update(String(raw)).digest("hex");
@@ -218,4 +219,61 @@ export async function markPasswordResetTokenUsed(token) {
     .maybeSingle();
   if (error) throw error;
   return Boolean(data);
+}
+
+/** One-time hop after setup finish — survives restarts and multi-instance. */
+export async function createExchangeToken({ accountId, orgId, email }) {
+  const { raw, hash } = mintToken();
+  const row = {
+    token: hash,
+    account_id: accountId,
+    org_id: orgId,
+    email: String(email).toLowerCase().trim(),
+    expires_at: new Date(Date.now() + EXCHANGE_TOKEN_TTL_MS).toISOString(),
+    used_at: null,
+  };
+  if (useMock()) {
+    await mockdb.insertExchangeToken(row);
+    return raw;
+  }
+  const db = getServiceClient();
+  const { error } = await db.from("setup_exchange_tokens").insert(row);
+  if (error) throw error;
+  return raw;
+}
+
+/** Consume a valid unused exchange token (single-use). Returns row or null. */
+export async function consumeExchangeToken(token) {
+  const hash = hashToken(token);
+  let row;
+  if (useMock()) {
+    row = await mockdb.getExchangeToken(hash);
+  } else {
+    const db = getServiceClient();
+    const { data, error } = await db
+      .from("setup_exchange_tokens")
+      .select("*")
+      .eq("token", hash)
+      .maybeSingle();
+    if (error) throw error;
+    row = data;
+  }
+  if (!row || row.used_at) return null;
+  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+
+  if (useMock()) {
+    await mockdb.markExchangeTokenUsed(hash);
+  } else {
+    const db = getServiceClient();
+    const { data, error } = await db
+      .from("setup_exchange_tokens")
+      .update({ used_at: new Date().toISOString() })
+      .eq("token", hash)
+      .is("used_at", null)
+      .select("token")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+  }
+  return row;
 }

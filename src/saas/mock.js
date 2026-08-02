@@ -46,6 +46,7 @@ function seedData() {
     accounts: [ownerAccount],
     setupTokens: [],
     passwordResetTokens: [],
+    exchangeTokens: [],
     orgs: [
       {
         id: "mock-org-1",
@@ -99,6 +100,8 @@ async function load() {
   }
   cache.accounts ||= [];
   cache.setupTokens ||= [];
+  cache.passwordResetTokens ||= [];
+  cache.exchangeTokens ||= [];
   return cache;
 }
 
@@ -280,6 +283,28 @@ export async function getPasswordResetToken(token) {
 export async function markPasswordResetTokenUsed(token) {
   const db = await load();
   const row = (db.passwordResetTokens || []).find((t) => t.token === token);
+  if (row) {
+    row.used_at = new Date().toISOString();
+    await save();
+  }
+}
+
+export async function insertExchangeToken(row) {
+  const db = await load();
+  db.exchangeTokens ||= [];
+  db.exchangeTokens.push(row);
+  await save();
+  return row;
+}
+
+export async function getExchangeToken(token) {
+  const db = await load();
+  return (db.exchangeTokens || []).find((t) => t.token === token) || null;
+}
+
+export async function markExchangeTokenUsed(token) {
+  const db = await load();
+  const row = (db.exchangeTokens || []).find((t) => t.token === token);
   if (row) {
     row.used_at = new Date().toISOString();
     await save();

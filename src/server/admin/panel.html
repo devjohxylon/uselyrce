@@ -2369,6 +2369,20 @@ function toast(msg, bad = false) {
   toast._t = setTimeout(() => el.classList.add("hidden"), 3200);
 }
 
+/** Prevent double-submit on destructive / RCON actions. */
+async function withBusy(el, fn) {
+  if (!el || el.dataset.busy === "1") return;
+  el.dataset.busy = "1";
+  const wasDisabled = el.disabled;
+  el.disabled = true;
+  try {
+    await fn();
+  } finally {
+    el.dataset.busy = "0";
+    el.disabled = wasDisabled;
+  }
+}
+
 function fmtUptime(s) {
   if (!s && s !== 0) return "—";
   const h = Math.floor(s / 3600);
@@ -6156,8 +6170,11 @@ function bindView() {
           return;
         }
         if (a === "broadcast") {
-          await api("/broadcast", { method: "POST", body: { message: document.getElementById("broadcastMsg").value } });
-          toast("Broadcast sent");
+          await withBusy(el, async () => {
+            await api("/broadcast", { method: "POST", body: { message: document.getElementById("broadcastMsg").value } });
+            toast("Broadcast sent");
+          });
+          return;
         }
         if (a === "saveWipe") {
           const local = document.getElementById("wipeAtInput").value;
@@ -6270,24 +6287,32 @@ function bindView() {
         if (a === "kick") {
           const reason = prompt(`Kick reason for ${el.dataset.ign}:`, "Kicked by admin")?.trim();
           if (reason == null) return;
-          await api(`/players/${encodeURIComponent(el.dataset.ign)}/kick`, {
-            method: "POST",
-            body: { reason: reason || "Kicked by admin" },
+          await withBusy(el, async () => {
+            await api(`/players/${encodeURIComponent(el.dataset.ign)}/kick`, {
+              method: "POST",
+              body: { reason: reason || "Kicked by admin" },
+            });
+            toast(`Kicked ${el.dataset.ign}`);
+            await refreshOverview().catch(() => {});
+            render();
           });
-          toast(`Kicked ${el.dataset.ign}`);
-          refreshOverview().then(render);
+          return;
         }
         if (a === "ban") {
           const reason = prompt(`Ban reason for ${el.dataset.ign}:`, "")?.trim();
           if (reason == null) return;
           if (!reason) { toast("Ban reason required", true); return; }
           if (!confirm(`Ban ${el.dataset.ign}?\nReason: ${reason}`)) return;
-          await api(`/players/${encodeURIComponent(el.dataset.ign)}/ban`, {
-            method: "POST",
-            body: { reason },
+          await withBusy(el, async () => {
+            await api(`/players/${encodeURIComponent(el.dataset.ign)}/ban`, {
+              method: "POST",
+              body: { reason },
+            });
+            toast(`Banned ${el.dataset.ign}`);
+            await refreshOverview().catch(() => {});
+            render();
           });
-          toast(`Banned ${el.dataset.ign}`);
-          refreshOverview().then(render);
+          return;
         }
         if (a === "rcon" || a === "preset") {
           const cmd = a === "preset" ? el.dataset.cmd : document.getElementById("rconCmd").value;
@@ -6519,17 +6544,20 @@ function bindView() {
           const ign = document.getElementById("banIgn")?.value?.trim();
           const reason = document.getElementById("banReason")?.value?.trim();
           const duration = Number(document.getElementById("banDuration")?.value || 0);
-          
+
           if (!ign) { toast("Player IGN required", true); return; }
           if (!reason) { toast("Ban reason required", true); return; }
-          
-          const r = await api("/bans", { method: "POST", body: { ign, reason, duration } });
-          if (r.ok) {
-            toast(`Banned ${ign}`);
-            render();
-          } else {
-            toast(r.error, true);
-          }
+
+          await withBusy(el, async () => {
+            const r = await api("/bans", { method: "POST", body: { ign, reason, duration } });
+            if (r.ok) {
+              toast(`Banned ${ign}`);
+              render();
+            } else {
+              toast(r.error || "Ban failed", true);
+            }
+          });
+          return;
         }
         
         if (a === "unban") {

@@ -20,15 +20,23 @@ export function isPlanLive(status) {
 }
 
 export function assertCanAddServer(org, currentCount) {
-  if (!isPlanLive(org.plan_status) && org.plan_status !== "inactive") {
-    // inactive orgs may still be in setup before first checkout — allow 0→1 only during onboarding
+  const status = org.plan_status;
+  const live = isPlanLive(status);
+  // inactive = pre-checkout / ops preview onboarding — allow a single server only.
+  const onboarding = status === "inactive";
+
+  if (!live && !onboarding) {
+    const err = new Error("Active subscription required to add a server.");
+    err.code = "PLAN_REQUIRED";
+    throw err;
   }
-  const max = maxServersForPlan(org.plan || "basic");
-  if (!isPlanLive(org.plan_status) && currentCount >= 1) {
+  if (onboarding && currentCount >= 1) {
     const err = new Error("Active subscription required to add more servers.");
     err.code = "PLAN_REQUIRED";
     throw err;
   }
+
+  const max = maxServersForPlan(org.plan || "basic");
   if (currentCount >= max) {
     const err = new Error(
       `Plan "${org.plan}" allows ${max} server(s). Upgrade to add more.`,

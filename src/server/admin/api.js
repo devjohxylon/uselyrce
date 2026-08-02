@@ -1794,8 +1794,9 @@ export async function attachAdminPanel(app, client) {
     try {
       await backfillBansFromPanelLogs().catch(() => null);
 
+      // RCON banlist sync is on-demand only (POST /bans/sync or ?sync=1).
       let sync = null;
-      if (req.query.sync !== "0") {
+      if (req.query.sync === "1") {
         const fetched = await fetchServerBanlist().catch((e) => ({
           raw: null,
           attempts: [{ error: e.message }],
@@ -1880,18 +1881,42 @@ export async function attachAdminPanel(app, client) {
       const safeReason = assertSafeRconArg(String(reason).slice(0, 120), "reason");
 
       const durationMs = duration ? Number(duration) * 60 * 1000 : null;
-      const result = await banPlayer(safeIgn, safeReason, req.session.label, durationMs);
-
-      if (result.ok || result.error === "Player is already banned") {
-        await sendGameCommand(`ban ${quoteRconArg(safeIgn)} ${quoteRconArg(safeReason)}`).catch(() =>
-          sendGameCommand(`global.ban ${quoteRconArg(safeIgn)} ${quoteRconArg(safeReason)}`),
-        );
-        await audit(req, "ban", { ign, reason, duration: duration || 0 });
+      const stored = await banPlayer(safeIgn, safeReason, req.session.label, durationMs);
+      const already = !stored.ok && stored.error === "Player is already banned";
+      if (!stored.ok && !already) {
+        return res.status(400).json({ ok: false, error: stored.error || "Could not store ban" });
       }
 
-      res.json(result.ok ? result : { ...result, ok: result.error === "Player is already banned" });
+      let result;
+      try {
+        result = await sendGameCommand(`ban ${quoteRconArg(safeIgn)} ${quoteRconArg(safeReason)}`);
+      } catch (first) {
+        try {
+          result = await sendGameCommand(
+            `global.ban ${quoteRconArg(safeIgn)} ${quoteRconArg(safeReason)}`,
+          );
+        } catch (second) {
+          if (!already) {
+            return res.status(502).json({
+              ok: false,
+              error: `Ban saved in panel but game server rejected it: ${second.message || first.message}`,
+              ban: stored.ban || null,
+            });
+          }
+          result = second.message || first.message;
+        }
+      }
+
+      await audit(req, "ban", { ign, reason, duration: duration || 0 });
+      res.json({
+        ok: true,
+        result: result ?? "",
+        ban: stored.ban || null,
+        stored: true,
+      });
     } catch (error) {
-      res.status(500).json({ ok: false, error: error.message });
+      const status = error.code === "RCON_ARG" ? 400 : 500;
+      res.status(status).json({ ok: false, error: error.message });
     }
   });
 
