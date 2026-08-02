@@ -219,6 +219,21 @@ ${groups}
     </footer>`;
 }
 
+/** Exclusive accordion: opening one <details> inside [data-acc] closes siblings. */
+function renderAccScript() {
+  return `  <script>
+    document.querySelectorAll("[data-acc]").forEach(function (root) {
+      root.addEventListener("toggle", function (e) {
+        var d = e.target;
+        if (!(d instanceof HTMLDetailsElement) || !d.open) return;
+        root.querySelectorAll("details[open]").forEach(function (other) {
+          if (other !== d) other.open = false;
+        });
+      }, true);
+    });
+  </script>`;
+}
+
 /** Vercel Web Analytics — only loads on www (script is served after Analytics is enabled). */
 function renderAnalytics() {
   return `  <script>
@@ -232,7 +247,7 @@ export function applyShell(html) {
     .replace(/^[ \t]*<!--HEAD:([a-z]+)-->/m, (_m, key) => renderHead(key))
     .replace(/^[ \t]*<!--NAV:([a-z]*)-->/m, (_m, active) => renderNav(active))
     .replace(/^[ \t]*<!--FOOTER-->/m, renderFooter())
-    .replace(/<\/body>/i, `${renderAnalytics()}\n</body>`);
+    .replace(/<\/body>/i, `${renderAccScript()}\n${renderAnalytics()}\n</body>`);
 }
 
 export function renderSitemap() {

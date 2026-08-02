@@ -3,90 +3,71 @@
 <head>
 <!--HEAD:docs-->
   <style>
-    .docs {
-      display: grid;
-      grid-template-columns: 14rem 1fr;
-      gap: 3rem;
-      padding-bottom: clamp(3rem, 7vh, 4rem);
-      align-items: start;
+    .docs-acc {
       animation: rise .55s ease .05s both;
+      padding-bottom: clamp(2.5rem, 6vh, 3.5rem);
     }
-
-    .toc { position: sticky; top: 2rem; display: grid; gap: .55rem; }
-    .toc .label { margin: 0 0 .35rem; }
-    .toc a {
-      color: var(--muted);
-      font-size: .875rem;
-      line-height: 1.4;
-      padding-left: .8rem;
-      border-left: 1px solid var(--line);
-      transition: color .15s ease, border-color .15s ease;
+    .docs-acc details {
+      border-top: 1px solid var(--line);
     }
-    .toc a:hover { color: var(--text); border-color: var(--chrome-dim); }
-
-    .doc-body { display: grid; gap: 2.75rem; min-width: 0; }
-    .doc-body section { scroll-margin-top: 1.5rem; }
-    .doc-body h2 {
-      margin: 0 0 .9rem;
-      font-size: 1.35rem;
+    .docs-acc details:last-of-type { border-bottom: 1px solid var(--line); }
+    .docs-acc summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 1.15rem 0;
+      cursor: pointer;
+      font-size: 1.05rem;
       font-weight: 600;
-      letter-spacing: -.02em;
+      letter-spacing: -.015em;
+      list-style: none;
     }
-    .doc-body h3 {
-      margin: 1.75rem 0 .6rem;
-      font-size: 1rem;
-      font-weight: 600;
+    .docs-acc summary::-webkit-details-marker { display: none; }
+    .docs-acc summary:hover { color: var(--chrome); }
+    .docs-acc summary::after {
+      content: "+";
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--chrome-dim);
+      flex: none;
     }
-    .doc-body p, .doc-body li {
-      color: var(--muted);
-      font-size: .975rem;
-      line-height: 1.7;
+    .docs-acc details[open] > summary::after { content: "−"; }
+    .docs-acc .acc-body {
+      padding: 0 0 1.35rem;
+      max-width: 68ch;
     }
-    .doc-body p { margin: 0 0 .9rem; max-width: 70ch; }
-    .doc-body ul, .doc-body ol { margin: 0 0 .9rem; padding-left: 1.2rem; max-width: 70ch; }
-    .doc-body li { margin-bottom: .45rem; }
-    .doc-body li strong { color: var(--text); font-weight: 600; }
-    .doc-body a { color: var(--chrome); text-decoration: underline; }
-
-    .callout {
-      border: 1px solid var(--line);
-      border-left: 2px solid var(--chrome-dim);
-      border-radius: var(--radius);
-      background: var(--bg2);
-      padding: 1rem 1.15rem;
-      margin: 1.25rem 0;
-      max-width: 70ch;
-    }
-    .callout p { margin: 0; font-size: .925rem; }
-    .callout strong { color: var(--text); }
-
-    dl { margin: 0 0 .9rem; max-width: 70ch; }
-    dt {
-      font-size: .925rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-top: 1rem;
-    }
-    dd {
-      margin: .3rem 0 0;
+    .docs-acc .acc-body p,
+    .docs-acc .acc-body li {
       color: var(--muted);
       font-size: .95rem;
       line-height: 1.65;
     }
-
-    @media (max-width: 900px) {
-      .docs { grid-template-columns: 1fr; gap: 2rem; }
-      .toc {
-        position: static;
-        grid-auto-flow: column;
-        grid-template-columns: none;
-        grid-auto-columns: max-content;
-        overflow-x: auto;
-        gap: 1.25rem;
-        padding-bottom: .5rem;
-      }
-      .toc .label { display: none; }
-      .toc a { border-left: 0; padding-left: 0; white-space: nowrap; }
+    .docs-acc .acc-body p { margin: 0 0 .75rem; }
+    .docs-acc .acc-body ul,
+    .docs-acc .acc-body ol { margin: 0 0 .75rem; padding-left: 1.15rem; }
+    .docs-acc .acc-body li { margin-bottom: .35rem; }
+    .docs-acc .acc-body li strong { color: var(--text); font-weight: 600; }
+    .docs-acc .acc-body a { color: var(--chrome); text-decoration: underline; }
+    .docs-acc .acc-body h3 {
+      margin: 1.1rem 0 .45rem;
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .docs-acc .acc-body dl { margin: 0 0 .75rem; }
+    .docs-acc .acc-body dt {
+      margin-top: .75rem;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .docs-acc .acc-body dd {
+      margin: .25rem 0 0;
+      color: var(--muted);
+      font-size: .925rem;
+      line-height: 1.6;
     }
   </style>
 </head>
@@ -97,137 +78,118 @@
     <section class="page-hero">
       <p class="label">Documentation</p>
       <h1>Docs</h1>
-      <p>Everything you need to go from a fresh purchase to a fully managed server.</p>
+      <p>Setup, servers, kits, Discord, and billing.</p>
     </section>
 
-    <div class="docs">
-      <nav class="toc">
-        <p class="label">On this page</p>
-        <a href="#how-it-works">How it works</a>
-        <a href="#workspace">Create your workspace</a>
-        <a href="#connect">Connect a server</a>
-        <a href="#players">Players and moderation</a>
-        <a href="#kits">Kits</a>
-        <a href="#discord">Discord bot</a>
-        <a href="#staff">Staff permissions</a>
-        <a href="#multi">Multiple servers</a>
-        <a href="#billing">Billing</a>
-        <a href="#troubleshooting">Troubleshooting</a>
-      </nav>
-
-      <div class="doc-body">
-        <section id="how-it-works">
-          <h2>How it works</h2>
-          <p>Usely is hosted, so there is nothing to install on your game server. You give us your server's WebRCON details once, and we hold an outbound connection to it. That connection powers three things:</p>
+    <div class="docs-acc" data-acc>
+      <details open>
+        <summary>How it works</summary>
+        <div class="acc-body">
+          <p>Usely is hosted. You add WebRCON once; we keep the connection for the panel and Discord bot.</p>
           <ul>
-            <li><strong>The web panel</strong> — your browser view of players, kits, bans, and the RCON console.</li>
-            <li><strong>The Discord bot</strong> — population channels, kill feeds, and staff sign-in.</li>
-            <li><strong>Your workspace</strong> — the container for your servers, staff, and billing, reachable at your own address on <code>usely.dev</code>.</li>
+            <li><strong>Panel</strong> — players, kits, bans, RCON.</li>
+            <li><strong>Discord bot</strong> — feeds, pop channels, staff tools.</li>
+            <li><strong>Workspace</strong> — your servers and billing at <code>*.usely.dev</code>.</li>
           </ul>
-          <p>No plugins, no mods, no uploads. If you change hosts, you only update the connection details.</p>
-        </section>
+        </div>
+      </details>
 
-        <section id="workspace">
-          <h2>Create your workspace</h2>
-          <p>Usely is buy-first: you pick a plan before the workspace exists, which keeps signup to a single step.</p>
+      <details>
+        <summary>Create your workspace</summary>
+        <div class="acc-body">
           <ol>
-            <li>Choose a plan on the <a href="/pricing">pricing page</a> and pay.</li>
-            <li>We email you a setup link (valid for seven days).</li>
-            <li>On that link you pick a <strong>panel address</strong> (like <code>myserver.usely.dev</code>), set your owner password, invite the Discord bot, and add at least one WebRCON server.</li>
-            <li>Open your panel — create staff keys under <strong>Workspace → Staff keys</strong> and share them with moderators.</li>
+            <li>Pick a plan on <a href="/pricing">pricing</a> and pay.</li>
+            <li>Open the setup link from email (7 days).</li>
+            <li>Choose a panel address, owner password, Discord, and WebRCON.</li>
+            <li>Create staff keys under <strong>Workspace → Staff keys</strong>.</li>
           </ol>
-          <div class="callout">
-            <p><strong>Choose your address carefully.</strong> It's what you and your staff type to reach the panel, and changing it later means everyone updates their bookmarks. Use your community name, not a server name you might retire.</p>
-          </div>
-        </section>
+          <p>Pick an address you’ll keep — staff bookmarks depend on it.</p>
+        </div>
+      </details>
 
-        <section id="connect">
-          <h2>Connect a server</h2>
-          <p>Each server is one WebRCON connection. From the panel, add a server and provide:</p>
+      <details>
+        <summary>Connect a server</summary>
+        <div class="acc-body">
           <dl>
             <dt>Host</dt>
-            <dd>The IP address or hostname your host exposes WebRCON on.</dd>
+            <dd>WebRCON IP or hostname.</dd>
             <dt>Port</dt>
-            <dd>The WebRCON port — usually different from the game port players connect to.</dd>
+            <dd>WebRCON port (not the game port).</dd>
             <dt>Password</dt>
-            <dd>Your RCON password. It's encrypted before it's stored, and it's never shown back to you in full.</dd>
+            <dd>RCON password — stored encrypted.</dd>
           </dl>
-          <p>Your host's control panel is where all three values live, often under a remote console, RCON, or server settings section. If you can't find them, your host's support can tell you which port WebRCON is on.</p>
-          <p>Once saved, the connection comes up on its own and the panel starts showing live data. If it can't connect, the server shows as offline and Usely keeps retrying — you don't need to reconnect by hand after a restart or wipe.</p>
-        </section>
+          <p>Values come from your host’s control panel. Offline servers retry automatically.</p>
+        </div>
+      </details>
 
-        <section id="players">
-          <h2>Players and moderation</h2>
-          <p>The players view lists everyone currently online, pulled live from the server rather than a cached snapshot. From there you can:</p>
+      <details>
+        <summary>Players and moderation</summary>
+        <div class="acc-body">
           <ul>
-            <li>Kick a player, with a reason they'll see.</li>
-            <li>Ban a player, which adds them to your ban list.</li>
-            <li>Review and unban from the ban list, including bans placed before you started using Usely.</li>
-            <li>Broadcast a message to everyone on the server.</li>
-            <li>See which players have linked Discord accounts.</li>
+            <li>Kick / ban with a reason</li>
+            <li>Ban list + unban (including prior server bans)</li>
+            <li>Broadcast</li>
+            <li>Linked Discord accounts</li>
+            <li>Raw RCON console (separate permission)</li>
           </ul>
-          <h3>RCON console</h3>
-          <p>The console runs any command your server accepts and shows the raw response, for the cases the panel doesn't cover. Access to it is a separate permission, so you can give staff moderation tools without giving them full server control.</p>
-        </section>
+        </div>
+      </details>
 
-        <section id="kits">
-          <h2>Kits</h2>
-          <p>A kit is a named set of items players can claim in-game. To build one, select items from the Rust Console item list and save the kit — there's no JSON to write and no file to upload.</p>
-          <p>Players claim kits through the quick chat phrases you configure, so the flow works with a controller and needs no typing. Kits are per-workspace, so a kit you build is available on whichever of your servers you assign it to.</p>
-          <div class="callout">
-            <p><strong>Console item list only.</strong> The catalog is limited to items that exist in Rust Console Edition, so you can't accidentally build a kit around a PC-only item, scope, or attachment that would silently fail in-game.</p>
-          </div>
-        </section>
+      <details>
+        <summary>Kits</summary>
+        <div class="acc-body">
+          <p>Build kits from the Console item catalog. Players claim via quick-chat phrases you set. Kits are workspace-scoped.</p>
+        </div>
+      </details>
 
-        <section id="discord">
-          <h2>Discord bot</h2>
-          <p>The bot is included with every plan. From the panel open <strong>Workspace → Setup</strong> and click <strong>Invite Discord bot</strong>. You need Manage Server on that Discord. After it joins, paste the guild ID (or finish the Discord authorize flow) and link it.</p>
-          <p>What it handles:</p>
+      <details>
+        <summary>Discord bot</summary>
+        <div class="acc-body">
+          <p>Invite from <strong>Workspace → Setup</strong> (Manage Server required), then link the guild.</p>
           <ul>
-            <li><strong>Population channels</strong> — a channel name that updates with your live player count, so members can see how busy the server is without launching the game.</li>
-            <li><strong>Kill feeds</strong> — in-game kills posted to a channel.</li>
-            <li><strong>VIP and slash commands</strong> — community tools in Discord; panel staff access uses keys instead.</li>
+            <li>Pop channel rename</li>
+            <li>Killfeed and other feeds</li>
+            <li>Slash commands</li>
           </ul>
-          <p>If the bot goes offline, the panel keeps working — they're independent connections.</p>
-        </section>
+          <p>Panel stays up if the bot is offline.</p>
+        </div>
+      </details>
 
-        <section id="staff">
-          <h2>Staff permissions</h2>
-          <p>Staff sign in with <strong>access keys</strong>, not Discord. From <strong>Workspace → Staff keys</strong>, create a key, choose permissions (kick, ban, kits, and so on), and send the secret once. They open your panel URL and sign in under Staff.</p>
-          <p>Revoke or disable a key to cut access immediately. Keys never get billing or key management — those stay on the owner email login.</p>
-          <p>Permissions are checked on every action, not just at sign-in, so a key that can kick and ban but not use RCON genuinely cannot run RCON commands.</p>
-          <div class="callout">
-            <p><strong>The owner account stays separate.</strong> Billing and server credentials belong to your email login — staff keys can be broad for day-to-day moderation without exposing payment or RCON passwords.</p>
-          </div>
-        </section>
+      <details>
+        <summary>Staff permissions</summary>
+        <div class="acc-body">
+          <p>Staff use access keys from <strong>Workspace → Staff keys</strong>. Permissions are checked per action. Billing and credentials stay on the owner login.</p>
+        </div>
+      </details>
 
-        <section id="multi">
-          <h2>Multiple servers</h2>
-          <p>Basic covers one server. Pro covers two, and Network covers more. Each one is its own WebRCON connection with its own players, bans, and status.</p>
-          <p>Switch which server you're managing from the panel header. Kits and staff keys belong to the workspace, so you configure them once rather than repeating the setup per server.</p>
-          <p>If you downgrade to a plan with a lower limit, disconnect the extra servers first.</p>
-        </section>
+      <details>
+        <summary>Multiple servers</summary>
+        <div class="acc-body">
+          <p>Basic = 1, Pro = 2, Network = more. Switch servers from the panel header. Kits and staff keys are shared. Downgrade only after disconnecting extras.</p>
+        </div>
+      </details>
 
-        <section id="billing">
-          <h2>Billing</h2>
-          <p>Plans are monthly, and payment is handled by Stripe — card details never touch Usely's servers. From the panel you can change plans, update your payment method, download invoices, and cancel.</p>
-          <p>Upgrades take effect immediately so you can add a server right away. Cancelling stops future charges and your workspace stays available until the end of the period you've paid for.</p>
-        </section>
+      <details>
+        <summary>Billing</summary>
+        <div class="acc-body">
+          <p>Monthly via Stripe. Change plan, payment method, invoices, and cancel from the panel. Upgrades apply immediately; cancel keeps access until period end.</p>
+        </div>
+      </details>
 
-        <section id="troubleshooting">
-          <h2>Troubleshooting</h2>
-          <h3>The server shows as offline</h3>
-          <p>Almost always the host, port, or password. Confirm the port is the WebRCON port and not the game port, and re-enter the password if it was changed on the host. If your host rotates IPs, the host value may be stale.</p>
-          <h3>No players are listed but the server is online</h3>
-          <p>An online status with an empty list usually means the server genuinely has nobody on it. If players are in-game and still not showing, the connection may be authenticated but restricted — check that your RCON user has full console access on the host.</p>
-          <h3>The Discord bot is offline or silent</h3>
-          <p>Check that it's still in your Discord and can view and post in the channels you assigned. Population channels also need permission to rename the channel, which is separate from posting.</p>
-          <h3>Staff can't sign in</h3>
-          <p>They must open your workspace panel URL (e.g. <code>myserver.usely.dev</code>), not the marketing site. Confirm the key is still enabled under <strong>Workspace → Staff keys</strong>, and that they paste the full <code>ask_…</code> secret.</p>
-          <h3>Something else</h3>
-          <p>Check the <a href="/faq">FAQ</a>, then <a href="/contact">get in touch</a> — include your panel address so we can find your workspace.</p>
-        </section>
-      </div>
+      <details>
+        <summary>Troubleshooting</summary>
+        <div class="acc-body">
+          <h3>Server offline</h3>
+          <p>Check WebRCON host, port, and password.</p>
+          <h3>Online but empty player list</h3>
+          <p>Usually nobody is on. If they are, confirm full RCON access on the host.</p>
+          <h3>Bot silent</h3>
+          <p>Confirm it’s in the server and can post / rename the assigned channels.</p>
+          <h3>Staff can’t sign in</h3>
+          <p>They must use your panel URL and a full enabled <code>ask_…</code> key.</p>
+          <p>Still stuck? <a href="/faq">FAQ</a> or <a href="/contact">contact</a> with your panel address.</p>
+        </div>
+      </details>
     </div>
 
 <!--FOOTER-->

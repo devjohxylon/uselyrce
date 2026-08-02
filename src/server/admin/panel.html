@@ -1969,7 +1969,7 @@ button { transition: all .15s ease; }
         </button>
         <div>
           <h2 id="pageTitle">Home</h2>
-          <p class="page-sub" id="pageSub">Server health and quick controls</p>
+          <p class="page-sub" id="pageSub"></p>
         </div>
       </div>
       <div class="pills" id="statusPills"></div>
@@ -2058,7 +2058,7 @@ const state = {
 const NAV_SECTIONS = {
   home: {
     title: "Home",
-    sub: "Server health and quick controls",
+    sub: "",
     tabs: [
       { id: "overview", label: "Overview", perm: "overview" },
       { id: "map", label: "Map", perm: "overview" },
@@ -2066,7 +2066,7 @@ const NAV_SECTIONS = {
   },
   players: {
     title: "Players",
-    sub: "Online players, links, profiles, bans, and reports",
+    sub: "",
     tabs: [
       { id: "players", label: "Find", perm: "players" },
       { id: "profiles", label: "Profiles", perm: "players" },
@@ -2077,12 +2077,12 @@ const NAV_SECTIONS = {
   },
   kits: {
     title: "Kits",
-    sub: "Server kits + panel builder",
+    sub: "",
     tabs: [{ id: "kits", label: "Kits", perm: "kits" }],
   },
   community: {
     title: "Community",
-    sub: "Leaderboards, automation, and events",
+    sub: "",
     tabs: [
       { id: "stats", label: "Leaderboard", perm: "stats" },
       { id: "automation", label: "Automation", perm: "automation" },
@@ -2091,7 +2091,7 @@ const NAV_SECTIONS = {
   },
   server: {
     title: "Server",
-    sub: "Status, wipe automation, and analytics",
+    sub: "",
     tabs: [
       { id: "status", label: "Status", perm: "overview" },
       { id: "wipe", label: "Wipe", perm: "overview" },
@@ -2100,7 +2100,7 @@ const NAV_SECTIONS = {
   },
   workspace: {
     title: "Workspace",
-    sub: "Discord, servers, staff keys, billing",
+    sub: "",
     tabs: [
       { id: "servers", label: "Setup", perm: "servers" },
       { id: "keys", label: "Staff keys", perm: "keys" },
@@ -2111,47 +2111,47 @@ const NAV_SECTIONS = {
 
 function syncWorkspaceNav() {
   if (state.session?.saas) {
-    NAV_SECTIONS.workspace.sub = "Discord, servers, staff keys, billing";
+    NAV_SECTIONS.workspace.sub = "";
     NAV_SECTIONS.workspace.tabs = [
       { id: "servers", label: "Setup", perm: "servers" },
       { id: "keys", label: "Staff keys", perm: "keys" },
       { id: "billing", label: "Billing", perm: "billing" },
     ];
   } else {
-    NAV_SECTIONS.workspace.sub = "Staff access keys";
+    NAV_SECTIONS.workspace.sub = "";
     NAV_SECTIONS.workspace.tabs = [{ id: "keys", label: "Staff keys", perm: "keys" }];
   }
 }
 
 const MAIN_TOOL_TABS = [
-  { id: "commands", label: "Actions", perm: "serverCommands", title: "Actions", sub: "Give kits, ranks, and trigger events" },
-  { id: "discord", label: "Discord", perm: "serverCommands", title: "Discord", sub: "Channels, feeds, VIP, and slash commands" },
+  { id: "commands", label: "Actions", perm: "serverCommands", title: "Actions", sub: "" },
+  { id: "discord", label: "Discord", perm: "serverCommands", title: "Discord", sub: "" },
 ];
 
 const ADVANCED_TABS = [
-  { id: "console", label: "RCON", perm: "rcon", title: "RCON", sub: "Raw RCON commands" },
-  { id: "warps", label: "Warps", perm: "warps", title: "Warps", sub: "Warps and force teleports" },
-  { id: "logs", label: "Logs", perm: "logs", title: "Logs", sub: "Panel actions and system audit trail" },
+  { id: "console", label: "RCON", perm: "rcon", title: "RCON", sub: "" },
+  { id: "warps", label: "Warps", perm: "warps", title: "Warps", sub: "" },
+  { id: "logs", label: "Logs", perm: "logs", title: "Logs", sub: "" },
 ];
 
 const TAB_META = {
-  overview: { title: "Home", sub: "Server health and quick controls", perm: "overview" },
-  map: { title: "Live map", sub: "Fullscreen radar — calibrate once, watch everyone move", perm: "overview" },
-  players: { title: "Players", sub: "Search anyone — online roster below", perm: "players" },
-  profiles: { title: "Players", sub: "Staff dossiers — stats, notes, actions", perm: "players" },
-  links: { title: "Players", sub: "Discord ↔ IGN links", perm: "links" },
-  bans: { title: "Players", sub: "Manage player bans", perm: "ban" },
-  reports: { title: "Players", sub: "Combat log and trio group alerts", perm: "reports" },
-  kits: { title: "Kits", sub: "Server kits + panel builder", perm: "kits" },
-  stats: { title: "Community", sub: "Wipe leaderboards and player lookup", perm: "stats" },
-  automation: { title: "Community", sub: "Auto messages and scheduled commands", perm: "automation" },
-  events: { title: "Community", sub: "Automate RCON commands on a schedule", perm: "schedule" },
-  status: { title: "Server", sub: "Live telemetry, map, wipe, and connections", perm: "overview" },
-  wipe: { title: "Server", sub: "Checklist and one-click wipe automation", perm: "overview" },
-  analytics: { title: "Server", sub: "Pop, FPS, and weapon stats", perm: "overview" },
-  servers: { title: "Workspace", sub: "Link Discord and connect WebRCON servers", perm: "servers" },
-  keys: { title: "Workspace", sub: "Staff access keys for your panel", perm: "keys" },
-  billing: { title: "Workspace", sub: "Plan and Stripe subscription", perm: "billing" },
+  overview: { title: "Home", sub: "", perm: "overview" },
+  map: { title: "Live map", sub: "", perm: "overview" },
+  players: { title: "Players", sub: "", perm: "players" },
+  profiles: { title: "Players", sub: "", perm: "players" },
+  links: { title: "Players", sub: "", perm: "links" },
+  bans: { title: "Players", sub: "", perm: "ban" },
+  reports: { title: "Players", sub: "", perm: "reports" },
+  kits: { title: "Kits", sub: "", perm: "kits" },
+  stats: { title: "Community", sub: "", perm: "stats" },
+  automation: { title: "Community", sub: "", perm: "automation" },
+  events: { title: "Community", sub: "", perm: "schedule" },
+  status: { title: "Server", sub: "", perm: "overview" },
+  wipe: { title: "Server", sub: "", perm: "overview" },
+  analytics: { title: "Server", sub: "", perm: "overview" },
+  servers: { title: "Workspace", sub: "", perm: "servers" },
+  keys: { title: "Workspace", sub: "", perm: "keys" },
+  billing: { title: "Workspace", sub: "", perm: "billing" },
 };
 
 for (const t of [...MAIN_TOOL_TABS, ...ADVANCED_TABS]) {
@@ -2709,7 +2709,7 @@ function renderOverview() {
       <td data-label="IGN"><button class="ghost" style="padding:0;justify-content:flex-start;font-weight:700" data-action="viewPlayer" data-ign="${esc(p.ign)}">${esc(p.ign)}</button></td>
       <td data-label="Platform">${esc(p.platform || "—")}</td>
       <td data-label="Ping">${p.ping ?? "—"}${p.ping != null ? " ms" : ""}</td>
-    </tr>`).join("") || `<tr><td colspan="3"><div class="empty">Nobody online right now<span class="empty-hint">Players will appear here when they connect</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="3"><div class="empty">Nobody online right now</div></td></tr>`;
 
   return `
     ${healthStrip}
@@ -2768,7 +2768,6 @@ function renderOverview() {
 
         <div class="card">
           <h3>Quick broadcast</h3>
-          <p class="card-desc">Say a message to everyone in-game right now.</p>
           ${can("broadcast") ? `
           <div class="form-row">
             <input id="broadcastMsg" placeholder="Message to broadcast…" />
@@ -2778,7 +2777,6 @@ function renderOverview() {
 
         <div class="card">
           <h3>Wipe countdown</h3>
-          <p class="card-desc">Updates the Discord wipe status channel name.</p>
           <div class="form-row">
             <input id="wipeAtInput" type="datetime-local" value="${esc(o.wipe?.localInput || "")}" />
             <button class="primary" data-action="saveWipe">Save</button>
@@ -2799,7 +2797,6 @@ async function renderPlayers() {
         <h3>Find player</h3>
         ${q ? `<span class="pill info">searching</span>` : ""}
       </div>
-      <p class="card-desc">Search online players, Discord links, and dossiers by IGN or Discord ID.</p>
       <div class="player-hub-search">
         <input id="playerHubSearch" placeholder="IGN or Discord ID…" value="${esc(q)}" />
         <button class="primary" data-action="searchPlayersHub">Search</button>
@@ -2820,7 +2817,7 @@ async function renderPlayers() {
           ${can("kick") && p.online ? `<button data-action="kick" data-ign="${esc(p.ign)}">Kick</button>` : ""}
           ${can("ban") ? `<button class="danger" data-action="ban" data-ign="${esc(p.ign)}">Ban</button>` : ""}
         </td>
-      </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No matches<span class="empty-hint">Try a different IGN, or open Profiles to create a dossier</span></div></td></tr>`;
+      </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No matches</div></td></tr>`;
 
     return `
       ${searchBlock}
@@ -2855,7 +2852,7 @@ async function renderPlayers() {
           </div>
         </div>
       </td>
-    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">Nobody online right now<span class="empty-hint">Search above for offline / linked players</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">Nobody online right now</div></td></tr>`;
   return `
     ${searchBlock}
     <div class="card">
@@ -2866,7 +2863,6 @@ async function renderPlayers() {
           <button data-action="refreshPlayers">Refresh</button>
         </div>
       </div>
-      <p class="card-desc">Live roster — search above for anyone offline.</p>
       <table class="table">
         <thead><tr><th>IGN</th><th>Platform</th><th>Ping</th><th>Link</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
@@ -2884,7 +2880,6 @@ function renderConsole() {
         <h3>Live RCON</h3>
         <span class="pill ${state.overview?.rcon?.connected ? "ok" : "bad"}">${state.overview?.rcon?.connected ? "Connected" : "Offline"}</span>
       </div>
-      <p class="card-desc">Commands run directly on the Rust server. Be careful — this is raw access.</p>
       <div class="console" id="consoleOut">${log}</div>
       <div class="form-row">
         <input id="rconCmd" placeholder='e.g. say hello  |  teleportpos (0,0,0) "Player"' />
@@ -2914,7 +2909,7 @@ async function renderStats() {
   const valueLabel = cats.find((c) => c.id === category)?.label || "Value";
   const rows = (data.rows || []).map((r) =>
     `<tr><td data-label="Rank">#${r.rank}</td><td data-label="Player"><button class="ghost" style="padding:0;justify-content:flex-start" data-action="viewPlayer" data-ign="${esc(r.name)}">${esc(r.name)}</button></td><td data-label="${esc(valueLabel)}">${esc(r.value)}</td></tr>`
-  ).join("") || `<tr><td colspan="3"><div class="empty">No stats tracked yet<span class="empty-hint">Stats populate as players join and play</span></div></td></tr>`;
+  ).join("") || `<tr><td colspan="3"><div class="empty">No stats tracked yet</div></td></tr>`;
   return `
     <div class="split">
       <div class="card">
@@ -2927,7 +2922,6 @@ async function renderStats() {
       </div>
       <div class="card">
         <h3>Community actions</h3>
-        <p class="card-desc">Push the current wipe boards to Discord, or look up one player.</p>
         <div class="actions">
           <button class="primary" data-action="pushStats">Push to Discord</button>
           ${can("statsReset") ? `<button class="danger" data-action="resetStats">Reset wipe stats</button>` : ""}
@@ -3053,7 +3047,6 @@ async function renderServerStatus() {
         ${can("broadcast") ? `
         <div class="card">
           <h3>Broadcast</h3>
-          <p class="card-desc">Say a message to everyone in-game right now.</p>
           <div class="form-row">
             <input id="broadcastMsg" placeholder="Message to broadcast…" />
             <button class="primary" data-action="broadcast">Send</button>
@@ -3170,7 +3163,7 @@ async function renderAutomation() {
           <button data-action="toggleJob" data-id="${esc(j.id)}" data-on="${j.enabled ? "0" : "1"}">${j.enabled ? "Pause" : "On"}</button>
           <button class="danger" data-action="delJob" data-id="${esc(j.id)}">Del</button>
         </td>
-      </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No scheduled commands<span class="empty-hint">Use Schedule Command to automate server tasks</span></div></td></tr>`;
+      </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No scheduled commands</div></td></tr>`;
     return `
       <div class="section-stack">
         ${tabs}
@@ -3200,7 +3193,7 @@ async function renderAutomation() {
         <button data-action="toggleMsg" data-id="${esc(m.id)}" data-on="${m.enabled ? "0" : "1"}">${m.enabled ? "Pause" : "On"}</button>
         <button class="danger" data-action="delMsg" data-id="${esc(m.id)}">Del</button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="4"><div class="empty">No auto messages<span class="empty-hint">Set up recurring messages to chat</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="4"><div class="empty">No auto messages</div></td></tr>`;
   return `
     <div class="section-stack">
       ${tabs}
@@ -3221,14 +3214,13 @@ async function renderAutomation() {
 
 function renderSettingField(kind, groupKey, field) {
   const id = `${kind}-${groupKey}-${field.key}`;
-  const hint = field.hint ? `<small>${esc(field.hint)}</small>` : "";
   const dataAttrs = `data-${kind}="${esc(groupKey)}" data-${kind}-field="${esc(field.key)}"`;
   if (field.type === "toggle") {
     return `
       <div class="feed-field toggle">
         <label for="${esc(id)}">
           <input type="checkbox" id="${esc(id)}" ${dataAttrs} ${field.value ? "checked" : ""} />
-          <span>${esc(field.label)}${hint}</span>
+          <span>${esc(field.label)}</span>
         </label>
       </div>`;
   }
@@ -3238,7 +3230,7 @@ function renderSettingField(kind, groupKey, field) {
     ).join("");
     return `
       <div class="feed-field">
-        <label for="${esc(id)}">${esc(field.label)}${hint}</label>
+        <label for="${esc(id)}">${esc(field.label)}</label>
         <select id="${esc(id)}" ${dataAttrs}>${opts}</select>
       </div>`;
   }
@@ -3247,13 +3239,13 @@ function renderSettingField(kind, groupKey, field) {
     const max = field.max != null ? ` max="${field.max}"` : "";
     return `
       <div class="feed-field">
-        <label for="${esc(id)}">${esc(field.label)}${hint}</label>
+        <label for="${esc(id)}">${esc(field.label)}</label>
         <input type="number" id="${esc(id)}" ${dataAttrs} value="${esc(field.value ?? "")}"${min}${max} />
       </div>`;
   }
   return `
     <div class="feed-field">
-      <label for="${esc(id)}">${esc(field.label)}${hint}</label>
+      <label for="${esc(id)}">${esc(field.label)}</label>
       <input type="text" id="${esc(id)}" ${dataAttrs}
         value="${esc(field.value ?? "")}" placeholder="${esc(field.placeholder || "")}" />
     </div>`;
@@ -3269,11 +3261,11 @@ function renderCommandField(cmdKey, field) {
 
 async function renderDiscordChannels() {
   const DISCORD_SUBS = [
-    { id: "channels", label: "Channels", hint: "Pick where each feed posts. Saved for this workspace." },
-    { id: "status", label: "Status", hint: "How pop / wipe voice channels are renamed." },
-    { id: "feeds", label: "Feeds", hint: "What gets posted — killfeed filters and feed toggles." },
-    { id: "vip", label: "VIP", hint: "Discord role, kit id, claim phrase, and cooldowns." },
-    { id: "slash", label: "Slash cmds", hint: "Turn Discord slash commands on/off and tweak options." },
+    { id: "channels", label: "Channels" },
+    { id: "status", label: "Status" },
+    { id: "feeds", label: "Feeds" },
+    { id: "vip", label: "VIP" },
+    { id: "slash", label: "Slash cmds" },
   ];
   const valid = new Set(DISCORD_SUBS.map((s) => s.id));
   if (!valid.has(state.discordSub)) state.discordSub = "channels";
@@ -3281,7 +3273,7 @@ async function renderDiscordChannels() {
   const meta = DISCORD_SUBS.find((s) => s.id === sub) || DISCORD_SUBS[0];
 
   const pageSubEl = document.getElementById("pageSub");
-  if (pageSubEl) pageSubEl.textContent = meta.hint;
+  if (pageSubEl) pageSubEl.textContent = meta.label;
 
   const data = await api("/channels");
   const groups = {};
@@ -3316,9 +3308,7 @@ async function renderDiscordChannels() {
             return `
             <div class="chan-row">
               <label>${esc(ch.label)}
-                <small>${esc(ch.hint || ch.env)}
-                  <span class="chan-source ${srcClass}">${esc(ch.source)}</span>
-                </small>
+                <small><span class="chan-source ${srcClass}">${esc(ch.source)}</span></small>
               </label>
               <select data-channel-key="${esc(ch.key)}">${selectOpts}</select>
               <input data-channel-manual="${esc(ch.key)}" placeholder="or paste id" value="${esc(ch.value || "")}" />
@@ -3327,7 +3317,6 @@ async function renderDiscordChannels() {
         </div>
       </div>`).join("") || `<div class="card"><div class="empty">No channel slots</div></div>`;
     body = `
-      <p class="discord-intro">Only set the channels you use. Killfeed → Feeds group. Pop / wipe renames → Status group (voice channels work best).</p>
       ${blocks}`;
   } else if (sub === "status") {
     saveAction = "saveStatusDisplays";
@@ -3335,13 +3324,11 @@ async function renderDiscordChannels() {
     const statusBlocks = (data.statusDisplays || []).map((block) => `
       <div class="card feed-setting-card" style="margin-bottom:.75rem">
         <h3>${esc(block.label)}</h3>
-        <p class="muted" style="font-family:var(--mono);font-size:.72rem">${esc(block.hint || "")}</p>
         <div class="feed-field-grid">
           ${(block.fields || []).map((f) => renderSettingField("status", block.key, f)).join("")}
         </div>
       </div>`).join("") || `<div class="card"><div class="empty">No status display settings</div></div>`;
     body = `
-      <p class="discord-intro">Formats for live pop / wipe countdown channel names. Assign the channels under <b>Channels → Status</b>.</p>
       <div class="feed-settings-grid">${statusBlocks}</div>`;
   } else if (sub === "feeds") {
     saveAction = "saveFeeds";
@@ -3349,13 +3336,11 @@ async function renderDiscordChannels() {
     const feedBlocks = (data.feeds || []).map((feed) => `
       <div class="card feed-setting-card" style="margin-bottom:.75rem">
         <h3>${esc(feed.label)}</h3>
-        <p class="muted" style="font-family:var(--mono);font-size:.72rem">${esc(feed.hint || "")}</p>
         <div class="feed-field-grid">
           ${(feed.fields || []).map((f) => renderFeedField(feed.key, f)).join("")}
         </div>
       </div>`).join("") || `<div class="card"><div class="empty">No feed settings</div></div>`;
     body = `
-      <p class="discord-intro">Killfeed defaults to compact PvP only. Turn on NPC / animal / suicide lines only if you want the spam.</p>
       <div class="feed-settings-grid">${feedBlocks}</div>`;
   } else if (sub === "vip") {
     saveAction = "saveVip";
@@ -3369,7 +3354,7 @@ async function renderDiscordChannels() {
           )).join("");
         return `
           <div class="feed-field">
-            <label for="${id}">${esc(field.label)}${field.hint ? `<small>${esc(field.hint)}</small>` : ""}</label>
+            <label for="${id}">${esc(field.label)}</label>
             <select id="${id}" data-vip-field="roleId">${selectOpts}</select>
             <input data-vip-field-manual="roleId" placeholder="or paste role id" value="${esc(field.value || "")}" style="margin-top:.35rem" />
           </div>`;
@@ -3377,7 +3362,6 @@ async function renderDiscordChannels() {
       return renderSettingField("vip", "vip", { ...field, key: field.key });
     }).join("") || `<div class="empty">No VIP settings</div>`;
     body = `
-      <p class="discord-intro">Players with the VIP role claim via quick chat (default <code>I need water</code>). Kit id defaults to <code>vipkit</code>.</p>
       <div class="card"><div class="feed-field-grid">${vipFields}</div></div>`;
   } else {
     saveAction = "saveCommands";
@@ -3398,7 +3382,6 @@ async function renderDiscordChannels() {
           </div>`).join("")}
       </div>`).join("") || `<div class="card"><div class="empty">No slash commands registered</div></div>`;
     body = `
-      <p class="discord-intro">Disable a command to block it immediately. Homes / TPR / giveaway extras apply when saved. Discord’s command list only updates after <code>npm run register-commands</code>.</p>
       <div class="cmd-catalog">${commandBlocks}</div>`;
   }
 
@@ -3457,7 +3440,6 @@ async function renderServerCommands() {
       <div class="actions-grid">
         <div class="card">
           <h3>Give kit</h3>
-          <p class="card-desc">Grant a panel or server kit to the player above.</p>
           <label class="field-label" for="cmdKitId">Kit</label>
           <select id="cmdKitId">${kitOpts}</select>
           <button class="primary" data-action="cmdGiveKit">Give kit</button>
@@ -3465,7 +3447,6 @@ async function renderServerCommands() {
 
         <div class="card">
           <h3>Rank</h3>
-          <p class="card-desc">VIP uses kit <code>vipkit</code>. Mod / Owner use vanilla auth.</p>
           <label class="field-label" for="cmdRank">Rank</label>
           <select id="cmdRank">${rankOpts}</select>
           <div class="cmd-actions">
@@ -3480,7 +3461,6 @@ async function renderServerCommands() {
           <h3>Events</h3>
           <span class="pill info plain">RCON presets</span>
         </div>
-        <p class="card-desc">Call world events on the live server. Some need console / plugin support.</p>
         <div class="event-grid">${eventBtns}</div>
         ${customRconRow}
       </div>
@@ -3513,7 +3493,7 @@ async function renderProfiles() {
       <td data-label="Actions" class="actions">
         <button data-action="viewPlayer" data-ign="${esc(p.ign)}">Open</button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No dossiers yet<span class="empty-hint">Open a player from Online, or search an IGN below</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No dossiers yet</div></td></tr>`;
 
   return `
     <div class="card">
@@ -3521,7 +3501,6 @@ async function renderProfiles() {
         <h3>Player dossiers</h3>
         <span class="pill info">${(data.profiles || []).length}</span>
       </div>
-      <p class="card-desc">Search staff notes by IGN, tag, or note text. Open anyone online from the Online tab.</p>
       <div class="form-row" style="margin-bottom:.85rem">
         <input id="profileSearch" placeholder="Search IGN / tag / note…" value="${esc(q)}" />
         <button class="primary" data-action="searchProfiles">Search</button>
@@ -4337,7 +4316,7 @@ function mapPlayerHudHtml(players) {
 function kitDraftRowsHtml() {
   const items = state.kitDraft.items || [];
   if (!items.length) {
-    return `<div class="empty" style="padding:2rem 1rem">No items selected<span class="empty-hint">Click items below to add them</span></div>`;
+    return `<div class="empty" style="padding:2rem 1rem">No items selected</div>`;
   }
   return items.map((row, idx) => `
     <div class="kit-picked-row">
@@ -4368,7 +4347,7 @@ function kitCatalogHtml(catalog) {
   }
   const shown = rows.slice(0, 200);
   if (!shown.length) {
-    return `<div class="empty" style="padding:2rem 1rem">No matches<span class="empty-hint">Try different keywords</span></div>`;
+    return `<div class="empty" style="padding:2rem 1rem">No matches</div>`;
   }
   return shown.map((i) => `
     <button type="button" class="kit-item" data-action="kitAddItem" data-id="${esc(i.id)}" data-name="${esc(i.name)}">
@@ -4508,7 +4487,7 @@ async function renderKits() {
         <button data-action="giveKit" data-id="${esc(k.id)}" data-source="panel">Give</button>
         <button class="danger" data-action="delKit" data-id="${esc(k.id)}">Delete</button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No panel kits yet<span class="empty-hint">Create a custom bundle with Create kit</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No panel kits yet</div></td></tr>`;
 
   const serverRows = (data.serverKits || []).map((k) => {
     const itemPreview = (k.items || []).length
@@ -4524,7 +4503,7 @@ async function renderKits() {
         <button class="danger" data-action="delServerKit" data-id="${esc(k.id)}">Delete</button>
       </td>
     </tr>`;
-  }).join("") || `<tr><td colspan="3"><div class="empty">${data.serverError ? esc(data.serverError) : "No in-game kits returned from RCON (kit list). Make sure KitManager is installed and RCON is online."}${data.serverRaw ? `<span class="empty-hint">Raw: ${esc(data.serverRaw)}</span>` : ""}</div></td></tr>`;
+  }).join("") || `<tr><td colspan="3"><div class="empty">${data.serverError ? esc(data.serverError) : "No in-game kits returned from RCON (kit list). Make sure KitManager is installed and RCON is online."}${data.serverRaw ? `` : ""}</div></td></tr>`;
 
   const cats = (catalog.categories || ["All"]).map((c) =>
     `<button type="button" data-action="kitCategory" data-cat="${esc(c)}" class="${state.kitDraft.category === c ? "active" : ""}">${esc(c)}</button>`
@@ -4564,7 +4543,7 @@ async function renderKits() {
              alt="${esc(i.item)}" />
         <strong>${esc(nameOf(i.item))}</strong>
         <div class="meta">${esc(i.item)}${i.container ? ` · ${esc(i.container)}` : ""}</div>
-      </div>`).join("") || `<div class="empty" style="grid-column:1/-1;padding:2rem 1rem">No items in this kit<span class="empty-hint">Add one below, or create it in-game</span></div>`;
+      </div>`).join("") || `<div class="empty" style="grid-column:1/-1;padding:2rem 1rem">No items in this kit</div>`;
 
     modalBlock = `
       <div class="kit-modal-backdrop" data-action="closeServerKit">
@@ -4613,7 +4592,7 @@ async function renderKits() {
               <p class="kit-modal-eyebrow">Panel kit bundle</p>
               <h3>${editing ? esc(d.label || d.id) : "Create kit"}</h3>
               <p class="muted" style="font-family:var(--mono);font-size:.68rem;margin:.45rem 0 0">
-                ${d.items.length} item${d.items.length === 1 ? "" : "s"} · granted with inventory.giveto
+                ${d.items.length} item${d.items.length === 1 ? "" : "s"}
               </p>
             </div>
             <div class="actions">
@@ -4631,14 +4610,12 @@ async function renderKits() {
               </div>
               <div class="form-grid" style="grid-template-columns: 1fr 1fr">
                 <div>
-                  <p class="kit-modal-add-label">Claim phrase (quick chat)</p>
+                  <p class="kit-modal-add-label">Claim phrase</p>
                   <input id="kitClaimPhrase" placeholder="e.g. boom kit|need boom" value="${esc(d.claimPhrase || "")}" />
-                  <p class="hint" style="margin:.35rem 0 0">Empty = not claimable via quick chat. Use | for aliases.</p>
                 </div>
                 <div>
-                  <p class="kit-modal-add-label">Required Discord role</p>
+                  <p class="kit-modal-add-label">Discord role</p>
                   <select id="kitClaimRole">${roleOptions}</select>
-                  <p class="hint" style="margin:.35rem 0 0">Optional. Role-gated claims need a linked IGN.</p>
                 </div>
               </div>
               <div>
@@ -4668,10 +4645,8 @@ async function renderKits() {
       <div class="kit-lock-banner ${locks.enabled ? "is-locked" : "is-open"}">
         <div>
           <span class="pill ${locks.enabled ? "warn" : "info"}">${locks.enabled ? "Locked" : "Open"}</span>
-          <h4 style="margin:.55rem 0 .2rem">${locks.enabled ? "Quick-chat claims are paused" : "Players can claim kits"}</h4>
-          ${locks.enabled
-            ? `<p>Selected kits cannot be claimed in-game until you end the lock.${hoursLeft != null ? ` About ${hoursLeft}h left.` : ""} Staff Give still works.</p>`
-            : ""}
+          <h4 style="margin:.55rem 0 .2rem">${locks.enabled ? "Claims locked" : "Claims open"}</h4>
+          ${locks.enabled && hoursLeft != null ? `<p>${hoursLeft}h left</p>` : ""}
         </div>
         <div class="actions">
           ${locks.enabled
@@ -4681,7 +4656,7 @@ async function renderKits() {
       </div>
       <div class="kit-lock-step">
         <h4>1 · Kits to pause</h4>
-        <p class="hint" style="margin:0 0 .65rem">${claimable.length ? "Showing kits that have a claim phrase." : "No claim phrases yet — showing all panel kits."}</p>
+        ${claimable.length ? "" : `<p class="hint" style="margin:0 0 .65rem">No claim phrases yet.</p>`}
         <div style="display:grid;gap:.45rem;max-height:220px;overflow:auto;padding-right:.25rem">${lockChecks}</div>
       </div>
       <div class="kit-lock-step">
@@ -4703,10 +4678,6 @@ async function renderKits() {
       <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap">
         <div>
           <h3 style="margin:0">In-game kits (server)</h3>
-          <p class="muted" style="font-family:var(--mono);font-size:.72rem;margin:.35rem 0 0">
-            Live list from RCON <code>${esc(serverEndpoint)}</code> (<code>kit list</code>).
-            Open a kit to see items with icons.
-          </p>
         </div>
         <button data-action="refreshServerKits">Resync from server</button>
       </div>
@@ -4717,9 +4688,6 @@ async function renderKits() {
       <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap">
         <div>
           <h3 style="margin:0">Panel kit bundles</h3>
-          <p class="muted" style="font-family:var(--mono);font-size:.72rem;margin:.35rem 0 0">
-            Custom bundles granted with <code>inventory.giveto</code>. Set a claim phrase for quick-chat redeem.
-          </p>
         </div>
         <button class="primary" data-action="openKitBuilder">Create kit</button>
       </div>
@@ -4829,9 +4797,9 @@ async function renderKeys() {
   const created = secret
     ? `<div class="card" style="border-color:rgba(94,217,160,.35)">
         <h3>Copy this key now</h3>
-        <p class="muted" style="margin:0 0 .65rem">Shown once. Send it to your staff — they sign in on this panel with it.</p>
+        <p class="muted" style="margin:0 0 .65rem">Shown once.</p>
         <code style="display:block;word-break:break-all;font-family:var(--mono);font-size:.85rem;padding:.85rem;background:rgba(0,0,0,.45);border:1px solid var(--line)">${esc(secret)}</code>
-        <p class="muted" style="margin:.65rem 0 0">Label: <strong>${esc(createdLabel)}</strong></p>
+        <p class="muted" style="margin:.65rem 0 0">${esc(createdLabel)}</p>
       </div>`
     : "";
 
@@ -4859,7 +4827,7 @@ async function renderKeys() {
           ${perms.map((p) => {
             const meta = PERM_META[p] || { label: p, hint: "" };
             const on = Boolean(defaults[p]);
-            return `<button type="button" class="perm-chip${on ? " on" : ""}" data-action="togglePerm" data-perm="${esc(p)}" aria-pressed="${on ? "true" : "false"}" title="${esc(meta.hint)}">${esc(meta.label)}<small>${esc(meta.hint)}</small></button>`;
+            return `<button type="button" class="perm-chip${on ? " on" : ""}" data-action="togglePerm" data-perm="${esc(p)}" aria-pressed="${on ? "true" : "false"}">${esc(meta.label)}</button>`;
           }).join("")}
         </div>
       </div>`).join("");
@@ -4872,11 +4840,6 @@ async function renderKeys() {
     ${created}
     <div class="card">
       <h3>Create staff key</h3>
-      <p class="card-desc">
-        ${saas
-          ? "One key per person. Start from a preset, tweak chips if you want, then generate. They sign in on this panel URL under Staff — never billing or key management."
-          : "Start from a preset, tweak chips, then generate. Staff keys can never manage keys or view audit logs."}
-      </p>
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:1rem">
         <span class="muted" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;margin-right:.25rem">Preset</span>
         ${presetBtns}
@@ -4905,7 +4868,7 @@ async function renderReports() {
       <td data-label="Size"><span class="pill bad">${g.size}/${g.max}</span></td>
       <td data-label="Team ID">#${esc(g.teamId)}</td>
       <td data-label="Members">${(g.members || []).map((n) => esc(n)).join(", ")}</td>
-    </tr>`).join("") || `<tr><td colspan="4"><div class="empty">No group alerts yet<span class="empty-hint">Groups will trigger alerts when large teams form</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="4"><div class="empty">No group alerts yet</div></td></tr>`;
 
   const combatRows = (data.combat || []).map((c) => `
     <tr>
@@ -4913,7 +4876,7 @@ async function renderReports() {
       <td data-label="Killer"><strong>${esc(c.killer)}</strong></td>
       <td data-label="Victim">${esc(c.victim)}</td>
       <td data-label="Weapon">${esc(c.weapon || "—")}${c.headshot ? " · HS" : ""}</td>
-    </tr>`).join("") || `<tr><td colspan="4"><div class="empty">No combat events yet<span class="empty-hint">Waiting for PvP kills to track</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="4"><div class="empty">No combat events yet</div></td></tr>`;
 
   return `
     <div class="section-stack">
@@ -5000,7 +4963,7 @@ async function renderLogs() {
       <td data-label="Action"><code>${esc(e.action)}</code></td>
       <td data-label="Source"><span class="log-source ${esc(e.source)}">${esc(e.source)}</span></td>
       <td data-label="Detail" class="log-detail muted">${formatLogDetail(e.detail)}</td>
-    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No log entries yet<span class="empty-hint">Panel actions and system events will show here</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No log entries yet</div></td></tr>`;
 
   return `
     <div class="card">
@@ -5008,7 +4971,6 @@ async function renderLogs() {
         <h3>Logs</h3>
         <span class="pill info">${merged.length} entries</span>
       </div>
-      <p class="card-desc">Panel actions and system audit in one place. Detail chips stay wrapped so the table doesn’t blow out.</p>
       <div class="table-wrap"><table class="table">
         <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Source</th><th>Detail</th></tr></thead>
         <tbody>${rows}</tbody>
@@ -5045,7 +5007,7 @@ async function renderBans() {
           ${!inactive && can("ban") ? `<button class="danger" data-action="unban" data-ign="${esc(b.ign)}">Unban</button>` : `<span class="muted">${esc(b.source || "")}</span>`}
         </td>
       </tr>`;
-    }).join("") || `<tr><td colspan="6"><div class="empty">${inactive ? "No past bans" : "No active bans"}<span class="empty-hint">${inactive ? "Past bans keep their original reason here" : "Click Sync from server if players were banned outside the panel"}</span></div></td></tr>`;
+    }).join("") || `<tr><td colspan="6"><div class="empty">${inactive ? "No past bans" : "No active bans"}</div></td></tr>`;
   }
 
   return `
@@ -5057,7 +5019,6 @@ async function renderBans() {
           <button data-action="syncBans" style="padding:.3rem .6rem;font-size:.72rem">Sync from server</button>
         </div>
       </div>
-      <p class="card-desc"><strong>Banned by</strong> is the staff key label or owner name from the panel. Synced game-banlist entries may show “Server banlist” when the actor isn’t known.</p>
       <div class="table-wrap"><table class="table">
         <thead><tr><th>Player</th><th>Reason</th><th>Banned by</th><th>Banned</th><th>Expires</th><th></th></tr></thead>
         <tbody>${banRows(bans)}</tbody>
@@ -5088,7 +5049,6 @@ async function renderBans() {
         <h3>Ban history</h3>
         <span class="pill info">${history.length}</span>
       </div>
-      <p class="card-desc">Past bans with who issued them and who unbanned (when known).</p>
       <div class="table-wrap"><table class="table">
         <thead><tr><th>Player</th><th>Reason</th><th>Banned by</th><th>Banned</th><th>Unbanned</th><th></th></tr></thead>
         <tbody>${banRows(history.slice(0, 50), { inactive: true })}</tbody>
@@ -5122,7 +5082,7 @@ async function renderEvents() {
         ` : ""}
       </td>
     </tr>`;
-  }).join("") || `<tr><td colspan="7"><div class="empty">No scheduled events<span class="empty-hint">Create automated tasks below</span></div></td></tr>`;
+  }).join("") || `<tr><td colspan="7"><div class="empty">No scheduled events</div></td></tr>`;
   
   return `
     <div class="card">
@@ -5130,7 +5090,6 @@ async function renderEvents() {
         <h3>Scheduled Events</h3>
         <span class="pill info">${events.length} events</span>
       </div>
-      <p class="card-desc">Automate RCON commands on a schedule - restarts, announcements, cleanup, and more.</p>
       <div class="table-wrap"><table class="table">
         <thead><tr><th>Name</th><th>Command</th><th>Schedule</th><th>Status</th><th>Next Run</th><th>Runs</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
@@ -5276,7 +5235,6 @@ async function renderServers() {
         <h3>${esc(org.name || "Your workspace")}</h3>
         <p class="muted" style="margin:.35rem 0 0">Plan <strong>${esc(org.plan || "basic")}</strong> · ${esc(org.planStatus || "—")}</p>
       </div>
-      <p class="muted" style="margin:0;font-size:.78rem">Staff keys are on the next tab.</p>
     </div>
     <div class="ws-grid">
       <section class="card ws-panel">
@@ -5286,20 +5244,17 @@ async function renderServers() {
         </div>
         <div class="ws-panel-body">
         ${guildLinked ? `
-          <p class="muted" style="margin:0">Guild <code>${esc(org.guildId)}</code>. Bot handles kill feeds, population, and slash commands.</p>
+          <p class="muted" style="margin:0">Guild <code>${esc(org.guildId)}</code></p>
           <p style="margin:0">
             <a href="${esc(inviteUrl)}" target="_blank" rel="noopener" style="color:var(--chrome)">Re-invite bot</a>
-            <span class="muted"> if it was kicked.</span>
           </p>
         ` : `
-          <p class="card-desc">Invite the Usely bot (Manage Server required), then paste the guild ID if it doesn’t auto-link.</p>
           <a class="primary" href="${esc(inviteUrl)}" target="_blank" rel="noopener"
             style="display:inline-flex;text-decoration:none">Invite Discord bot</a>
           <div class="form-row" style="grid-template-columns:1fr auto;gap:.5rem">
             <input id="saasGuildId" placeholder="Discord guild ID" />
             <button type="button" class="primary" data-action="saasLinkGuild">Link</button>
           </div>
-          <p class="muted" style="margin:0;font-size:.75rem">Server Settings → Widget, or right-click the server with Developer Mode on.</p>
         `}
         </div>
       </section>
@@ -5309,7 +5264,6 @@ async function renderServers() {
           <span class="ws-status ${servers.length ? "ok" : "warn"}"><span class="dot"></span>${servers.length ? `${servers.length} connected` : "None yet"}</span>
         </div>
         <div class="ws-panel-body">
-        <p class="card-desc">Nitrado → Settings → WebRCON. Host is IP only; port is the RCON port.</p>
         <div class="table-wrap"><table class="table">
           <thead><tr><th>Server</th><th>Status</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
@@ -5395,7 +5349,6 @@ async function renderWipe() {
       <input type="checkbox" data-wipe-step="${esc(s.id)}" ${s.enabled !== false ? "checked" : ""} ${canRun ? "" : "disabled"} />
       <span class="wipe-copy">
         <b>${esc(s.label)}</b>
-        <span>${esc(s.hint || "")}</span>
       </span>
     </label>
   `).join("");
@@ -5410,7 +5363,6 @@ async function renderWipe() {
         <h3>Run wipe</h3>
         ${last?.at ? `<span class="pill info">${esc(new Date(last.at).toLocaleString())}</span>` : `<span class="pill">Never run</span>`}
       </div>
-      <p class="card-desc">Resets bot-side wipe data. Does not wipe the Nitrado map.</p>
       <div class="wipe-list">${rows}</div>
       ${canRun ? `
       <div class="wipe-actions">
@@ -5420,7 +5372,7 @@ async function renderWipe() {
       </div>
       <label class="wipe-auto">
         <input type="checkbox" id="wipeAutoSchedule" ${data.autoRunOnSchedule ? "checked" : ""} />
-        <span class="wipe-copy"><b>Auto-run at countdown</b><span>When wipe time hits zero</span></span>
+        <span class="wipe-copy"><b>Auto-run at countdown</b></span>
       </label>
       ` : `<p class="hint">Need stats-reset permission to run this.</p>`}
       ${lastBits ? `<div class="wipe-last"><span class="hint" style="margin:0">Last:</span>${lastBits}</div>` : ""}
@@ -5428,7 +5380,6 @@ async function renderWipe() {
 
     <div class="card" style="margin-top:1rem;max-width:640px">
       <div class="card-head"><h3>Countdown</h3><span class="pill">${esc(o.stats?.wipe || "—")}</span></div>
-      <p class="card-desc">Status channel rename. Current: ${esc(wipeLabel)}</p>
       <div class="form-row" style="margin-top:0">
         <input id="wipeAtInput" type="datetime-local" value="${esc(o.wipe?.localInput || "")}" />
         <button class="primary" data-action="saveWipe">Save</button>

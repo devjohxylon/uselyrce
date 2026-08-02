@@ -8,6 +8,14 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Tighter docs, changelog, and panel copy",
+    changes: [
+      { type: "changed", text: "Docs and changelog use month/topic accordions instead of one long scroll." },
+      { type: "changed", text: "Panel labels and fields drop the extra helper paragraphs — titles and placeholders stay." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Staff Discord commands and clearer kit locks",
     changes: [
       { type: "added", text: "New staff Discord commands: <code>/kit</code> (list, give, locks), <code>/player</code> (lookup, tp), and <code>/bans list</code> — with clear embeds." },
@@ -224,26 +232,50 @@ function formatDate(iso) {
   });
 }
 
-export function renderEntries() {
-  return entries
-    .map(
-      (entry) => `      <article class="entry">
-        <div class="when">
-          <time datetime="${entry.date}">${formatDate(entry.date)}</time>
-        </div>
-        <div class="what">
-          <h2>${entry.title}</h2>
-          <ul>
+function formatMonth(ym) {
+  return new Date(`${ym}-01T12:00:00Z`).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function renderEntry(entry) {
+  return `        <article class="entry">
+          <p class="entry-date"><time datetime="${entry.date}">${formatDate(entry.date)}</time></p>
+          <div class="what">
+            <h2 class="entry-title">${entry.title}</h2>
+            <ul>
 ${entry.changes
   .map(
-    (change) => `            <li><span class="tag ${change.type}">${
+    (change) => `              <li><span class="tag ${change.type}">${
       TYPE_LABEL[change.type] ?? change.type
     }</span><span>${change.text}</span></li>`,
   )
   .join("\n")}
-          </ul>
+            </ul>
+          </div>
+        </article>`;
+}
+
+/** Month accordion — one open at a time via data-acc in the page shell. */
+export function renderEntries() {
+  /** @type {Map<string, typeof entries>} */
+  const byMonth = new Map();
+  for (const entry of entries) {
+    const ym = entry.date.slice(0, 7);
+    if (!byMonth.has(ym)) byMonth.set(ym, []);
+    byMonth.get(ym).push(entry);
+  }
+
+  return [...byMonth.entries()]
+    .map(
+      ([ym, list], i) => `      <details${i === 0 ? " open" : ""}>
+        <summary>${formatMonth(ym)}<span class="acc-meta"><span class="acc-count">${list.length} update${list.length === 1 ? "" : "s"}</span></span></summary>
+        <div class="month-body">
+${list.map(renderEntry).join("\n")}
         </div>
-      </article>`,
+      </details>`,
     )
     .join("\n");
 }
