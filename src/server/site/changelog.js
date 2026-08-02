@@ -11,8 +11,8 @@ export const entries = [
     title: "Tighter docs, changelog, and panel copy",
     changes: [
       { type: "changed", text: "Docs are a full setup and product guide with a sticky table of contents — from checkout and WebRCON through Discord channels, kits, staff keys, and wipe day." },
-      { type: "changed", text: "Admin panel and sign-in match the slag-copper marketing theme." },
-      { type: "changed", text: "Marketing site theme: graphite + copper accents, sharper motion on load, hover, and scroll." },
+      { type: "changed", text: "Admin panel and sign-in match the sky-blue marketing theme." },
+      { type: "changed", text: "Marketing site theme: graphite + sky-blue accents, sharper motion on load, hover, and scroll." },
       { type: "changed", text: "Changelog, FAQ, pricing, contact, and status each use a distinct layout instead of the same hero template." },
       { type: "changed", text: "Panel labels and fields drop the extra helper paragraphs — titles and placeholders stay." },
     ],
