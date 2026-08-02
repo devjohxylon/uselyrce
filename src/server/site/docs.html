@@ -5,7 +5,7 @@
   <style>
     .docs {
       display: grid;
-      grid-template-columns: 11.5rem minmax(0, 1fr);
+      grid-template-columns: 12rem minmax(0, 1fr);
       gap: 3.5rem;
       align-items: start;
       padding-bottom: clamp(3rem, 8vh, 5rem);
@@ -16,15 +16,17 @@
       position: sticky;
       top: 1.5rem;
       display: grid;
-      gap: .15rem;
+      gap: .1rem;
       padding-top: .15rem;
+      max-height: calc(100vh - 2.5rem);
+      overflow: auto;
     }
     .toc .label { margin: 0 0 .65rem; }
     .toc a {
       color: var(--muted);
-      font-size: .8125rem;
+      font-size: .8rem;
       line-height: 1.35;
-      padding: .4rem 0 .4rem .85rem;
+      padding: .38rem 0 .38rem .85rem;
       border-left: 1px solid var(--line);
       transition: color .15s ease, border-color .15s ease;
     }
@@ -36,22 +38,29 @@
 
     .doc-body {
       min-width: 0;
-      max-width: 42rem;
+      max-width: 44rem;
       display: grid;
-      gap: 2.75rem;
+      gap: 3rem;
     }
     .doc-body section { scroll-margin-top: 1.5rem; }
     .doc-body h2 {
-      margin: 0 0 .85rem;
-      font-size: 1.35rem;
+      margin: 0 0 .9rem;
+      font-size: 1.4rem;
       font-weight: 600;
       letter-spacing: -.02em;
       line-height: 1.2;
     }
     .doc-body h3 {
-      margin: 1.35rem 0 .45rem;
-      font-size: .95rem;
+      margin: 1.6rem 0 .55rem;
+      font-size: 1.02rem;
       font-weight: 600;
+    }
+    .doc-body h3:first-child { margin-top: 0; }
+    .doc-body h4 {
+      margin: 1.15rem 0 .4rem;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--chrome);
     }
     .doc-body p,
     .doc-body li {
@@ -59,31 +68,69 @@
       font-size: .95rem;
       line-height: 1.7;
     }
-    .doc-body p { margin: 0 0 .75rem; }
+    .doc-body p { margin: 0 0 .85rem; }
     .doc-body p:last-child,
     .doc-body ul:last-child,
     .doc-body ol:last-child,
-    .doc-body dl:last-child { margin-bottom: 0; }
+    .doc-body dl:last-child,
+    .doc-body table:last-child { margin-bottom: 0; }
     .doc-body ul,
-    .doc-body ol { margin: 0 0 .75rem; padding-left: 1.15rem; }
-    .doc-body li { margin-bottom: .35rem; }
+    .doc-body ol { margin: 0 0 .85rem; padding-left: 1.2rem; }
+    .doc-body li { margin-bottom: .4rem; }
     .doc-body li strong { color: var(--text); font-weight: 600; }
     .doc-body a { color: var(--chrome); text-decoration: underline; text-underline-offset: 2px; }
 
-    .doc-body dl { margin: 0 0 .75rem; }
+    .doc-body dl { margin: 0 0 .85rem; }
     .doc-body dt {
-      margin-top: .85rem;
+      margin-top: .95rem;
       font-size: .9rem;
       font-weight: 600;
       color: var(--text);
     }
     .doc-body dt:first-child { margin-top: 0; }
     .doc-body dd {
-      margin: .2rem 0 0;
+      margin: .25rem 0 0;
       color: var(--muted);
       font-size: .925rem;
-      line-height: 1.6;
+      line-height: 1.65;
     }
+
+    .doc-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 1rem;
+      font-size: .875rem;
+    }
+    .doc-body th,
+    .doc-body td {
+      text-align: left;
+      padding: .55rem .65rem;
+      border-top: 1px solid var(--line);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    .doc-body th {
+      color: var(--chrome-dim);
+      font-family: var(--mono);
+      font-size: .68rem;
+      font-weight: 500;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      border-top: 0;
+    }
+    .doc-body td { color: var(--muted); }
+    .doc-body td strong { color: var(--text); font-weight: 600; }
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 2px solid var(--chrome-dim);
+      border-radius: var(--radius);
+      background: var(--bg2);
+      padding: 1rem 1.15rem;
+      margin: 1.1rem 0;
+    }
+    .callout p { margin: 0; font-size: .9rem; }
+    .callout strong { color: var(--text); }
 
     @media (max-width: 900px) {
       .docs { grid-template-columns: 1fr; gap: 1.75rem; }
@@ -93,6 +140,7 @@
         flex-wrap: nowrap;
         gap: 0;
         overflow-x: auto;
+        max-height: none;
         padding-bottom: .35rem;
         margin: 0 -.25rem;
         -webkit-overflow-scrolling: touch;
@@ -116,112 +164,345 @@
     <section class="page-hero">
       <p class="label">Documentation</p>
       <h1>Docs</h1>
-      <p>Setup, servers, kits, Discord, and billing.</p>
+      <p>How Usely works, how to finish setup, and how to run your Rust Console server from the panel and Discord.</p>
     </section>
 
     <div class="docs">
       <nav class="toc" aria-label="On this page">
         <p class="label">On this page</p>
-        <a href="#how-it-works">How it works</a>
-        <a href="#workspace">Create workspace</a>
-        <a href="#connect">Connect a server</a>
-        <a href="#players">Players</a>
-        <a href="#kits">Kits</a>
+        <a href="#overview">Overview</a>
+        <a href="#requirements">What you need</a>
+        <a href="#get-started">Get started</a>
+        <a href="#signin">Signing in</a>
+        <a href="#panel">The panel</a>
+        <a href="#webrcon">WebRCON</a>
         <a href="#discord">Discord bot</a>
-        <a href="#staff">Staff</a>
-        <a href="#multi">Multiple servers</a>
-        <a href="#billing">Billing</a>
+        <a href="#channels">Channels &amp; feeds</a>
+        <a href="#kits">Kits</a>
+        <a href="#linking">Account linking</a>
+        <a href="#staff">Staff keys</a>
+        <a href="#wipe">Wipe day</a>
+        <a href="#plans">Plans &amp; billing</a>
         <a href="#troubleshooting">Troubleshooting</a>
       </nav>
 
       <article class="doc-body">
-        <section id="how-it-works">
-          <h2>How it works</h2>
-          <p>Usely is hosted. You add WebRCON once; we keep the connection for the panel and Discord bot.</p>
+        <section id="overview">
+          <h2>Overview</h2>
+          <p>Usely is a hosted admin panel and Discord bot for <strong>Rust Console Edition</strong>. You never install plugins or upload files to your game server. Instead you give Usely your host’s <strong>WebRCON</strong> details once, and we hold an outbound connection that powers:</p>
           <ul>
-            <li><strong>Panel</strong> — players, kits, bans, RCON.</li>
-            <li><strong>Discord bot</strong> — feeds, pop channels, staff tools.</li>
-            <li><strong>Workspace</strong> — your servers and billing at <code>*.usely.dev</code>.</li>
+            <li><strong>The web panel</strong> — live players, kits, bans, broadcasts, wipe tools, and a raw RCON console at your own address (for example <code>myserver.usely.dev</code>).</li>
+            <li><strong>The Discord bot</strong> — killfeeds, join/leave, game events, population and wipe countdown channel names, VIP claims, and staff slash commands.</li>
+            <li><strong>Your workspace</strong> — billing, staff keys, and one or more WebRCON servers under one plan.</li>
           </ul>
+          <p>Usely is in <strong>public beta</strong>. Features ship often. If something breaks, <a href="/contact?topic=bug">report a bug</a> and include your panel address.</p>
+          <table>
+            <thead>
+              <tr><th>URL</th><th>What it’s for</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>www.usely.dev</code></td><td>Marketing site, pricing, docs, signup</td></tr>
+              <tr><td><code>app.usely.dev</code></td><td>App host and <a href="https://app.usely.dev/demo">interactive demo</a></td></tr>
+              <tr><td><code>yourslug.usely.dev</code></td><td>Your workspace panel (owner + staff login)</td></tr>
+              <tr><td><code>yourslug.usely.dev/status</code></td><td>Public Discord / WebRCON health for that workspace</td></tr>
+            </tbody>
+          </table>
         </section>
 
-        <section id="workspace">
-          <h2>Create your workspace</h2>
+        <section id="requirements">
+          <h2>What you need</h2>
+          <ul>
+            <li>A Rust Console Edition server whose host exposes <strong>WebRCON</strong> (IP or hostname, port, and password). Nitrado and similar hosts show this under remote console / RCON settings.</li>
+            <li>A Discord server where you have <strong>Manage Server</strong> (to invite the bot).</li>
+            <li>A card for Stripe checkout (monthly billing).</li>
+          </ul>
+          <div class="callout">
+            <p><strong>WebRCON port ≠ game port.</strong> Players connect on the game port. Usely needs the separate WebRCON port from your host panel. If you’re unsure which is which, ask your host’s support.</p>
+          </div>
+        </section>
+
+        <section id="get-started">
+          <h2>Get started</h2>
+          <p>Usely is buy-first: you pick a plan, pay, then finish setup from an emailed link. That keeps signup to one path.</p>
+
+          <h3>1. Choose a plan and pay</h3>
           <ol>
-            <li>Pick a plan on <a href="/pricing">pricing</a> and pay.</li>
-            <li>Open the setup link from email (7 days).</li>
-            <li>Choose a panel address, owner password, Discord, and WebRCON.</li>
-            <li>Create staff keys under <strong>Workspace → Staff keys</strong>.</li>
+            <li>Open <a href="/pricing">Pricing</a> (or <a href="/signup">Signup</a>) and choose <strong>Basic</strong>, <strong>Pro</strong>, or <strong>Network</strong>.</li>
+            <li>Enter the owner email and continue to Stripe checkout.</li>
+            <li>After payment, we email a <strong>Finish setup</strong> link. It expires in <strong>seven days</strong>. You can resend it from the signup page if needed.</li>
           </ol>
-          <p>Pick an address you’ll keep — staff bookmarks depend on it.</p>
-        </section>
 
-        <section id="connect">
-          <h2>Connect a server</h2>
-          <dl>
-            <dt>Host</dt>
-            <dd>WebRCON IP or hostname.</dd>
-            <dt>Port</dt>
-            <dd>WebRCON port (not the game port).</dd>
-            <dt>Password</dt>
-            <dd>RCON password — stored encrypted.</dd>
-          </dl>
-          <p>Values come from your host’s control panel. Offline servers retry automatically.</p>
-        </section>
+          <h3>2. Finish setup (wizard)</h3>
+          <p>Open the link from the email. You’ll walk through three steps:</p>
 
-        <section id="players">
-          <h2>Players and moderation</h2>
+          <h4>Your workspace</h4>
           <ul>
-            <li>Kick / ban with a reason</li>
-            <li>Ban list + unban (including prior server bans)</li>
-            <li>Broadcast</li>
-            <li>Linked Discord accounts</li>
-            <li>Raw RCON console (separate permission)</li>
+            <li><strong>Community / workspace name</strong> — shown in the panel.</li>
+            <li><strong>Panel address</strong> — the subdomain staff will bookmark, like <code>astral.usely.dev</code>. Choose carefully; changing it later means everyone updates bookmarks.</li>
+            <li><strong>Owner password</strong> — at least 8 characters. This login controls billing and server credentials.</li>
           </ul>
+
+          <h4>Invite the Discord bot</h4>
+          <ul>
+            <li>Click invite and authorize the bot on your Discord (you need Manage Server).</li>
+            <li>Paste your <strong>Discord guild ID</strong> (Developer Mode → right-click the server → Copy Server ID) and link it.</li>
+          </ul>
+
+          <h4>Connect WebRCON</h4>
+          <ul>
+            <li><strong>Display name</strong> — label for this server in the panel header.</li>
+            <li><strong>RCON host</strong> — IP or hostname only (no <code>http://</code>).</li>
+            <li><strong>RCON port</strong> — WebRCON port from the host.</li>
+            <li><strong>RCON password</strong> — stored encrypted; never shown back in full.</li>
+          </ul>
+          <p>Setup tests the connection before finishing. When it succeeds, open your panel. On Pro/Network you can add more servers later under <strong>Workspace → Setup</strong>.</p>
+
+          <h3>3. First things after setup</h3>
+          <ol>
+            <li>Confirm the server shows online on <strong>Home → Overview</strong>.</li>
+            <li>Open <strong>Discord → Channels</strong> and assign at least Killfeed, Pop status, and Leaderboard if you use those features.</li>
+            <li>Create staff keys under <strong>Workspace → Staff keys</strong> for moderators.</li>
+            <li>Optionally set a wipe countdown under <strong>Server → Wipe</strong>.</li>
+          </ol>
         </section>
 
-        <section id="kits">
-          <h2>Kits</h2>
-          <p>Build kits from the Console item catalog. Players claim via quick-chat phrases you set. Kits are workspace-scoped.</p>
+        <section id="signin">
+          <h2>Signing in</h2>
+          <p>Always use <strong>your</strong> panel URL (<code>yourslug.usely.dev</code>), not the marketing site.</p>
+          <dl>
+            <dt>Owner</dt>
+            <dd>Email + password on the Owner tab. Use <strong>Forgot password?</strong> for a one-hour reset link. Owners manage billing, WebRCON servers, Discord guild link, staff keys, and audit logs.</dd>
+            <dt>Staff</dt>
+            <dd>Paste the full access key (<code>ask_…</code>) on the Staff tab. Keys are permission-scoped and never include billing or key management.</dd>
+          </dl>
+        </section>
+
+        <section id="panel">
+          <h2>The panel</h2>
+          <p>The left nav groups everything by job. Switch the active game server from the header when you have more than one.</p>
+
+          <table>
+            <thead>
+              <tr><th>Section</th><th>Tabs</th><th>What you do there</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Home</strong></td>
+                <td>Overview, Map</td>
+                <td>Connection health, pop / queue / FPS, who’s online, quick actions; live player map.</td>
+              </tr>
+              <tr>
+                <td><strong>Players</strong></td>
+                <td>Find, Profiles, Links, Bans, Reports</td>
+                <td>Search and moderate players; staff notes; Discord ↔ IGN links; ban list; combat / trio alerts.</td>
+              </tr>
+              <tr>
+                <td><strong>Kits</strong></td>
+                <td>Kits</td>
+                <td>Server kits from RCON, panel kit builder, claim locks, give kits.</td>
+              </tr>
+              <tr>
+                <td><strong>Community</strong></td>
+                <td>Leaderboard, Automation, Events</td>
+                <td>Wipe leaderboards, repeating in-game messages, scheduled RCON jobs / events.</td>
+              </tr>
+              <tr>
+                <td><strong>Server</strong></td>
+                <td>Status, Wipe, Analytics</td>
+                <td>Live status, wipe countdown + automation checklist, pop/FPS charts.</td>
+              </tr>
+              <tr>
+                <td><strong>Actions</strong></td>
+                <td>—</td>
+                <td>Give kits, grant/revoke ranks (VIP / Mod / Owner), trigger world events.</td>
+              </tr>
+              <tr>
+                <td><strong>Discord</strong></td>
+                <td>Channels, Status, Feeds, VIP, Slash cmds</td>
+                <td>Map bot channels and tune feeds, VIP claims, and slash commands.</td>
+              </tr>
+              <tr>
+                <td><strong>Workspace</strong></td>
+                <td>Setup, Staff keys, Billing</td>
+                <td>Guild + WebRCON servers, access keys, Stripe (owner only).</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Advanced tools: <strong>RCON</strong> (raw console), <strong>Warps</strong>, and <strong>Logs</strong> (owner audit). Access to each area is controlled by staff key permissions.</p>
+        </section>
+
+        <section id="webrcon">
+          <h2>WebRCON</h2>
+          <p>Each connected server is one WebRCON endpoint. Usely keeps the socket alive, reconnects after restarts, and uses it for player lists, kicks/bans, kits, broadcasts, stats, and the console.</p>
+          <ul>
+            <li>Add or remove servers under <strong>Workspace → Setup</strong> (within your plan limit).</li>
+            <li>Mark a default server for the header switcher.</li>
+            <li>Private / local hosts are rejected — Usely must reach a public WebRCON endpoint.</li>
+            <li>Credentials are encrypted at rest. Staff keys never expose the password.</li>
+          </ul>
+          <p>If the connection drops, the panel shows the server offline and Usely retries. You don’t need to reconnect by hand after a wipe or host restart once the details are correct.</p>
         </section>
 
         <section id="discord">
           <h2>Discord bot</h2>
-          <p>Invite from <strong>Workspace → Setup</strong> (Manage Server required), then link the guild.</p>
+          <p>Every plan includes the bot. Invite or re-invite it from setup or <strong>Workspace → Setup</strong>. The panel keeps working if Discord is down — feeds simply pause.</p>
+          <p>Typical staff and community slash commands (enable/disable under <strong>Discord → Slash cmds</strong>):</p>
           <ul>
-            <li>Pop channel rename</li>
-            <li>Killfeed and other feeds</li>
-            <li>Slash commands</li>
+            <li><strong>Info:</strong> <code>/server</code>, <code>/players</code>, <code>/stats</code>, <code>/leaderboard</code></li>
+            <li><strong>Linking:</strong> <code>/link start</code>, <code>/link status</code>, <code>/link unlink</code> (staff can force-link from the panel or Discord)</li>
+            <li><strong>Teleports:</strong> <code>/home</code>, <code>/warp</code>, <code>/tpr</code> / <code>/tpa</code> / <code>/tpd</code> (need a linked IGN)</li>
+            <li><strong>Staff:</strong> <code>/rcon</code>, <code>/kit</code>, <code>/player</code>, <code>/bans</code>, moderation, tickets, giveaways, polls, announces</li>
           </ul>
-          <p>Panel stays up if the bot is offline.</p>
+          <p>After inviting, map channels under <strong>Discord → Channels</strong> or the bot has nowhere useful to post.</p>
+        </section>
+
+        <section id="channels">
+          <h2>Channels &amp; feeds</h2>
+          <p>Open <strong>Discord</strong> in the panel. Only set the channels you actually use.</p>
+
+          <h3>Channels</h3>
+          <table>
+            <thead>
+              <tr><th>Group</th><th>Slots</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Feeds</strong></td>
+                <td>Killfeed, Join / Leave, Game chat, Game events, Admin log, Reports / combat, Teleport log</td>
+              </tr>
+              <tr>
+                <td><strong>Status</strong></td>
+                <td>Pop status (channel rename), Wipe status (channel rename) — voice channels work well</td>
+              </tr>
+              <tr>
+                <td><strong>Community</strong></td>
+                <td>Mod log, Ticket log, Welcome, Staff alert</td>
+              </tr>
+              <tr>
+                <td><strong>Posts</strong></td>
+                <td>Leaderboard image, Announcements, Wipes, Events</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Pick a channel from the dropdown or paste a channel ID. Save when you’re done. Source badges show whether a value came from the panel or env defaults.</p>
+
+          <h3>Status displays</h3>
+          <p>Under <strong>Discord → Status</strong>, control how pop and wipe channel names look (online/max format, queue label, offline label, wipe prefixes like countdown / TBA / Wiped).</p>
+
+          <h3>Feeds</h3>
+          <p>Under <strong>Discord → Feeds</strong>, turn individual feeds on or off and tune killfeed options (compact PvP, NPC, animal, traps, natural deaths, suicides, streak callouts).</p>
+
+          <h3>VIP</h3>
+          <p>Under <strong>Discord → VIP</strong>: Discord role, kit id (often <code>vipkit</code>), claim phrase (default quick chat like <code>i need water</code>; use <code>|</code> for aliases), post-wipe lockout hours, and once-per-wipe limits. Players need the role and a linked IGN to claim.</p>
+        </section>
+
+        <section id="kits">
+          <h2>Kits</h2>
+          <p>Open <strong>Kits</strong>. There are two kinds:</p>
+
+          <h3>In-game kits (server)</h3>
+          <p>Pulled live from the game host via RCON (<code>kit list</code>). Resync when you change kits on the server. Give them from the kits page or <strong>Actions</strong>.</p>
+
+          <h3>Panel kit bundles</h3>
+          <p>Built in Usely from the Rust Console Edition item catalog:</p>
+          <ol>
+            <li>Click <strong>Create kit</strong>.</li>
+            <li>Set <strong>Kit ID</strong>, display name, and cooldown (minutes).</li>
+            <li>Optional <strong>Claim phrase</strong> — what players must say in quick chat (aliases with <code>|</code>).</li>
+            <li>Optional <strong>Discord role</strong> — only members with that role (and a linked IGN) can claim.</li>
+            <li>Add items from the catalog (or a custom shortname) and <strong>Save kit</strong>.</li>
+          </ol>
+          <p>Panel kits are workspace-scoped — available on every server under the workspace. Staff can still <strong>Give</strong> a kit even when claims are locked.</p>
+
+          <h3>Kit locks</h3>
+          <p>Use locks on wipe day to pause quick-chat claims for boom kits (or any claimable panel kits):</p>
+          <ol>
+            <li>Select which kits to pause.</li>
+            <li>Choose duration: 2 / 6 / 12 / 24 hours, custom hours, or until you end it.</li>
+            <li><strong>Start lock</strong> / <strong>End lock now</strong>.</li>
+          </ol>
+          <p>Staff can also manage locks from Discord with <code>/kit lock</code>, <code>/kit unlock</code>, and <code>/kit locks</code>.</p>
+        </section>
+
+        <section id="linking">
+          <h2>Account linking</h2>
+          <p>Linking ties a Discord user to an in-game name so homes, warps, TPR, VIP claims, and role-gated kits work.</p>
+          <ul>
+            <li>Player: join the server, then run <code>/link start &lt;IGN&gt;</code> in Discord while that IGN is online.</li>
+            <li>Check or remove: <code>/link status</code>, <code>/link unlink</code>.</li>
+            <li>Staff: <strong>Players → Links</strong> in the panel, or force-link from Discord staff commands.</li>
+          </ul>
         </section>
 
         <section id="staff">
-          <h2>Staff permissions</h2>
-          <p>Staff use access keys from <strong>Workspace → Staff keys</strong>. Permissions are checked per action. Billing and credentials stay on the owner login.</p>
+          <h2>Staff keys</h2>
+          <p>Open <strong>Workspace → Staff keys</strong> (owner only).</p>
+          <ol>
+            <li>Pick a preset (<strong>Helper</strong>, <strong>Moderator</strong>, or <strong>Admin</strong>) or toggle permission chips.</li>
+            <li>Give the key a label (for example <code>Mod — Alex</code>).</li>
+            <li><strong>Generate access key</strong> — copy the <code>ask_…</code> secret immediately; it’s shown once.</li>
+            <li>Staff open your panel URL → Staff tab → paste the key.</li>
+          </ol>
+          <p>Disable or revoke anytime. Permissions are checked on every action, not only at login. Keys never unlock billing, staff-key management, or owner audit logs.</p>
+          <p>Useful chips include Dashboard, Player list, Kick, Ban, Teleport, Broadcast, Raw RCON, Leaderboards, Wipe reset, Warps, Discord links, Edit kits, Kits/ranks/Discord, Auto messages, Scheduled jobs, and Combat reports.</p>
         </section>
 
-        <section id="multi">
-          <h2>Multiple servers</h2>
-          <p>Basic = 1, Pro = 2, Network = more. Switch servers from the panel header. Kits and staff keys are shared. Downgrade only after disconnecting extras.</p>
+        <section id="wipe">
+          <h2>Wipe day</h2>
+          <p>Open <strong>Server → Wipe</strong>.</p>
+
+          <h3>Countdown</h3>
+          <p>Set the wipe datetime and save. Usely renames your wipe-status Discord channel and can post reminders to the <strong>Wipes</strong> channel (falls back to Announcements) at 24 hours, 1 hour, and wipe time.</p>
+
+          <h3>Run wipe</h3>
+          <p>This resets <strong>Usely-tracked</strong> wipe data. It does <strong>not</strong> wipe the Nitrado / host map — you still do that in the host panel.</p>
+          <p>Checklist steps (all on by default): stats &amp; leaderboard, homes, TP cooldowns, kit cooldowns, VIP kit claims, kill streaks, group alerts, republish boards, clear countdown, announce.</p>
+          <ul>
+            <li><strong>Run wipe now</strong> — needs the Wipe reset permission.</li>
+            <li><strong>Auto-run at countdown</strong> — runs the checklist when the wipe time hits zero.</li>
+          </ul>
+          <p>Also consider starting a <strong>kit lock</strong> before wipe so boom kits aren’t claimed early.</p>
         </section>
 
-        <section id="billing">
-          <h2>Billing</h2>
-          <p>Monthly via Stripe. Change plan, payment method, invoices, and cancel from the panel. Upgrades apply immediately; cancel keeps access until period end.</p>
+        <section id="plans">
+          <h2>Plans &amp; billing</h2>
+          <table>
+            <thead>
+              <tr><th>Plan</th><th>Price</th><th>Servers</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Basic</strong></td><td>$20 / month</td><td>1</td></tr>
+              <tr><td><strong>Pro</strong></td><td>$49 / month</td><td>2</td></tr>
+              <tr><td><strong>Network</strong></td><td>$99 / month</td><td>More (high limit for multi-server networks)</td></tr>
+            </tbody>
+          </table>
+          <p>Every plan includes the panel and Discord bot. Kits and staff keys are shared across servers in the workspace. Switch the active server from the panel header.</p>
+          <p>Manage plan, payment method, invoices, and cancel from <strong>Workspace → Billing</strong> (Stripe Customer Portal). Upgrades apply immediately. Cancel stops future charges; access continues until the end of the period you paid for. If you downgrade below your current server count, disconnect the extras first.</p>
         </section>
 
         <section id="troubleshooting">
           <h2>Troubleshooting</h2>
-          <h3>Server offline</h3>
-          <p>Check WebRCON host, port, and password.</p>
-          <h3>Online but empty player list</h3>
-          <p>Usually nobody is on. If they are, confirm full RCON access on the host.</p>
-          <h3>Bot silent</h3>
-          <p>Confirm it’s in the server and can post / rename the assigned channels.</p>
+
+          <h3>Server shows offline</h3>
+          <p>Almost always host, port, or password. Confirm the port is WebRCON (not the game port). Re-enter the password if the host rotated it. If the host changed IPs, update the host field under <strong>Workspace → Setup</strong>.</p>
+
+          <h3>Online but nobody in the player list</h3>
+          <p>Usually the server is empty. If players are in-game, the RCON user may lack full console access — check permissions on the host.</p>
+
+          <h3>Discord bot silent</h3>
+          <p>Confirm the bot is still in the guild and can view, post, and (for pop/wipe) <strong>rename</strong> the channels you assigned. Re-invite from Workspace → Setup if it was kicked.</p>
+
           <h3>Staff can’t sign in</h3>
-          <p>They must use your panel URL and a full enabled <code>ask_…</code> key.</p>
-          <p>Still stuck? <a href="/faq">FAQ</a> or <a href="/contact">contact</a> with your panel address.</p>
+          <p>They must open <code>yourslug.usely.dev</code>, not www.usely.dev. Confirm the key is enabled and they paste the full <code>ask_…</code> string.</p>
+
+          <h3>Setup email expired</h3>
+          <p>Use <strong>Resend setup email</strong> on the signup page with the same owner email.</p>
+
+          <h3>Role-gated or VIP kit won’t claim</h3>
+          <p>Player must be online, linked (<code>/link start</code>), have the required Discord role, and not be blocked by kit lock / wipe lockout / cooldown.</p>
+
+          <h3>Something else</h3>
+          <p>Check the <a href="/faq">FAQ</a>, then <a href="/contact">contact us</a> with your panel address and what you were doing. Support: <code>support@inbound.usely.dev</code>.</p>
         </section>
       </article>
     </div>
@@ -247,7 +528,7 @@
           entries.forEach(function (entry) {
             if (entry.isIntersecting) setActive(entry.target.id);
           });
-        }, { rootMargin: "-20% 0px -65% 0px", threshold: 0 });
+        }, { rootMargin: "-18% 0px -68% 0px", threshold: 0 });
         sections.forEach(function (s) { if (s) io.observe(s); });
       }
       if (sections[0]) setActive(sections[0].id);

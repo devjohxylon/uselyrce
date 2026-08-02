@@ -10,7 +10,7 @@ export const entries = [
     date: "2026-08-02",
     title: "Tighter docs, changelog, and panel copy",
     changes: [
-      { type: "changed", text: "Docs use a sticky table of contents and normal page scroll instead of an accordion." },
+      { type: "changed", text: "Docs are a full setup and product guide with a sticky table of contents — from checkout and WebRCON through Discord channels, kits, staff keys, and wipe day." },
       { type: "changed", text: "Panel labels and fields drop the extra helper paragraphs — titles and placeholders stay." },
     ],
   },

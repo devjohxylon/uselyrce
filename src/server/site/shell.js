@@ -43,7 +43,7 @@ export const PAGES = {
     out: "docs.html",
     title: "Docs — Usely",
     description:
-      "How to set up Usely: create a workspace, connect a Rust Console server over WebRCON, build kits, invite the Discord bot, and map staff permissions.",
+      "How to set up Usely in detail: checkout, workspace wizard, WebRCON, Discord channels and feeds, kits, staff keys, wipe day, and billing.",
     nav: "docs",
     priority: "0.8",
     changefreq: "monthly",

@@ -254,7 +254,7 @@ export async function buildDemoFixtures() {
           id: "boom",
           label: "Boom",
           cooldownMinutes: 180,
-          claimPhrase: "boom kit|need boom",
+          claimPhrase: "i need wood|i need water",
           claimRoleId: "",
           items: [
             { item: "explosive.timed", amount: 2 },
