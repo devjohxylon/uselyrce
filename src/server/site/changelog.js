@@ -10,6 +10,7 @@ export const entries = [
     date: "2026-08-01",
     title: "Workspace setup and staff keys",
     changes: [
+      { type: "added", text: "Staff key presets — Helper, Moderator, and Admin — so you can grant sensible access in one click, then tweak." },
       { type: "changed", text: "Workspace Setup is a side-by-side Discord + servers layout; Staff keys use permission chips you can click to turn on or off." },
       { type: "changed", text: "Discord role maps for panel login are gone. Staff sign in with access keys on your panel URL; create and revoke them under <strong>Workspace → Staff keys</strong>." },
     ],

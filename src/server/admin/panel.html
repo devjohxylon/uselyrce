@@ -4539,6 +4539,38 @@ async function renderKeys() {
     ["Server", ["overview", "broadcast", "warps", "rcon"]],
     ["Community", ["serverCommands", "kits", "links", "stats", "automessages", "schedule", "reports", "statsReset"]],
   ];
+  const KEY_PRESETS = {
+    helper: {
+      label: "Helper",
+      hint: "Look around, kick, broadcast — no bans or RCON",
+      perms: {
+        overview: true, players: true, kick: true, ban: false, teleport: true,
+        broadcast: true, rcon: false, stats: true, statsReset: false, warps: false,
+        links: true, kits: false, serverCommands: false, automessages: false,
+        schedule: false, reports: true,
+      },
+    },
+    moderator: {
+      label: "Moderator",
+      hint: "Day-to-day mods: kick, ban, kits, reports — no RCON or wipe",
+      perms: {
+        overview: true, players: true, kick: true, ban: true, teleport: true,
+        broadcast: true, rcon: false, stats: true, statsReset: false, warps: true,
+        links: true, kits: false, serverCommands: true, automessages: false,
+        schedule: false, reports: true,
+      },
+    },
+    admin: {
+      label: "Admin",
+      hint: "Almost full staff access, including RCON — still no billing/keys",
+      perms: {
+        overview: true, players: true, kick: true, ban: true, teleport: true,
+        broadcast: true, rcon: true, stats: true, statsReset: true, warps: true,
+        links: true, kits: true, serverCommands: true, automessages: true,
+        schedule: true, reports: true,
+      },
+    },
+  };
 
   let data = { keys: [], defaults: null };
   try {
@@ -4549,11 +4581,8 @@ async function renderKeys() {
   }
 
   const saas = Boolean(state.session?.saas);
-  const defaults = {
-    ...FALLBACK_DEFAULTS,
-    ...(state.session?.staffPermissionDefaults || {}),
-    ...(data.defaults || {}),
-  };
+  // Default the form to Moderator — owners can switch presets or tweak chips.
+  const defaults = { ...FALLBACK_DEFAULTS, ...KEY_PRESETS.moderator.perms };
   const keys = Array.isArray(data.keys) ? data.keys.filter(Boolean) : [];
 
   const secret = state.lastCreatedKey?.secret;
@@ -4597,15 +4626,23 @@ async function renderKeys() {
         </div>
       </div>`).join("");
 
+  const presetBtns = Object.entries(KEY_PRESETS).map(([id, p]) =>
+    `<button type="button" class="ghost" style="border:1px solid var(--line2)" data-action="keyPreset" data-preset="${esc(id)}" title="${esc(p.hint)}">${esc(p.label)}</button>`
+  ).join("");
+
   return `
     ${created}
     <div class="card">
       <h3>Create staff key</h3>
       <p class="card-desc">
         ${saas
-          ? "One key per person. Click permissions to turn them on (blue) or off. They sign in on this panel URL under Staff — never billing or key management."
-          : "Click permissions to turn them on or off. Staff keys can never manage keys or view audit logs."}
+          ? "One key per person. Start from a preset, tweak chips if you want, then generate. They sign in on this panel URL under Staff — never billing or key management."
+          : "Start from a preset, tweak chips, then generate. Staff keys can never manage keys or view audit logs."}
       </p>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:1rem">
+        <span class="muted" style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;margin-right:.25rem">Preset</span>
+        ${presetBtns}
+      </div>
       <label class="field" style="display:block;margin-bottom:1rem">
         <span style="display:block;margin-bottom:.35rem;font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">Label</span>
         <input id="keyLabel" placeholder="e.g. Mod — Alex" autocomplete="off" />
@@ -6161,6 +6198,48 @@ function bindView() {
           state.lastCreatedKey = { key: r.key, secret: r.secret };
           toast("Staff key created — copy it now");
           render();
+          return;
+        }
+        if (a === "keyPreset") {
+          const presets = {
+            helper: {
+              label: "Helper",
+              perms: {
+                overview: true, players: true, kick: true, ban: false, teleport: true,
+                broadcast: true, rcon: false, stats: true, statsReset: false, warps: false,
+                links: true, kits: false, serverCommands: false, automessages: false,
+                schedule: false, reports: true,
+              },
+            },
+            moderator: {
+              label: "Moderator",
+              perms: {
+                overview: true, players: true, kick: true, ban: true, teleport: true,
+                broadcast: true, rcon: false, stats: true, statsReset: false, warps: true,
+                links: true, kits: false, serverCommands: true, automessages: false,
+                schedule: false, reports: true,
+              },
+            },
+            admin: {
+              label: "Admin",
+              perms: {
+                overview: true, players: true, kick: true, ban: true, teleport: true,
+                broadcast: true, rcon: true, stats: true, statsReset: true, warps: true,
+                links: true, kits: true, serverCommands: true, automessages: true,
+                schedule: true, reports: true,
+              },
+            },
+          };
+          const preset = presets[el.dataset.preset];
+          if (!preset) return;
+          const labelEl = document.getElementById("keyLabel");
+          if (labelEl && !labelEl.value.trim()) labelEl.value = preset.label;
+          document.querySelectorAll("#keyPermGrid [data-perm]").forEach((btn) => {
+            const on = Boolean(preset.perms[btn.dataset.perm]);
+            btn.setAttribute("aria-pressed", on ? "true" : "false");
+            btn.classList.toggle("on", on);
+          });
+          toast(`${preset.label} preset applied — tweak chips if you want`);
           return;
         }
         if (a === "togglePerm") {
