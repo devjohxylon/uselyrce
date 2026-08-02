@@ -47,6 +47,30 @@ export const COMMAND_SETTING_DEFS = [
     access: "staff",
     fields: [toggle("enabled", "Enabled", true)],
   },
+  {
+    group: "Rust",
+    key: "kit",
+    name: "/kit",
+    description: "list · give · locks · lock · unlock",
+    access: "staff",
+    fields: [toggle("enabled", "Enabled", true)],
+  },
+  {
+    group: "Rust",
+    key: "player",
+    name: "/player",
+    description: "lookup · tp — staff player tools",
+    access: "staff",
+    fields: [toggle("enabled", "Enabled", true)],
+  },
+  {
+    group: "Rust",
+    key: "bans",
+    name: "/bans",
+    description: "list — active game bans",
+    access: "staff",
+    fields: [toggle("enabled", "Enabled", true)],
+  },
 
   // ——— Player ———
   {

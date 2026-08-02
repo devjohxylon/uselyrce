@@ -8,6 +8,15 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Staff Discord commands and clearer kit locks",
+    changes: [
+      { type: "added", text: "New staff Discord commands: <code>/kit</code> (list, give, locks), <code>/player</code> (lookup, tp), and <code>/bans list</code> — with clear embeds." },
+      { type: "changed", text: "<code>/rcon</code>, <code>/server</code>, <code>/players</code>, and <code>/automessage list</code> replies now use consistent Usely embeds." },
+      { type: "changed", text: "Kit locks in the panel use a simple Start / End flow with duration presets instead of a confusing save toggle." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Kit claim phrases and wipe-day locks",
     changes: [
       { type: "added", text: "Panel kits can use a custom quick-chat claim phrase and an optional Discord role requirement." },

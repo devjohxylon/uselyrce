@@ -1018,6 +1018,47 @@ button { transition: all .15s ease; }
   align-items: center;
 }
 
+.kit-lock-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  margin-bottom: 1.15rem;
+}
+.kit-lock-banner.is-open {
+  background: rgba(125, 206, 160, .06);
+  border-color: rgba(125, 206, 160, .22);
+}
+.kit-lock-banner.is-locked {
+  background: rgba(232, 192, 106, .08);
+  border-color: rgba(232, 192, 106, .28);
+}
+.kit-lock-banner h4 { margin: 0 0 .25rem; font-size: 1rem; }
+.kit-lock-banner p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.45; max-width: 42rem; }
+.kit-lock-step {
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.kit-lock-step h4 {
+  margin: 0 0 .55rem;
+  font-size: .78rem;
+  font-family: var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--chrome-dim);
+  font-weight: 600;
+}
+.kit-lock-presets { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .65rem; }
+.kit-lock-presets button.active {
+  border-color: rgba(215,221,230,.45);
+  background: rgba(215,221,230,.1);
+}
+
 .card.stat {
   padding: 2rem 2.25rem; 
   height: 140px;
@@ -4448,11 +4489,13 @@ async function renderKits() {
   const lockStatus = locks.enabled
     ? `On · ${(locks.kitIds || []).length} kit(s)${locks.until ? ` · ends ${new Date(locks.until).toLocaleString()}` : ""}`
     : `Off · ${(locks.kitIds || []).length} kit(s) saved`;
-  const lockChecks = (data.kits || []).map((k) => `
+  const claimable = (data.kits || []).filter((k) => k.claimPhrase);
+  const lockPool = claimable.length ? claimable : (data.kits || []);
+  const lockChecks = lockPool.map((k) => `
     <label class="wipe-auto" style="margin:0">
       <input type="checkbox" data-kit-lock-id="${esc(k.id)}" ${lockedSet.has(k.id) ? "checked" : ""} />
       <span class="wipe-copy"><b>${esc(k.label || k.id)}</b><span><code>${esc(k.id)}</code>${k.claimPhrase ? ` · “${esc(k.claimPhrase)}”` : " · no claim phrase"}</span></span>
-    </label>`).join("") || `<p class="hint" style="margin:0">Create panel kits first, then add them to the lock list.</p>`;
+    </label>`).join("") || `<p class="hint" style="margin:0">Create panel kits with a claim phrase first.</p>`;
   const panelRows = (data.kits || []).map((k) => `
     <tr>
       <td data-label="Kit"><strong>${esc(k.label)}</strong><div class="muted"><code>${esc(k.id)}</code> · panel${lockedSet.has(k.id) && locks.enabled ? ` · <span class="pill warn">locked</span>` : lockedSet.has(k.id) ? ` · <span class="pill">on lock list</span>` : ""}</div></td>
@@ -4621,22 +4664,40 @@ async function renderKits() {
 
   return `
     <div class="card" style="margin-bottom:.9rem">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap">
+      <div class="kit-lock-banner ${locks.enabled ? "is-locked" : "is-open"}">
         <div>
-          <h3 style="margin:0">Kit locks</h3>
-          <p class="card-desc" style="margin:.35rem 0 0">Pause quick-chat claims for selected panel kits (wipe-day boom lock). Staff Give still works.</p>
-          <p class="muted" style="font-family:var(--mono);font-size:.72rem;margin:.45rem 0 0">${esc(lockStatus)}</p>
+          <span class="pill ${locks.enabled ? "warn" : "info"}">${locks.enabled ? "Locked" : "Open"}</span>
+          <h4 style="margin:.55rem 0 .2rem">${locks.enabled ? "Quick-chat claims are paused" : "Players can claim kits"}</h4>
+          <p>${locks.enabled
+            ? `Selected kits cannot be claimed in-game until you end the lock.${locks.until ? ` Auto-ends ${esc(new Date(locks.until).toLocaleString())}.` : ""} Staff Give still works.`
+            : "Pick the kits below, choose how long (optional), then start the lock — useful for boom kits on wipe day."}</p>
         </div>
         <div class="actions">
-          <button class="${locks.enabled ? "danger" : "primary"}" data-action="toggleKitLocks">${locks.enabled ? "Turn locks off" : "Turn locks on"}</button>
-          <button data-action="saveKitLocks">Save list</button>
+          ${locks.enabled
+            ? `<button class="danger" data-action="endKitLock">End lock now</button>`
+            : `<button class="primary" data-action="startKitLock">Start lock</button>`}
         </div>
       </div>
-      <div class="form-row" style="margin-top:.85rem;grid-template-columns:auto 1fr;align-items:center">
-        <label class="muted" style="font-family:var(--mono);font-size:.72rem">Until (optional)</label>
-        <input id="kitLockUntil" type="datetime-local" value="${esc(toLocalInput(locks.until))}" />
+      <div class="kit-lock-step">
+        <h4>1 · Kits to pause</h4>
+        <p class="hint" style="margin:0 0 .65rem">${claimable.length ? "Showing kits that have a claim phrase." : "No claim phrases yet — showing all panel kits."}</p>
+        <div style="display:grid;gap:.45rem;max-height:220px;overflow:auto;padding-right:.25rem">${lockChecks}</div>
       </div>
-      <div style="display:grid;gap:.45rem;margin-top:.85rem;max-height:220px;overflow:auto;padding-right:.25rem">${lockChecks}</div>
+      <div class="kit-lock-step">
+        <h4>2 · How long (optional)</h4>
+        <div class="kit-lock-presets">
+          <button type="button" data-action="kitLockPreset" data-hours="2">2 hours</button>
+          <button type="button" data-action="kitLockPreset" data-hours="6">6 hours</button>
+          <button type="button" data-action="kitLockPreset" data-hours="12">12 hours</button>
+          <button type="button" data-action="kitLockPreset" data-hours="24">24 hours</button>
+          <button type="button" data-action="kitLockPreset" data-hours="0">No end time</button>
+        </div>
+        <div class="form-row" style="grid-template-columns:auto 1fr;align-items:center;margin:0">
+          <label class="muted" style="font-family:var(--mono);font-size:.72rem">Or pick a time</label>
+          <input id="kitLockUntil" type="datetime-local" value="${esc(toLocalInput(locks.until))}" />
+        </div>
+      </div>
+      <p class="muted" style="font-family:var(--mono);font-size:.68rem;margin:1rem 0 0">${esc(lockStatus)}</p>
     </div>
     <div class="card" style="margin-bottom:.9rem">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap">
@@ -5927,25 +5988,48 @@ function bindView() {
           render();
           return;
         }
-        if (a === "saveKitLocks" || a === "toggleKitLocks") {
-          const kitIds = [...document.querySelectorAll("[data-kit-lock-id]:checked")].map((el) => el.dataset.kitLockId);
+        if (a === "kitLockPreset") {
+          const hours = Number(el.dataset.hours) || 0;
+          const input = document.getElementById("kitLockUntil");
+          if (!input) return;
+          if (hours <= 0) {
+            input.value = "";
+          } else {
+            const d = new Date(Date.now() + hours * 3600_000);
+            const pad = (n) => String(n).padStart(2, "0");
+            input.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          }
+          document.querySelectorAll('[data-action="kitLockPreset"]').forEach((btn) => {
+            btn.classList.toggle("active", btn === el);
+          });
+          return;
+        }
+        if (a === "startKitLock" || a === "endKitLock") {
+          const selected = [...document.querySelectorAll("[data-kit-lock-id]:checked")].map((el) => el.dataset.kitLockId);
           const untilRaw = document.getElementById("kitLockUntil")?.value || "";
           let until = null;
           if (untilRaw) {
             const d = new Date(untilRaw);
-            if (Number.isNaN(d.getTime())) { toast("Invalid until time", true); return; }
+            if (Number.isNaN(d.getTime())) { toast("Invalid end time", true); return; }
             until = d.toISOString();
           }
+          const enabled = a === "startKitLock";
+          if (enabled && !selected.length) {
+            toast("Select at least one kit to lock", true);
+            return;
+          }
           const current = await api("/kit-locks");
-          const enabled = a === "toggleKitLocks"
-            ? !Boolean(current.kitLocks?.enabled)
-            : Boolean(current.kitLocks?.enabled);
+          const kitIds = enabled ? selected : (current.kitLocks?.kitIds || selected);
           const r = await api("/kit-locks", {
             method: "POST",
-            body: { enabled, until, kitIds },
+            body: {
+              enabled,
+              until: enabled ? until : current.kitLocks?.until || null,
+              kitIds,
+            },
           });
-          if (!r.ok) { toast(r.error || "Could not save kit locks", true); return; }
-          toast(enabled ? "Kit locks on" : "Kit locks saved");
+          if (!r.ok) { toast(r.error || "Could not update kit locks", true); return; }
+          toast(enabled ? "Kit lock started" : "Kit lock ended");
           render();
           return;
         }

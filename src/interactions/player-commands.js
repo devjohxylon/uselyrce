@@ -26,6 +26,7 @@ import {
 } from "../modules/rcon/automessages.js";
 import { syncVipForDiscord } from "../modules/rcon/vip-sync.js";
 import { postLinkPanel } from "../modules/panels/link-panel.js";
+import { okEmbed, warnEmbed, staffEmbed, formatNameList } from "../lib/staff-embed.js";
 
 async function reply(interaction, content, ephemeral = true) {
   if (interaction.deferred || interaction.replied) {
@@ -249,14 +250,25 @@ export async function handleAutoMessageCommand(interaction) {
 
   if (sub === "list") {
     const messages = await listAutoMessages();
-    if (!messages.length) return reply(interaction, "No auto-messages.");
-    const body = messages
-      .map(
-        (m) =>
-          `• \`${m.id}\` ${m.enabled ? "✅" : "⏸"} every ${m.intervalMinutes}m — ${m.text}`,
-      )
-      .join("\n");
-    return reply(interaction, body);
+    if (!messages.length) {
+      return interaction.reply({
+        ephemeral: true,
+        embeds: [warnEmbed("Auto-messages", "No auto-messages configured.")],
+      });
+    }
+    const lines = messages.map(
+      (m) =>
+        `• \`${m.id}\` ${m.enabled ? "on" : "off"} · every **${m.intervalMinutes}m**\n  ${m.text}`,
+    );
+    return interaction.reply({
+      ephemeral: true,
+      embeds: [
+        staffEmbed({
+          title: `Auto-messages (${messages.length})`,
+          description: formatNameList(lines),
+        }),
+      ],
+    });
   }
 
   if (sub === "remove") {

@@ -12,6 +12,8 @@ import {
   handleServerInfoCommand,
   handleStatsCommand,
 } from "./rcon-commands.js";
+import { handleKitCommand } from "./kit-commands.js";
+import { handleBansCommand, handlePlayerStaffCommand } from "./staff-player-commands.js";
 import {
   handleAutoMessageCommand,
   handleHomeCommand,
@@ -57,6 +59,9 @@ export function attachInteractionRouter(client) {
         if (name === "stats") return await handleStatsCommand(interaction);
         if (name === "leaderboard") return await handleLeaderboardCommand(interaction);
         if (name === "rcon") return await handleRconCommand(interaction);
+        if (name === "kit") return await handleKitCommand(interaction);
+        if (name === "player") return await handlePlayerStaffCommand(interaction);
+        if (name === "bans") return await handleBansCommand(interaction);
         if (PLAYER_COMMANDS[name]) return await PLAYER_COMMANDS[name](interaction);
 
         if (MOD_COMMANDS.has(name)) return await handleModerationCommands(interaction);

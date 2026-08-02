@@ -2,6 +2,7 @@ import { EmbedBuilder } from "discord.js";
 import { requireStaff } from "../lib/permissions.js";
 import { sendModLog } from "../lib/modlog.js";
 import { rconOfflineMessage } from "../lib/rcon-messages.js";
+import { okEmbed, errEmbed, staffEmbed, STAFF_OK_COLOR, STAFF_WARN_COLOR } from "../lib/staff-embed.js";
 import {
   getOnlinePlayers,
   getServerInfo,
@@ -39,13 +40,16 @@ function formatUptime(seconds) {
 export async function handleServerInfoCommand(interaction) {
   const info = getServerInfo();
   if (!info) {
-    return interaction.reply({ ephemeral: true, content: offlineNotice() });
+    return interaction.reply({
+      ephemeral: true,
+      embeds: [errEmbed("Server offline", offlineNotice())],
+    });
   }
 
-  const embed = new EmbedBuilder()
-    .setTitle(info.Hostname ?? "Usely")
-    .setColor(0x2ecc71)
-    .addFields(
+  const embed = staffEmbed({
+    title: info.Hostname ?? "Usely",
+    color: info.Restarting ? STAFF_WARN_COLOR : STAFF_OK_COLOR,
+    fields: [
       {
         name: "Players",
         value: `${info.Players ?? 0}/${info.MaxPlayers ?? "?"}${info.Queued ? ` (+${info.Queued} queued)` : ""}`,
@@ -56,10 +60,9 @@ export async function handleServerInfoCommand(interaction) {
       { name: "Uptime", value: formatUptime(info.Uptime), inline: true },
       { name: "FPS", value: String(info.Framerate ?? "?"), inline: true },
       { name: "Entities", value: String(info.EntityCount ?? "?"), inline: true },
-    )
-    .setTimestamp();
-
-  if (info.Restarting) embed.setFooter({ text: "⚠️ Server is restarting" });
+    ],
+    footer: info.Restarting ? "Server is restarting" : undefined,
+  });
 
   return interaction.reply({ embeds: [embed] });
 }
@@ -70,22 +73,28 @@ export async function handlePlayersCommand(interaction) {
     const info = getServerInfo();
     return interaction.reply({
       ephemeral: true,
-      content: info ? "Nobody is online right now." : offlineNotice(),
+      embeds: [
+        info
+          ? okEmbed("Online players", "Nobody is online right now.")
+          : errEmbed("RCON offline", offlineNotice()),
+      ],
     });
   }
 
   const names = players
-    .map((p) => p.ign)
+    .map((p) => `• ${p.ign}`)
     .sort((a, b) => a.localeCompare(b))
-    .join(", ");
+    .join("\n");
 
-  const embed = new EmbedBuilder()
-    .setTitle(`Online players (${players.length})`)
-    .setDescription(names.slice(0, 4000))
-    .setColor(0x3498db)
-    .setTimestamp();
-
-  return interaction.reply({ embeds: [embed] });
+  return interaction.reply({
+    embeds: [
+      staffEmbed({
+        title: `Online · ${players.length}`,
+        description: names.slice(0, 4000),
+        color: 0x7dcea0,
+      }),
+    ],
+  });
 }
 
 export async function handleStatsCommand(interaction) {
@@ -195,7 +204,9 @@ export async function handleRconCommand(interaction) {
       moderatorId: interaction.user.id,
       reason: `Wipe label: ${data.wipe}`,
     });
-    return interaction.editReply(`Stats wiped. Now tracking wipe \`${data.wipe}\`.`);
+    return interaction.editReply({
+      embeds: [okEmbed("Stats reset", `Now tracking wipe \`${data.wipe}\`.`)],
+    });
   }
 
   if (sub === "pushstats") {
@@ -204,13 +215,22 @@ export async function handleRconCommand(interaction) {
     const discord = await publishLeaderboardToDiscord(interaction.client).catch((error) => ({
       error: error.message,
     }));
-    if (discord?.error) return interaction.editReply(`Failed: ${discord.error}`);
-    if (!discord) return interaction.editReply("No stats to push yet.");
-    return interaction.editReply("Leaderboard image updated in Discord.");
+    if (discord?.error) {
+      return interaction.editReply({ embeds: [errEmbed("Leaderboard push failed", discord.error)] });
+    }
+    if (!discord) {
+      return interaction.editReply({ embeds: [errEmbed("No stats to push yet.")] });
+    }
+    return interaction.editReply({
+      embeds: [okEmbed("Leaderboard updated", "Discord leaderboard image refreshed.")],
+    });
   }
 
   if (!getRconStatus().connected) {
-    return interaction.reply({ ephemeral: true, content: offlineNotice() });
+    return interaction.reply({
+      ephemeral: true,
+      embeds: [errEmbed("RCON offline", offlineNotice())],
+    });
   }
 
   await interaction.deferReply({ ephemeral: true });
@@ -220,30 +240,37 @@ export async function handleRconCommand(interaction) {
 
   let command;
   let summary;
+  let title = "RCON";
 
   if (sub === "say") {
     const message = interaction.options.getString("message", true);
     command = `say <color=#00ffcc>[Usely]</color> ${message}`;
-    summary = `Broadcast: ${message}`;
+    summary = message;
+    title = "Broadcast";
   } else if (sub === "console") {
     command = interaction.options.getString("command", true);
-    summary = `Console: \`${command}\``;
+    summary = `\`${command}\``;
+    title = "Console";
   } else if (sub === "kick") {
     command = `kick "${player}" "${reason}"`;
-    summary = `Kicked \`${player}\` — ${reason}`;
+    summary = `\`${player}\` — ${reason}`;
+    title = "Kick";
   } else if (sub === "ban") {
     command = `ban "${player}" "${reason}"`;
-    summary = `Banned \`${player}\` — ${reason}`;
+    summary = `\`${player}\` — ${reason}`;
+    title = "Ban";
   } else if (sub === "unban") {
     command = `unban "${player}"`;
-    summary = `Unbanned \`${player}\``;
+    summary = `\`${player}\``;
+    title = "Unban";
   } else if (sub === "give") {
     const item = interaction.options.getString("item", true);
     const amount = interaction.options.getInteger("amount") ?? 1;
     command = `inventory.giveto "${player}" "${item}" ${amount}`;
-    summary = `Gave \`${amount}x ${item}\` to \`${player}\``;
+    summary = `\`${amount}× ${item}\` → \`${player}\``;
+    title = "Give item";
   } else {
-    return interaction.editReply("Unknown subcommand.");
+    return interaction.editReply({ embeds: [errEmbed("Unknown subcommand")] });
   }
 
   try {
@@ -263,16 +290,20 @@ export async function handleRconCommand(interaction) {
     }
 
     await sendModLog(interaction.guild, {
-      title: "RCON command",
+      title: `RCON · ${title}`,
       moderatorId: interaction.user.id,
       description: summary,
     });
 
     const output = String(response ?? "").trim();
-    return interaction.editReply(
-      output ? `${summary}\n\`\`\`\n${output.slice(0, 1800)}\n\`\`\`` : `${summary} ✅`,
-    );
+    const fields = [{ name: "Action", value: summary }];
+    if (output) fields.push({ name: "Server reply", value: `\`\`\`\n${output.slice(0, 900)}\n\`\`\`` });
+    return interaction.editReply({
+      embeds: [okEmbed(title, null, fields)],
+    });
   } catch (error) {
-    return interaction.editReply(`RCON command failed: ${error.message}`);
+    return interaction.editReply({
+      embeds: [errEmbed(`${title} failed`, error.message)],
+    });
   }
 }

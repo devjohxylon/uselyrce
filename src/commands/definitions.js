@@ -118,6 +118,78 @@ export const commandDefinitions = [
       sub.setName("pushstats").setDescription("Push the leaderboard image to Discord now"),
     ),
 
+  new SlashCommandBuilder()
+    .setName("kit")
+    .setDescription("Staff: panel kits, give, and wipe-day locks")
+    .setDefaultMemberPermissions(staff)
+    .addSubcommand((sub) =>
+      sub.setName("list").setDescription("List panel kits and claim / lock status"),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("give")
+        .setDescription("Give a panel or server kit to a player")
+        .addStringOption((o) =>
+          o.setName("player").setDescription("In-game name (IGN)").setRequired(true),
+        )
+        .addStringOption((o) =>
+          o.setName("kit").setDescription("Kit id / name").setRequired(true),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("locks").setDescription("Show kit lock status"),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("lock")
+        .setDescription("Turn kit locks on (uses kits selected in the panel)")
+        .addIntegerOption((o) =>
+          o
+            .setName("hours")
+            .setDescription("Optional auto-end after this many hours")
+            .setMinValue(1)
+            .setMaxValue(168),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("unlock").setDescription("Turn kit locks off (keeps the saved kit list)"),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("player")
+    .setDescription("Staff: look up a player or force-teleport")
+    .setDefaultMemberPermissions(staff)
+    .addSubcommand((sub) =>
+      sub
+        .setName("lookup")
+        .setDescription("Online status, Discord link, wipe stats, ban flag")
+        .addStringOption((o) =>
+          o.setName("ign").setDescription("In-game name").setRequired(true),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("tp")
+        .setDescription("Force-teleport a player to coords or another player")
+        .addStringOption((o) =>
+          o.setName("player").setDescription("Player to move").setRequired(true),
+        )
+        .addStringOption((o) =>
+          o.setName("to_player").setDescription("Teleport onto this player's position"),
+        )
+        .addNumberOption((o) => o.setName("x").setDescription("X coordinate"))
+        .addNumberOption((o) => o.setName("y").setDescription("Y coordinate"))
+        .addNumberOption((o) => o.setName("z").setDescription("Z coordinate")),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("bans")
+    .setDescription("Staff: view active game bans")
+    .setDefaultMemberPermissions(staff)
+    .addSubcommand((sub) =>
+      sub.setName("list").setDescription("List active bans"),
+    ),
+
   // ——— Player systems (link / teleports / shop) ———
   new SlashCommandBuilder()
     .setName("link")
