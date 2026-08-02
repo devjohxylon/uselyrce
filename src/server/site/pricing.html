@@ -45,12 +45,12 @@
     }
     .plan:hover { border-color: var(--line2); }
     .plan.hot {
-      border-color: rgba(215,221,230,.35);
+      border-color: rgba(232, 149, 106, .45);
       background:
-        linear-gradient(180deg, rgba(215,221,230,.06), transparent 40%),
+        linear-gradient(180deg, rgba(232, 149, 106, .12), transparent 42%),
         var(--bg3);
       transform: translateY(-6px);
-      box-shadow: 0 24px 50px rgba(0,0,0,.45);
+      box-shadow: 0 24px 50px rgba(0, 0, 0, .45), 0 0 0 1px rgba(232, 149, 106, .08);
     }
     .badge {
       position: absolute;
@@ -63,7 +63,7 @@
       padding: .28rem .55rem;
       border-radius: 3px;
       background: var(--accent);
-      color: #0b0c0e;
+      color: var(--accent-ink);
       font-weight: 600;
     }
     .plan .nm {
@@ -73,11 +73,11 @@
       text-transform: uppercase;
       color: var(--chrome-dim);
     }
-    .plan.hot .nm { color: var(--chrome); }
+    .plan.hot .nm { color: var(--accent); }
     .servers {
       font-size: 1.05rem;
       font-weight: 600;
-      color: var(--chrome);
+      color: var(--accent);
       letter-spacing: -.01em;
     }
     .amt {
@@ -114,7 +114,7 @@
       width: .35rem;
       height: .35rem;
       margin-top: .4rem;
-      background: var(--chrome);
+      background: var(--accent);
       border-radius: 1px;
     }
     .plan .btn { width: 100%; }
@@ -188,7 +188,7 @@
       <p>Every plan includes the admin panel and Discord bot. Scale when you connect more servers.</p>
     </header>
 
-    <div class="grid">
+    <div class="grid" data-reveal>
       <article class="plan">
         <div>
           <div class="nm">Basic</div>
@@ -259,7 +259,7 @@
     </div>
 
     <p class="note">
-      Usely is in public beta — expect fast updates. After checkout, you get a setup email for your panel address, Discord bot invite, and WebRCON. Staff sign in with access keys. Hit a bug? <a href="/contact?topic=bug" style="color:var(--chrome);text-decoration:underline">Report it</a>. Questions before you buy? <a href="/contact" style="color:var(--chrome);text-decoration:underline">Contact us</a>.
+      Usely is in public beta — expect fast updates. After checkout, you get a setup email for your panel address, Discord bot invite, and WebRCON. Staff sign in with access keys. Hit a bug? <a href="/contact?topic=bug" style="color:var(--accent);text-decoration:underline">Report it</a>. Questions before you buy? <a href="/contact" style="color:var(--accent);text-decoration:underline">Contact us</a>.
     </p>
 
 <!--FOOTER-->

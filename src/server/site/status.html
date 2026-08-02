@@ -39,7 +39,7 @@
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background:
-        linear-gradient(90deg, rgba(127,209,164,.06), transparent 40%),
+        linear-gradient(90deg, rgba(232, 149, 106, .1), transparent 45%),
         var(--bg2);
       padding: 1.35rem 1.5rem;
       margin-bottom: 1rem;
@@ -57,9 +57,9 @@
       background: var(--faint);
       box-shadow: 0 0 0 3px rgba(255,255,255,.04);
     }
-    .dot.operational { background: #7fd1a4; }
-    .dot.degraded { background: #e2c37a; }
-    .dot.down { background: #e58f8f; }
+    .dot.operational { background: var(--ok); }
+    .dot.degraded { background: var(--warn); }
+    .dot.down { background: var(--bad); }
     .dot.unknown { background: var(--faint); }
 
     .components {

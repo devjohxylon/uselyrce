@@ -21,7 +21,7 @@
 .legal p:last-child { margin-bottom: 0; }
 .legal ul { margin: 0 0 .85rem; padding-left: 1.2rem; }
 .legal li { margin-bottom: .45rem; }
-.legal a { color: var(--chrome); text-decoration: underline; }
+.legal a { color: var(--accent); text-decoration: underline; }
 .legal dt {
   font-size: .95rem;
   font-weight: 600;

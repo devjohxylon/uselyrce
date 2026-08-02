@@ -156,7 +156,7 @@ function renderHead(key) {
   <title>${meta.title}</title>
   <meta name="description" content="${escapeAttr(meta.description)}" />
   <link rel="canonical" href="${canonical}" />
-  <meta name="theme-color" content="#050506" />
+  <meta name="theme-color" content="#070809" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Usely" />
   <meta property="og:title" content="${escapeAttr(meta.title)}" />
@@ -234,6 +234,28 @@ function renderAccScript() {
   </script>`;
 }
 
+/** Scroll reveals for [data-reveal] blocks. */
+function renderRevealScript() {
+  return `  <script>
+    (function () {
+      var nodes = Array.prototype.slice.call(document.querySelectorAll("[data-reveal]"));
+      if (!nodes.length) return;
+      if (!("IntersectionObserver" in window)) {
+        nodes.forEach(function (n) { n.classList.add("is-in"); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-in");
+          io.unobserve(entry.target);
+        });
+      }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
+      nodes.forEach(function (n) { io.observe(n); });
+    })();
+  </script>`;
+}
+
 /** Vercel Web Analytics — only loads on www (script is served after Analytics is enabled). */
 function renderAnalytics() {
   return `  <script>
@@ -247,7 +269,7 @@ export function applyShell(html) {
     .replace(/^[ \t]*<!--HEAD:([a-z]+)-->/m, (_m, key) => renderHead(key))
     .replace(/^[ \t]*<!--NAV:([a-z]*)-->/m, (_m, active) => renderNav(active))
     .replace(/^[ \t]*<!--FOOTER-->/m, renderFooter())
-    .replace(/<\/body>/i, `${renderAccScript()}\n${renderAnalytics()}\n</body>`);
+    .replace(/<\/body>/i, `${renderAccScript()}\n${renderRevealScript()}\n${renderAnalytics()}\n</body>`);
 }
 
 export function renderSitemap() {

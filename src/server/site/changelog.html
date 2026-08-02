@@ -74,7 +74,7 @@
       width: .45rem;
       height: .45rem;
       border-radius: 1px;
-      background: var(--chrome);
+      background: var(--accent);
       box-shadow: 0 0 0 3px var(--bg);
     }
     .entry-date {
@@ -121,8 +121,9 @@
       color: var(--chrome-dim);
       margin-top: .08rem;
     }
-    .tag.added { color: #0b0c0e; background: var(--accent); border-color: var(--accent); }
-    .tag.changed { color: var(--chrome); }
+    .tag.added { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+    .tag.changed { color: var(--accent); border-color: rgba(232, 149, 106, .35); }
+    .tag.fixed { color: var(--ok); border-color: rgba(126, 207, 154, .35); }
 
     .subscribe {
       margin: 2.5rem 0 3rem;
@@ -131,7 +132,7 @@
       color: var(--muted);
       font-size: .9rem;
     }
-    .subscribe a { color: var(--chrome); text-decoration: underline; }
+    .subscribe a { color: var(--accent); text-decoration: underline; }
 
     @media (max-width: 820px) {
       .month { grid-template-columns: 1fr; gap: .75rem; }
@@ -151,7 +152,7 @@
       <p>Shipped updates to the panel, Discord bot, and site — newest first.</p>
     </header>
 
-    <div class="timeline">
+    <div class="timeline" data-reveal>
 <!--ENTRIES-->
     </div>
 
