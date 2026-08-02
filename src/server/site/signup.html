@@ -23,12 +23,13 @@
       font-weight: 400; font-style: normal; font-display: swap;
     }
     :root {
-      --bg: #070809; --bg2: #101216; --bg3: #161b22;
-      --line: rgba(126,200,245,.1); --line2: rgba(232,236,241,.14);
-      --text: #e8ecf1; --muted: #9aa3ad; --faint: #5c6570;
+      --bg: #070809; --bg2: #101216; --bg3: #161b22; --bg-elev: #181b22;
+      --line: rgba(126,200,245,.12); --line2: rgba(232,236,241,.14);
+      --text: #e8ecf1; --muted: #9aa3ad; --faint: #7a8490;
       --chrome: #d5dbe3; --chrome-dim: #8b939e; --accent: #7ec8f5;
-      --accent-ink: #071018;
-      --ok: #7ecf9a; --bad: #e58f8f; --radius: 4px;
+      --accent-ink: #071018; --accent-hover: #9ad4f8;
+      --ok: #7ecf9a; --bad: #e58f8f;
+      --radius-sm: 4px; --radius: 6px; --radius-lg: 8px;
       --font: "Space Grotesk", system-ui, sans-serif;
       --mono: "JetBrains Mono", ui-monospace, monospace;
     }
@@ -42,10 +43,10 @@
     a { color: inherit; text-decoration: none; }
     .card {
       width: min(30rem, 100%); border: 1px solid var(--line); border-radius: var(--radius);
-      background: var(--bg2); padding: 2rem 1.75rem; display: grid; gap: 1.1rem;
+      background: var(--bg2); padding: 2rem 1.75rem; display: grid; gap: 1.25rem;
     }
     .brand { display: flex; align-items: center; gap: .65rem; font-weight: 700; letter-spacing: .14em; font-size: .85rem; }
-    .brand img { width: 28px; height: 28px; border-radius: 7px; }
+    .brand img { width: 28px; height: 28px; border-radius: var(--radius); }
     h1 { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; }
     p.sub { margin: -0.5rem 0 0; color: var(--muted); font-size: .92rem; line-height: 1.5; }
     .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
@@ -54,22 +55,23 @@
       padding: .8rem .7rem; cursor: pointer; display: grid; gap: .25rem; text-align: center;
     }
     .plan input { display: none; }
-    .plan .nm { font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--chrome-dim); }
+    .plan .nm { font-family: var(--mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--chrome-dim); }
     .plan .pr { font-weight: 700; font-size: 1.15rem; }
-    .plan .sv { color: var(--faint); font-size: .72rem; }
-    .plan.sel { border-color: var(--chrome); background: var(--bg-elev, #181b22); }
+    .plan .sv { color: var(--faint); font-size: .75rem; }
+    .plan.sel { border-color: var(--chrome); background: var(--bg-elev); }
     .plan.sel .nm { color: var(--chrome); }
     label { font-size: .82rem; color: var(--muted); display: grid; gap: .35rem; }
     input[type=email] {
       width: 100%; font: inherit; color: var(--text); background: var(--bg3);
       border: 1px solid var(--line2); border-radius: var(--radius); padding: .75rem .85rem; outline: none;
+      min-height: 48px;
     }
     input[type=email]:focus { border-color: var(--chrome-dim); }
     button {
       font: inherit; font-weight: 600; cursor: pointer; border: none; border-radius: var(--radius);
-      background: var(--accent); color: var(--accent-ink); padding: .85rem 1rem;
+      background: var(--accent); color: var(--accent-ink); padding: .85rem 1rem; min-height: 48px;
     }
-    button:hover { background: #fff; }
+    button:hover { background: var(--accent-hover); }
     button:disabled { opacity: .55; cursor: default; }
     .err { color: var(--bad); font-size: .85rem; display: none; }
     .done { display: none; gap: .8rem; }
@@ -78,6 +80,19 @@
     .done a.setup { color: var(--chrome); text-decoration: underline; word-break: break-all; }
     .foot { color: var(--faint); font-size: .8rem; text-align: center; }
     .foot a { color: var(--muted); }
+    @media (max-width: 420px) {
+      .plans { grid-template-columns: 1fr; gap: .5rem; }
+      .plan {
+        grid-template-columns: 5.5rem 1fr auto;
+        align-items: center;
+        text-align: left;
+        padding: .75rem 1rem;
+        gap: .5rem 1rem;
+      }
+      .plan .nm { grid-column: 1; }
+      .plan .pr { grid-column: 2; font-size: 1.25rem; }
+      .plan .sv { grid-column: 3; text-align: right; }
+    }
   </style>
   <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

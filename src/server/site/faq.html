@@ -7,7 +7,12 @@
       padding: clamp(2.5rem, 6vh, 3.5rem) 0 0;
       animation: rise .5s ease both;
     }
-    .faq-hero .label { margin-bottom: .85rem; }
+    .faq-hero .label {
+      margin-bottom: .85rem;
+      font-size: .75rem;
+      color: var(--accent);
+      letter-spacing: .14em;
+    }
     .faq-hero h1 {
       margin: 0;
       font-size: clamp(2rem, 4vw, 2.75rem);
@@ -16,7 +21,7 @@
       line-height: 1.1;
       max-width: 14ch;
     }
-    .faq-hero p {
+    .faq-hero > p:not(.label) {
       margin: .9rem 0 0;
       color: var(--muted);
       font-size: .95rem;
@@ -85,7 +90,7 @@
     .faq-card summary:hover .faq-q { color: var(--accent); }
     .faq-num {
       font-family: var(--mono);
-      font-size: .72rem;
+      font-size: .75rem;
       letter-spacing: .08em;
       color: var(--faint);
     }

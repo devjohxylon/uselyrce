@@ -9,7 +9,12 @@
       border-bottom: 1px solid var(--line);
       margin-bottom: 2rem;
     }
-    .cl-hero .label { margin-bottom: .85rem; }
+    .cl-hero .label {
+      margin-bottom: .85rem;
+      font-size: .75rem;
+      color: var(--accent);
+      letter-spacing: .14em;
+    }
     .cl-hero h1 {
       margin: 0;
       font-size: clamp(2rem, 4vw, 2.75rem);
@@ -17,7 +22,7 @@
       letter-spacing: -.03em;
       line-height: 1.1;
     }
-    .cl-hero p {
+    .cl-hero > p:not(.label) {
       margin: .85rem 0 0;
       color: var(--muted);
       font-size: .95rem;
@@ -41,7 +46,7 @@
       position: sticky;
       top: 1.5rem;
       font-family: var(--mono);
-      font-size: .72rem;
+      font-size: .75rem;
       letter-spacing: .12em;
       text-transform: uppercase;
       color: var(--chrome-dim);
@@ -79,7 +84,7 @@
     }
     .entry-date {
       font-family: var(--mono);
-      font-size: .68rem;
+      font-size: .75rem;
       letter-spacing: .1em;
       text-transform: uppercase;
       color: var(--faint);

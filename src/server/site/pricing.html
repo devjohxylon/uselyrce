@@ -10,7 +10,12 @@
       max-width: 36rem;
       margin: 0 auto;
     }
-    .price-hero .label { margin-bottom: .85rem; }
+    .price-hero .label {
+      margin-bottom: .85rem;
+      font-size: .75rem;
+      color: var(--accent);
+      letter-spacing: .14em;
+    }
     .price-hero h1 {
       margin: 0;
       font-size: clamp(2.2rem, 5vw, 3.1rem);
@@ -18,7 +23,7 @@
       letter-spacing: -.03em;
       line-height: 1.08;
     }
-    .price-hero p {
+    .price-hero > p:not(.label) {
       margin: 1rem auto 0;
       color: var(--muted);
       font-size: 1rem;
@@ -49,19 +54,18 @@
       background:
         linear-gradient(180deg, rgba(126,200,245, .12), transparent 42%),
         var(--bg3);
-      transform: translateY(-6px);
-      box-shadow: 0 24px 50px rgba(0, 0, 0, .45), 0 0 0 1px rgba(126,200,245, .08);
+      box-shadow: 0 0 0 1px rgba(126,200,245, .08);
     }
     .badge {
       position: absolute;
       top: -.65rem;
       left: 1.25rem;
       font-family: var(--mono);
-      font-size: .62rem;
+      font-size: .75rem;
       letter-spacing: .12em;
       text-transform: uppercase;
       padding: .28rem .55rem;
-      border-radius: 3px;
+      border-radius: var(--radius-sm, 4px);
       background: var(--accent);
       color: var(--accent-ink);
       font-weight: 600;
@@ -172,7 +176,7 @@
 
     @media (max-width: 860px) {
       .grid { grid-template-columns: 1fr; gap: 1.6rem; }
-      .plan.hot { transform: none; box-shadow: none; }
+      .plan.hot { box-shadow: none; }
       .included .row { grid-template-columns: 1fr; }
       .included .item:nth-child(odd) { border-right: none; }
     }

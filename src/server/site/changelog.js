@@ -8,6 +8,16 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Tighter visual system across site and panel",
+    changes: [
+      { type: "fixed", text: "Mobile menu Get started button is readable again (dark text on the sky accent)." },
+      { type: "fixed", text: "Home status cards reflow on phone instead of crushing into unreadably narrow columns." },
+      { type: "changed", text: "Marketing labels, buttons, spacing, and plan cards share one radius and type scale." },
+      { type: "changed", text: "Panel status colors, empty states, and touch targets match the same design tokens as the marketing site." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Network plan is 4+ servers",
     changes: [
       { type: "changed", text: "Network is marketed as <code>4+</code> servers — not an up-to-100 soft unlimited." },

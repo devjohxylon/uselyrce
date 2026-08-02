@@ -218,6 +218,7 @@ function renderNav(active) {
     </header>
     <div class="nav-drawer-backdrop" id="navDrawerBackdrop" hidden></div>
     <nav class="nav-drawer" id="navDrawer" aria-label="Mobile" hidden>
+      <button type="button" class="nav-drawer-close" id="navDrawerClose" aria-label="Close menu">&times;</button>
       ${drawerLinks}
     </nav>
     <main id="main">`;
@@ -253,6 +254,7 @@ function renderNavMenuScript() {
       var btn = document.getElementById("navMenuBtn");
       var drawer = document.getElementById("navDrawer");
       var backdrop = document.getElementById("navDrawerBackdrop");
+      var closeBtn = document.getElementById("navDrawerClose");
       if (!btn || !drawer || !backdrop) return;
       var lastFocus = null;
       function setOpen(open) {
@@ -272,6 +274,7 @@ function renderNavMenuScript() {
       btn.addEventListener("click", function () {
         setOpen(btn.getAttribute("aria-expanded") !== "true");
       });
+      closeBtn?.addEventListener("click", function () { setOpen(false); });
       backdrop.addEventListener("click", function () { setOpen(false); });
       drawer.addEventListener("click", function (e) {
         if (e.target.closest("a")) setOpen(false);
