@@ -62,7 +62,7 @@
     .stage {
       position: relative;
       isolation: isolate;
-      min-height: 100svh;
+      min-height: min(88svh, 48rem);
       overflow: hidden;
       border-bottom: 1px solid rgba(255,255,255,.06);
       background:
@@ -71,14 +71,14 @@
         #050506;
     }
     .stage-inner {
-      width: min(1600px, calc(100% - 1.75rem));
+      width: min(1280px, calc(100% - 2.25rem));
       margin: 0 auto;
       min-height: inherit;
       display: grid;
       grid-template-columns: minmax(15rem, 22rem) minmax(0, 1fr);
-      gap: clamp(1.25rem, 3vw, 2.75rem);
+      gap: clamp(1.25rem, 3vw, 2.5rem);
       align-items: center;
-      padding: clamp(1.5rem, 4vh, 2.75rem) 0;
+      padding: clamp(2rem, 5vh, 3.25rem) 0;
       perspective: 1800px;
     }
     .stage.flip .stage-inner {
@@ -160,7 +160,7 @@
       z-index: 1;
       display: block;
       width: 100%;
-      max-height: min(86svh, 920px);
+      max-height: min(68svh, 720px);
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,.14);
       background: #0a0b0e;
@@ -176,7 +176,7 @@
       display: block;
       width: 100%;
       height: auto;
-      max-height: min(86svh, 920px);
+      max-height: min(68svh, 720px);
       object-fit: cover;
       object-position: top center;
     }
@@ -240,7 +240,7 @@
       }
       .stage-shot,
       .stage-shot img {
-        max-height: min(70svh, 640px);
+        max-height: min(58svh, 520px);
       }
       .feat {
         grid-template-columns: 1fr;
