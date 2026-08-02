@@ -7,6 +7,13 @@
  */
 export const entries = [
   {
+    date: "2026-08-02",
+    title: "Clearer Discord link errors",
+    changes: [
+      { type: "fixed", text: "Linking a Discord server that’s already tied to another workspace now shows a clear message instead of a database error." },
+    ],
+  },
+  {
     date: "2026-08-01",
     title: "Public beta",
     changes: [

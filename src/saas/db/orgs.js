@@ -75,15 +75,37 @@ export async function listOrgsByGuildIds(guildIds) {
 }
 
 export async function setGuild(orgId, guildId) {
-  if (useMock()) return mockdb.updateOrg(orgId, { discord_guild_id: guildId ? String(guildId) : null });
+  const next = guildId ? String(guildId) : null;
+  if (next) {
+    const existing = await getOrgByGuildId(next);
+    if (existing && existing.id !== orgId) {
+      const err = new Error(
+        "That Discord server is already linked to another Usely workspace. Unlink it there first, or use a different Discord server."
+      );
+      err.code = "GUILD_TAKEN";
+      err.status = 409;
+      throw err;
+    }
+  }
+  if (useMock()) return mockdb.updateOrg(orgId, { discord_guild_id: next });
   const db = getServiceClient();
   const { data, error } = await db
     .from("orgs")
-    .update({ discord_guild_id: guildId ? String(guildId) : null })
+    .update({ discord_guild_id: next })
     .eq("id", orgId)
     .select("*")
     .single();
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23505") {
+      const err = new Error(
+        "That Discord server is already linked to another Usely workspace. Unlink it there first, or use a different Discord server."
+      );
+      err.code = "GUILD_TAKEN";
+      err.status = 409;
+      throw err;
+    }
+    throw error;
+  }
   return data;
 }
 

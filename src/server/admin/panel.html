@@ -2366,10 +2366,11 @@ async function boot() {
         pending: "Bot invited — wait a few seconds, then paste the guild ID and Link guild",
         denied: "Discord invite was cancelled",
         login: "Sign in as the workspace owner to finish linking the bot",
+        taken: "That Discord server is already linked to another workspace",
         error: "Could not finish bot linking — try Link guild with the guild ID",
         ok: "Bot invite finished",
       };
-      if (msgs[botStatus]) toast(msgs[botStatus], botStatus === "denied" || botStatus === "error");
+      if (msgs[botStatus]) toast(msgs[botStatus], botStatus === "denied" || botStatus === "error" || botStatus === "taken");
       if (botStatus === "linked" || botStatus === "pending") setTab("servers");
       history.replaceState({}, "", location.pathname);
     }

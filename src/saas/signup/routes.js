@@ -249,7 +249,8 @@ export function attachSignupRoutes(app, client = null) {
       });
     } catch (error) {
       console.error("Setup guild failed:", error.message);
-      res.status(500).json({ ok: false, error: error.message });
+      const status = error.status || (error.code === "GUILD_TAKEN" ? 409 : 500);
+      res.status(status).json({ ok: false, error: error.message });
     }
   });
 

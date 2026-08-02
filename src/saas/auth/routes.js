@@ -108,7 +108,14 @@ export function attachSaasRoutes(app, client) {
         if (!guild) {
           return res.redirect(302, `/admin?bot=pending&guild=${encodeURIComponent(guildId)}`);
         }
-        await setGuild(targetOrg, guildId);
+        try {
+          await setGuild(targetOrg, guildId);
+        } catch (linkErr) {
+          if (linkErr.code === "GUILD_TAKEN") {
+            return res.redirect(302, "/admin?bot=taken");
+          }
+          throw linkErr;
+        }
         return res.redirect(302, "/admin?bot=linked");
       }
       return res.redirect(302, "/admin?bot=ok");
@@ -418,21 +425,26 @@ export function attachSaasRoutes(app, client) {
   });
 
   app.post("/admin/api/saas/orgs/:id/guild", async (req, res) => {
-    const session = await resolveSaasSession(req, client);
-    if (!session || session.orgId !== req.params.id || !requireOwnerServers(session)) {
-      return res.status(403).json({ error: "Forbidden" });
+    try {
+      const session = await resolveSaasSession(req, client);
+      if (!session || session.orgId !== req.params.id || !requireOwnerServers(session)) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      const guildId = String(req.body?.guildId || "").trim();
+      if (!guildId) return res.status(400).json({ error: "guildId required" });
+      const guild = client.guilds.cache.get(guildId);
+      if (!guild) {
+        return res.status(400).json({
+          error: "Bot is not in that Discord server yet. Invite the bot first.",
+          botInviteUrl: botInviteUrl(req.params.id, client),
+        });
+      }
+      const org = await setGuild(req.params.id, guildId);
+      res.json({ ok: true, org });
+    } catch (error) {
+      const status = error.status || (error.code === "GUILD_TAKEN" ? 409 : 500);
+      res.status(status).json({ error: error.message });
     }
-    const guildId = String(req.body?.guildId || "").trim();
-    if (!guildId) return res.status(400).json({ error: "guildId required" });
-    const guild = client.guilds.cache.get(guildId);
-    if (!guild) {
-      return res.status(400).json({
-        error: "Bot is not in that Discord server yet. Invite the bot first.",
-        botInviteUrl: botInviteUrl(req.params.id, client),
-      });
-    }
-    const org = await setGuild(req.params.id, guildId);
-    res.json({ ok: true, org });
   });
 
   app.get("/admin/api/saas/servers", async (req, res) => {
