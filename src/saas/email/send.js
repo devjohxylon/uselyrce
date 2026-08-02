@@ -17,6 +17,51 @@ async function writeToOutbox(message) {
   await fs.writeFile(OUTBOX, JSON.stringify(box, null, 2), "utf8");
 }
 
+function trimEnv(value) {
+  return String(value || "")
+    .trim()
+    // Common Railway paste mistakes: wrapping quotes
+    .replace(/^['"]|['"]$/g, "");
+}
+
+function parseFrom(raw) {
+  const from = trimEnv(raw) || "Usely <onboarding@usely.dev>";
+  // Allow "Name <email@domain>" or bare email
+  const angled = from.match(/^(.*)<([^>]+)>$/);
+  if (angled) {
+    const name = angled[1].trim().replace(/^["']|["']$/g, "");
+    const email = angled[2].trim();
+    return name ? `${name} <${email}>` : email;
+  }
+  return from;
+}
+
+function friendlyResendError(status, bodyText) {
+  let parsed = null;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    /* plain text */
+  }
+  const msg = String(parsed?.message || bodyText || "").trim();
+  if (/not verified|domain is not verified/i.test(msg)) {
+    return `Resend says the from-domain is not verified. EMAIL_FROM must use the exact domain shown as Verified in Resend (status ${status}).`;
+  }
+  if (/only send testing emails|resend\.dev/i.test(msg)) {
+    return `Resend is still in test mode for that from-address. Verify usely.dev (or your sending subdomain) and set EMAIL_FROM to that domain.`;
+  }
+  if (/invalid.*api.?key|unauthorized|401/i.test(msg) || status === 401) {
+    return `Resend rejected the API key (HTTP ${status}). Re-copy RESEND_API_KEY from the same Resend account that owns the domain.`;
+  }
+  if (/invalid_from|Invalid `from`/i.test(msg) || status === 422) {
+    return `Invalid EMAIL_FROM format. Use: Usely <onboarding@usely.dev>`;
+  }
+  if (status === 403 && /1010|Access denied|User-Agent/i.test(msg + bodyText)) {
+    return `Resend blocked the request (403). Redeploy if you have not pulled the User-Agent fix yet.`;
+  }
+  return msg ? `Resend error (${status}): ${msg}` : `Resend error (HTTP ${status})`;
+}
+
 export async function sendEmail({ to, subject, html, text, replyTo }) {
   if (config.saas.mock) {
     await writeToOutbox({ to, subject, html, text, replyTo });
@@ -25,24 +70,26 @@ export async function sendEmail({ to, subject, html, text, replyTo }) {
     return { mock: true };
   }
 
-  if (!config.saas.resendApiKey) {
+  const apiKey = trimEnv(config.saas.resendApiKey);
+  if (!apiKey) {
     throw new Error(
       "RESEND_API_KEY is not configured — cannot send email in live SaaS mode.",
     );
   }
 
-  const from = config.saas.emailFrom || "Usely <onboarding@usely.dev>";
+  const from = parseFrom(config.saas.emailFrom);
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${config.saas.resendApiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      Accept: "application/json",
       // Resend blocks requests with no User-Agent (403 / error 1010).
       "User-Agent": "usely/1.0 (+https://usely.dev)",
     },
     body: JSON.stringify({
       from,
-      to: [to],
+      to: [String(to).trim()],
       subject,
       html,
       text,
@@ -52,9 +99,25 @@ export async function sendEmail({ to, subject, html, text, replyTo }) {
   if (!res.ok) {
     const body = await res.text();
     console.error(`Resend send failed from=${from} to=${to} status=${res.status} body=${body}`);
-    throw new Error(`Email send failed (${res.status}): ${body}`);
+    const err = new Error(friendlyResendError(res.status, body));
+    err.code = "RESEND_FAILED";
+    err.status = res.status;
+    err.detail = body;
+    throw err;
   }
   return res.json();
+}
+
+/** Ops/debug helper — returns sanitized config + a live Resend probe result. */
+export function getEmailConfigPublic() {
+  const from = parseFrom(config.saas.emailFrom);
+  const key = trimEnv(config.saas.resendApiKey);
+  return {
+    from,
+    hasApiKey: Boolean(key),
+    apiKeyPrefix: key ? `${key.slice(0, 6)}…` : null,
+    mock: Boolean(config.saas.mock),
+  };
 }
 
 export function setupEmailHtml({ setupUrl, plan }) {

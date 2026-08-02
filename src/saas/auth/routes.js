@@ -223,10 +223,13 @@ export function attachSaasRoutes(app, client) {
       res.json({ ok: true, kind: "none" });
     } catch (error) {
       console.error("forgot-password failed:", error.message);
-      const hint = /RESEND|Email send failed|domain/i.test(error.message)
-        ? "Email delivery failed. Confirm RESEND_API_KEY and that your from-domain is verified in Resend."
-        : "Could not start account recovery. Try again in a minute.";
-      res.status(500).json({ ok: false, error: hint });
+      res.status(500).json({
+        ok: false,
+        error:
+          error.code === "RESEND_FAILED" || /Resend|Email send failed|RESEND/i.test(error.message)
+            ? error.message
+            : "Could not start account recovery. Try again in a minute.",
+      });
     }
   });
 
@@ -282,9 +285,10 @@ export function attachSaasRoutes(app, client) {
       console.error("resend-setup failed:", error.message);
       res.status(500).json({
         ok: false,
-        error: /RESEND|Email send failed|domain/i.test(error.message)
-          ? "Email delivery failed. Check Resend domain verification."
-          : "Could not resend setup link",
+        error:
+          error.code === "RESEND_FAILED" || /Resend|Email send failed|RESEND/i.test(error.message)
+            ? error.message
+            : "Could not resend setup link",
       });
     }
   });

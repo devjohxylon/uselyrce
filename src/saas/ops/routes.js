@@ -402,6 +402,34 @@ export function attachOpsRoutes(app, client = null) {
     }
   });
 
+  /** Probe Resend with a real send to the address you choose (ops only). */
+  app.post("/api/ops/test-email", async (req, res) => {
+    if (!requireOps(req, res)) return;
+    try {
+      const { sendEmail, getEmailConfigPublic } = await import("../email/send.js");
+      const to = String(req.body?.to || "").toLowerCase().trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+        return res.status(400).json({ ok: false, error: "Provide a valid to email" });
+      }
+      const cfg = getEmailConfigPublic();
+      await sendEmail({
+        to,
+        subject: "Usely ops test email",
+        html: `<p>Resend is working for <strong>${cfg.from}</strong>.</p>`,
+        text: `Resend is working for ${cfg.from}.`,
+      });
+      res.json({ ok: true, ...cfg, to });
+    } catch (error) {
+      console.error("ops test-email failed:", error.message, error.detail || "");
+      res.status(500).json({
+        ok: false,
+        error: error.message,
+        detail: error.detail || null,
+        ...(await import("../email/send.js").then((m) => m.getEmailConfigPublic()).catch(() => ({}))),
+      });
+    }
+  });
+
   /** Skip Stripe — create a real setup token so you can walk through /setup. */
   app.post("/api/ops/preview-setup", async (req, res) => {
     if (!requireOps(req, res)) return;
