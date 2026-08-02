@@ -222,12 +222,12 @@ export function attachSaasRoutes(app, client) {
       // No matching account — same message as success so we don't leak.
       res.json({ ok: true, kind: "none" });
     } catch (error) {
-      console.error("forgot-password failed:", error.message);
+      console.error("forgot-password failed:", error.message, error.detail || "");
       res.status(500).json({
         ok: false,
         error:
           error.code === "RESEND_FAILED" || /Resend|Email send failed|RESEND/i.test(error.message)
-            ? error.message
+            ? "We couldn’t send email right now. Try again later."
             : "Could not start account recovery. Try again in a minute.",
       });
     }
@@ -282,12 +282,12 @@ export function attachSaasRoutes(app, client) {
       }
       res.json({ ok: true });
     } catch (error) {
-      console.error("resend-setup failed:", error.message);
+      console.error("resend-setup failed:", error.message, error.detail || "");
       res.status(500).json({
         ok: false,
         error:
           error.code === "RESEND_FAILED" || /Resend|Email send failed|RESEND/i.test(error.message)
-            ? error.message
+            ? "We couldn’t send email right now. Try again later."
             : "Could not resend setup link",
       });
     }
