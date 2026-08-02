@@ -8,6 +8,13 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Full kit catalog in the demo",
+    changes: [
+      { type: "fixed", text: "The interactive demo’s kit builder now uses the full Rust Console Edition item catalog instead of four sample items." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Homepage product walkthrough",
     changes: [
       { type: "added", text: "Full-bleed scroll sections on the home page that show the kit builder and workspace setup, with short copy for each." },

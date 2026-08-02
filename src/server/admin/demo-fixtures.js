@@ -10,6 +10,7 @@ import { getVipSettingsForPanel } from "../../modules/admin/vip-settings.js";
 import { getWipeAutomationConfig } from "../../modules/rcon/wipe-runner.js";
 import { OWNER_PERMISSIONS } from "../../modules/admin/access-keys.js";
 import { STAFF_PERMISSIONS } from "../../modules/admin/access-keys.js";
+import { listRustItems } from "../../data/rust-items.js";
 
 const PLAYERS = [
   { ign: "GhostNova", platform: "Xbox", ping: 42 },
@@ -260,13 +261,7 @@ export async function buildDemoFixtures() {
     },
     items: {
       ok: true,
-      categories: ["All", "Tools", "Attire", "Weapon"],
-      items: [
-        { id: "rock", name: "Rock", category: "Tools" },
-        { id: "torch", name: "Torch", category: "Tools" },
-        { id: "metal.facemask", name: "Metal Facemask", category: "Attire" },
-        { id: "rifle.ak", name: "Assault Rifle", category: "Weapon" },
-      ],
+      ...listRustItems(),
     },
     keys: {
       ok: true,

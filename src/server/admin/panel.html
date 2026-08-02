@@ -1402,8 +1402,8 @@ button { transition: all .15s ease; }
   gap: 1.15rem;
   align-items: start;
 }
-.kit-builder-modal .kit-picked { max-height: 280px; }
-.kit-builder-modal .kit-catalog { max-height: 360px; }
+.kit-builder-modal .kit-picked { max-height: 320px; }
+.kit-builder-modal .kit-catalog { max-height: min(52vh, 480px); }
 @media (max-width: 900px) {
   .kit-builder-modal .kit-builder { grid-template-columns: 1fr; }
 }
@@ -4312,7 +4312,7 @@ function kitCatalogHtml(catalog) {
       i.id.includes(q) || i.name.toLowerCase().includes(q) || i.category.toLowerCase().includes(q),
     );
   }
-  const shown = rows.slice(0, 80);
+  const shown = rows.slice(0, 200);
   if (!shown.length) {
     return `<div class="empty" style="padding:2rem 1rem">No matches<span class="empty-hint">Try different keywords</span></div>`;
   }
@@ -4328,7 +4328,7 @@ function kitCatalogHtml(catalog) {
       </div>
       <span class="add">+</span>
     </button>`).join("") + (rows.length > shown.length
-      ? `<div class="muted" style="padding:.7rem;text-align:center;font-family:var(--mono);font-size:.68rem;border-top:1px solid rgba(255,255,255,.04)">+${rows.length - shown.length} more — refine search</div>`
+      ? `<div class="muted" style="padding:.7rem;text-align:center;font-family:var(--mono);font-size:.68rem;border-top:1px solid rgba(255,255,255,.04)">+${rows.length - shown.length} more — type to search</div>`
       : "");
 }
 
