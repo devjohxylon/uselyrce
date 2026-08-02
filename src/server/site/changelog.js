@@ -13,7 +13,7 @@ export const entries = [
       { type: "fixed", text: "Each workspace’s kits, links, bans, wipe time, and Discord feed channels stay isolated per server — no cross-customer bleed on a shared host." },
       { type: "fixed", text: "Owners can only edit or delete their own WebRCON servers (and set defaults only within their workspace)." },
       { type: "fixed", text: "Checkout retries no longer create duplicate workspaces for the same Stripe subscription." },
-      { type: "added", text: "Owner forgot-password and resend-setup-link on the panel login screen." },
+      { type: "added", text: "Owner password reset from the panel login screen; setup-email resend lives on the signup page after checkout." },
       { type: "changed", text: "WebRCON rejects private/local hosts; unpaid workspaces no longer stay attached to the live RCON pool." },
     ],
   },

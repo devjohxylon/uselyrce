@@ -86,8 +86,13 @@
       <h2>Check your email</h2>
       <p id="doneMsg">We sent a setup link to your inbox. Open it to pick your panel address and password.</p>
       <p id="mockLink" style="display:none">No payment required for this preview. <a class="setup" id="mockHref" href="#">Open your setup link</a></p>
+      <label id="resendWrap" style="display:none;margin-top:.5rem">Email for setup link
+        <input id="resendEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+      </label>
+      <button type="button" id="resendSetup" style="display:none;background:transparent;border:1px solid var(--line2);color:var(--text)">Resend setup email</button>
+      <p id="resendMsg" class="err" style="display:none"></p>
     </div>
-    <div class="foot">Already set up? <a href="/admin">Sign in to your panel</a></div>
+    <div class="foot">Already set up? <a href="/admin">Sign in to your panel</a> · Paid but no email? Use resend above after checkout.</div>
   </div>
   <script>
     const params = new URLSearchParams(location.search);
@@ -128,6 +133,9 @@
         document.getElementById("form").style.display = "none";
         const done = document.getElementById("done");
         done.style.display = "grid";
+        document.getElementById("resendWrap").style.display = "grid";
+        document.getElementById("resendSetup").style.display = "block";
+        document.getElementById("resendEmail").value = email;
         if (r.setupUrl) {
           document.getElementById("mockLink").style.display = "block";
           document.getElementById("mockHref").href = r.setupUrl;
@@ -141,6 +149,35 @@
         err.style.display = "block";
         btn.disabled = false;
         btn.textContent = "Continue to checkout";
+      }
+    });
+    document.getElementById("resendSetup")?.addEventListener("click", async () => {
+      const msg = document.getElementById("resendMsg");
+      const btn = document.getElementById("resendSetup");
+      const email = document.getElementById("resendEmail")?.value?.trim();
+      msg.style.display = "none";
+      msg.style.color = "";
+      if (!email) {
+        msg.textContent = "Enter the email you used at checkout.";
+        msg.style.display = "block";
+        return;
+      }
+      btn.disabled = true;
+      try {
+        const r = await fetch("/admin/auth/resend-setup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }).then((x) => x.json());
+        if (!r.ok) throw new Error(r.error || "Failed");
+        msg.textContent = "If that checkout finished, we sent a new setup link.";
+        msg.style.color = "var(--ok)";
+        msg.style.display = "block";
+      } catch (e) {
+        msg.textContent = e.message || "Could not resend";
+        msg.style.display = "block";
+      } finally {
+        btn.disabled = false;
       }
     });
   </script>

@@ -162,6 +162,19 @@ export function attachSaasRoutes(app, client) {
     }
   });
 
+  function appBaseUrl(req) {
+    const configured = String(config.saas.publicUrl || "").replace(/\/$/, "");
+    if (configured && !/localhost/i.test(configured)) return configured;
+    const host = String(req.get("x-forwarded-host") || req.get("host") || "").split(",")[0].trim();
+    const proto = String(req.get("x-forwarded-proto") || "https").split(",")[0].trim();
+    return host ? `${proto}://${host}` : configured || "https://app.usely.dev";
+  }
+
+  /**
+   * Account recovery for owners: password reset if they finished setup,
+   * or a fresh setup link if they paid but never set a password.
+   * Always returns the same success shape when nothing matches (no email leak).
+   */
   app.post("/admin/auth/forgot-password", async (req, res) => {
     try {
       const ip = forgotLimit.clientIp(req);
@@ -171,22 +184,49 @@ export function attachSaasRoutes(app, client) {
       }
       forgotLimit.fail(ip);
       const email = String(req.body?.email || "").toLowerCase().trim();
-      const account = email ? await getAccountByEmail(email) : null;
-      // Always succeed — don't leak whether the email exists.
+      if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        return res.status(400).json({ ok: false, error: "Enter a valid email address." });
+      }
+
+      const account = await getAccountByEmail(email);
+      const base = appBaseUrl(req);
+
       if (account?.password_hash) {
         const token = await createPasswordResetToken(account.id);
-        const resetUrl = `${config.saas.publicUrl.replace(/\/$/, "")}/admin?reset=${token}`;
+        const resetUrl = `${base}/admin?reset=${token}`;
         await sendEmail({
           to: account.email,
           subject: "Reset your Usely password",
           html: resetPasswordEmailHtml({ resetUrl }),
           text: `Reset your Usely password: ${resetUrl}`,
         });
+        return res.json({ ok: true, kind: "reset" });
       }
-      res.json({ ok: true });
+
+      if (account && !account.password_hash) {
+        const orgs = await listOrgsOwnedByAccount(account.id);
+        const org = orgs[0];
+        if (org) {
+          const token = await createSetupToken({ accountId: account.id, orgId: org.id });
+          const setupUrl = `${base}/setup?token=${token}`;
+          await sendEmail({
+            to: account.email,
+            subject: "Finish setting up your Usely workspace",
+            html: setupEmailHtml({ setupUrl, plan: org.plan || "basic" }),
+            text: `Finish setup: ${setupUrl}`,
+          });
+          return res.json({ ok: true, kind: "setup" });
+        }
+      }
+
+      // No matching account — same message as success so we don't leak.
+      res.json({ ok: true, kind: "none" });
     } catch (error) {
       console.error("forgot-password failed:", error.message);
-      res.status(500).json({ ok: false, error: "Could not start password reset" });
+      const hint = /RESEND|Email send failed|domain/i.test(error.message)
+        ? "Email delivery failed. Confirm RESEND_API_KEY and that your from-domain is verified in Resend."
+        : "Could not start account recovery. Try again in a minute.";
+      res.status(500).json({ ok: false, error: hint });
     }
   });
 
@@ -209,6 +249,7 @@ export function attachSaasRoutes(app, client) {
     }
   });
 
+  /** Paid but unfinished setup — used from /signup, not the login screen. */
   app.post("/admin/auth/resend-setup", async (req, res) => {
     try {
       const ip = forgotLimit.clientIp(req);
@@ -218,13 +259,16 @@ export function attachSaasRoutes(app, client) {
       }
       forgotLimit.fail(ip);
       const email = String(req.body?.email || "").toLowerCase().trim();
-      const account = email ? await getAccountByEmail(email) : null;
+      if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        return res.status(400).json({ ok: false, error: "Enter a valid email address." });
+      }
+      const account = await getAccountByEmail(email);
       if (account && !account.password_hash) {
         const orgs = await listOrgsOwnedByAccount(account.id);
         const org = orgs[0];
         if (org) {
           const token = await createSetupToken({ accountId: account.id, orgId: org.id });
-          const setupUrl = `${config.saas.publicUrl.replace(/\/$/, "")}/setup?token=${token}`;
+          const setupUrl = `${appBaseUrl(req)}/setup?token=${token}`;
           await sendEmail({
             to: account.email,
             subject: "Finish setting up your Usely workspace",
@@ -236,7 +280,12 @@ export function attachSaasRoutes(app, client) {
       res.json({ ok: true });
     } catch (error) {
       console.error("resend-setup failed:", error.message);
-      res.status(500).json({ ok: false, error: "Could not resend setup link" });
+      res.status(500).json({
+        ok: false,
+        error: /RESEND|Email send failed|domain/i.test(error.message)
+          ? "Email delivery failed. Check Resend domain verification."
+          : "Could not resend setup link",
+      });
     }
   });
 

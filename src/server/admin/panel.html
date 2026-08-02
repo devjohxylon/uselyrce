@@ -315,6 +315,29 @@ input:focus, textarea:focus, select:focus {
   border: 1px solid rgba(255,107,115,.25); border-radius: var(--radius-sm);
   color: #ffb0b5; font-family: var(--mono); font-size: .72rem; text-align: center;
 }
+.login-error.ok {
+  background: rgba(94,217,160,.08);
+  border-color: rgba(94,217,160,.28);
+  color: #a8ebc8;
+}
+.login-help {
+  margin: .55rem 0 0;
+  text-align: right;
+  font-size: .78rem;
+}
+.login-help button {
+  background: none; border: none; padding: 0; margin: 0;
+  color: var(--muted); font: inherit; font-size: inherit; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.login-help button:hover { color: var(--chrome); }
+.login-back {
+  margin: 0 0 .85rem;
+  background: none; border: none; padding: 0;
+  color: var(--muted); font: inherit; font-size: .78rem; cursor: pointer;
+  text-align: left;
+}
+.login-back:hover { color: var(--chrome); }
 
 @media (max-width: 800px) {
   #login { padding: 1.5rem 1rem; }
@@ -1725,27 +1748,37 @@ button { transition: all .15s ease; }
         <button class="primary" id="loginBtn">Sign In</button>
       </div>
       <div id="saasLogin" class="hidden">
-        <p class="login-subtitle" style="margin:0 0 .85rem;text-align:left">Owner</p>
-        <label for="saasEmail">Email</label>
-        <input id="saasEmail" type="email" placeholder="you@example.com" autocomplete="email" />
-        <label for="saasPassword" style="margin-top:.6rem">Password</label>
-        <input id="saasPassword" type="password" placeholder="Your password" autocomplete="current-password" />
-        <button class="primary" id="saasEmailLoginBtn" style="margin-top:.85rem">Sign in as owner</button>
-        <button type="button" class="ghost" id="saasForgotBtn" style="margin-top:.45rem;width:100%;font-size:.78rem">Forgot password?</button>
-        <button type="button" class="ghost" id="saasResendSetupBtn" style="margin-top:.2rem;width:100%;font-size:.78rem">Resend setup link</button>
-        <div id="saasResetBox" class="hidden" style="margin-top:.85rem">
+        <div id="saasSignInView">
+          <p class="login-subtitle" style="margin:0 0 .85rem;text-align:left">Owner</p>
+          <label for="saasEmail">Email</label>
+          <input id="saasEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+          <label for="saasPassword" style="margin-top:.6rem">Password</label>
+          <input id="saasPassword" type="password" placeholder="Your password" autocomplete="current-password" />
+          <p class="login-help"><button type="button" id="saasForgotBtn">Forgot password?</button></p>
+          <button class="primary" id="saasEmailLoginBtn" style="margin-top:.85rem">Sign in as owner</button>
+          <p id="opsLoginHint" class="login-subtitle hidden" style="margin-top:.85rem;margin-bottom:0;color:var(--chrome)">Sign in with your ops email, then you'll be sent to the platform dashboard.</p>
+          <div style="display:flex;align-items:center;gap:.6rem;margin:1.15rem 0;color:var(--faint);font-size:.75rem">
+            <span style="flex:1;height:1px;background:var(--line)"></span>staff<span style="flex:1;height:1px;background:var(--line)"></span>
+          </div>
+          <label for="saasStaffKey">Access key</label>
+          <input id="saasStaffKey" type="password" placeholder="ask_…" autocomplete="current-password" />
+          <button class="primary" id="saasKeyLoginBtn" style="margin-top:.85rem;background:transparent;border:1px solid var(--line2);color:var(--text)">Sign in with key</button>
+          <p class="login-subtitle" style="margin-top:1rem;margin-bottom:0">Owners use email. Staff use a key from <strong>Workspace → Staff keys</strong> on this panel URL. New here? <a href="/signup" style="color:var(--chrome)">Create a workspace</a>.</p>
+        </div>
+        <div id="saasRecoverView" class="hidden">
+          <button type="button" class="login-back" id="saasRecoverBack">← Back to sign in</button>
+          <p class="login-subtitle" style="margin:0 0 .85rem;text-align:left">Reset password</p>
+          <p class="login-subtitle" style="margin:0 0 1rem;text-align:left;text-transform:none;letter-spacing:0;line-height:1.45">Enter your owner email. We’ll send a reset link if that account is set up.</p>
+          <label for="saasRecoverEmail">Email</label>
+          <input id="saasRecoverEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+          <button class="primary" id="saasRecoverBtn" style="margin-top:.85rem">Send reset link</button>
+        </div>
+        <div id="saasResetView" class="hidden">
+          <p class="login-subtitle" style="margin:0 0 .85rem;text-align:left">Choose a new password</p>
           <label for="saasResetPassword">New password</label>
           <input id="saasResetPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
-          <button class="primary" id="saasResetBtn" style="margin-top:.65rem">Save new password</button>
+          <button class="primary" id="saasResetBtn" style="margin-top:.85rem">Save password</button>
         </div>
-        <p id="opsLoginHint" class="login-subtitle hidden" style="margin-top:.85rem;margin-bottom:0;color:var(--chrome)">Sign in with your ops email, then you'll be sent to the platform dashboard.</p>
-        <div style="display:flex;align-items:center;gap:.6rem;margin:1.15rem 0;color:var(--faint);font-size:.75rem">
-          <span style="flex:1;height:1px;background:var(--line)"></span>staff<span style="flex:1;height:1px;background:var(--line)"></span>
-        </div>
-        <label for="saasStaffKey">Access key</label>
-        <input id="saasStaffKey" type="password" placeholder="ask_…" autocomplete="current-password" />
-        <button class="primary" id="saasKeyLoginBtn" style="margin-top:.85rem;background:transparent;border:1px solid var(--line2);color:var(--text)">Sign in with key</button>
-        <p class="login-subtitle" style="margin-top:1rem;margin-bottom:0">Owners use email. Staff use a key from <strong>Workspace → Staff keys</strong> on this panel URL. New here? <a href="/signup" style="color:var(--chrome)">Create a workspace</a>.</p>
       </div>
       <div id="loginError" class="login-error hidden"></div>
     </div>
@@ -2245,6 +2278,9 @@ async function boot() {
   if (session.saas) {
     saasLogin?.classList.remove("hidden");
     legacyLogin?.classList.add("hidden");
+    if (!session.authed && new URLSearchParams(location.search).get("reset")) {
+      setSaasLoginMode("reset");
+    }
   } else {
     saasLogin?.classList.add("hidden");
     legacyLogin?.classList.remove("hidden");
@@ -6561,9 +6597,26 @@ document.getElementById("navClose")?.addEventListener("click", () => setNavOpen(
 document.getElementById("navBackdrop")?.addEventListener("click", () => setNavOpen(false));
 document.getElementById("logoutBtnMobile")?.addEventListener("click", () =>
   document.getElementById("logoutBtn")?.click());
-document.getElementById("saasEmailLoginBtn")?.addEventListener("click", async () => {
+function showLoginMsg(text, ok = false) {
   const errorEl = document.getElementById("loginError");
-  errorEl.classList.add("hidden");
+  if (!errorEl) return;
+  errorEl.textContent = text || "";
+  errorEl.classList.toggle("ok", Boolean(ok));
+  errorEl.classList.toggle("hidden", !text);
+}
+
+function setSaasLoginMode(mode) {
+  const signIn = document.getElementById("saasSignInView");
+  const recover = document.getElementById("saasRecoverView");
+  const reset = document.getElementById("saasResetView");
+  signIn?.classList.toggle("hidden", mode !== "signin");
+  recover?.classList.toggle("hidden", mode !== "recover");
+  reset?.classList.toggle("hidden", mode !== "reset");
+  showLoginMsg("");
+}
+
+document.getElementById("saasEmailLoginBtn")?.addEventListener("click", async () => {
+  showLoginMsg("");
   try {
     const r = await fetch("/admin/auth/email", {
       method: "POST",
@@ -6576,22 +6629,29 @@ document.getElementById("saasEmailLoginBtn")?.addEventListener("click", async ()
     if (!r.ok) throw new Error(r.error || "Login failed");
     await boot();
   } catch (e) {
-    errorEl.textContent = e.message || "Invalid email or password";
-    errorEl.classList.remove("hidden");
+    showLoginMsg(e.message || "Invalid email or password");
   }
 });
 document.getElementById("saasPassword")?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") document.getElementById("saasEmailLoginBtn")?.click();
 });
-document.getElementById("saasForgotBtn")?.addEventListener("click", async () => {
-  const errorEl = document.getElementById("loginError");
-  errorEl.classList.add("hidden");
-  const email = document.getElementById("saasEmail")?.value?.trim();
+document.getElementById("saasForgotBtn")?.addEventListener("click", () => {
+  const email = document.getElementById("saasEmail")?.value?.trim() || "";
+  const recoverEmail = document.getElementById("saasRecoverEmail");
+  if (recoverEmail) recoverEmail.value = email;
+  setSaasLoginMode("recover");
+});
+document.getElementById("saasRecoverBack")?.addEventListener("click", () => setSaasLoginMode("signin"));
+document.getElementById("saasRecoverBtn")?.addEventListener("click", async () => {
+  const btn = document.getElementById("saasRecoverBtn");
+  const email = document.getElementById("saasRecoverEmail")?.value?.trim();
+  showLoginMsg("");
   if (!email) {
-    errorEl.textContent = "Enter your owner email first";
-    errorEl.classList.remove("hidden");
+    showLoginMsg("Enter your owner email.");
     return;
   }
+  btn.disabled = true;
+  btn.textContent = "Sending…";
   try {
     const r = await fetch("/admin/auth/forgot-password", {
       method: "POST",
@@ -6599,44 +6659,22 @@ document.getElementById("saasForgotBtn")?.addEventListener("click", async () => 
       body: JSON.stringify({ email }),
     }).then((x) => x.json());
     if (!r.ok) throw new Error(r.error || "Request failed");
-    errorEl.textContent = "If that account exists, we sent a reset link.";
-    errorEl.classList.remove("hidden");
+    showLoginMsg("Check your inbox (and spam) for a reset or setup link.", true);
   } catch (e) {
-    errorEl.textContent = e.message || "Could not send reset email";
-    errorEl.classList.remove("hidden");
+    showLoginMsg(e.message || "Could not send email");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Send reset link";
   }
 });
-document.getElementById("saasResendSetupBtn")?.addEventListener("click", async () => {
-  const errorEl = document.getElementById("loginError");
-  errorEl.classList.add("hidden");
-  const email = document.getElementById("saasEmail")?.value?.trim();
-  if (!email) {
-    errorEl.textContent = "Enter your owner email first";
-    errorEl.classList.remove("hidden");
-    return;
-  }
-  try {
-    const r = await fetch("/admin/auth/resend-setup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    }).then((x) => x.json());
-    if (!r.ok) throw new Error(r.error || "Request failed");
-    errorEl.textContent = "If setup is still unfinished, we sent a new link.";
-    errorEl.classList.remove("hidden");
-  } catch (e) {
-    errorEl.textContent = e.message || "Could not resend setup link";
-    errorEl.classList.remove("hidden");
-  }
+document.getElementById("saasRecoverEmail")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("saasRecoverBtn")?.click();
 });
 (() => {
-  const params = new URLSearchParams(location.search);
-  const resetToken = params.get("reset");
+  const resetToken = new URLSearchParams(location.search).get("reset");
   if (!resetToken) return;
-  document.getElementById("saasResetBox")?.classList.remove("hidden");
   document.getElementById("saasResetBtn")?.addEventListener("click", async () => {
-    const errorEl = document.getElementById("loginError");
-    errorEl.classList.add("hidden");
+    showLoginMsg("");
     try {
       const r = await fetch("/admin/auth/reset-password", {
         method: "POST",
@@ -6648,18 +6686,15 @@ document.getElementById("saasResendSetupBtn")?.addEventListener("click", async (
       }).then((x) => x.json());
       if (!r.ok) throw new Error(r.error || "Reset failed");
       history.replaceState({}, "", "/admin");
-      errorEl.textContent = "Password updated — sign in with your new password.";
-      errorEl.classList.remove("hidden");
-      document.getElementById("saasResetBox")?.classList.add("hidden");
+      setSaasLoginMode("signin");
+      showLoginMsg("Password updated — sign in with your new password.", true);
     } catch (e) {
-      errorEl.textContent = e.message || "Reset failed";
-      errorEl.classList.remove("hidden");
+      showLoginMsg(e.message || "Reset failed");
     }
   });
 })();
 document.getElementById("saasKeyLoginBtn")?.addEventListener("click", async () => {
-  const errorEl = document.getElementById("loginError");
-  errorEl.classList.add("hidden");
+  showLoginMsg("");
   try {
     await api("/login", {
       method: "POST",
@@ -6667,8 +6702,7 @@ document.getElementById("saasKeyLoginBtn")?.addEventListener("click", async () =
     });
     await boot();
   } catch (e) {
-    errorEl.textContent = e.message || "Wrong access key";
-    errorEl.classList.remove("hidden");
+    showLoginMsg(e.message || "Wrong access key");
   }
 });
 document.getElementById("saasStaffKey")?.addEventListener("keydown", (e) => {
