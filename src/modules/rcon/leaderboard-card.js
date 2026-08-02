@@ -134,7 +134,7 @@ function drawHeader(ctx, wipeLabel) {
   ctx.fillStyle = T.chromeDim;
   ctx.font = `600 11px ${FONT_UI}`;
   ctx.letterSpacing = "0.08em";
-  ctx.fillText("ASTRAL VANILLA+", PAD, 30);
+  ctx.fillText("USELY", PAD, 30);
   ctx.letterSpacing = "0px";
 
   // Chrome gradient title

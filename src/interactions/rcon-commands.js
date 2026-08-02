@@ -8,7 +8,7 @@ import {
   sendGameCommand,
 } from "../modules/rcon/client.js";
 import { getRconStatus } from "../modules/rcon/client.js";
-import { pushLeaderboardToWebsite, buildLeaderboardAttachment } from "../modules/rcon/index.js";
+import { buildLeaderboardAttachment } from "../modules/rcon/index.js";
 import {
   formatPlaytime,
   getLeaderboard,
@@ -200,21 +200,13 @@ export async function handleRconCommand(interaction) {
 
   if (sub === "pushstats") {
     await interaction.deferReply({ ephemeral: true });
-    const result = await pushLeaderboardToWebsite().catch((error) => ({ error: error.message }));
     const { publishLeaderboardToDiscord } = await import("../modules/rcon/leaderboard-publish.js");
     const discord = await publishLeaderboardToDiscord(interaction.client).catch((error) => ({
       error: error.message,
     }));
-    if (!result && discord?.error) {
-      return interaction.editReply(`Failed: ${discord.error}`);
-    }
-    if (result?.error) return interaction.editReply(`Website: ${result.error}`);
-    const parts = [];
-    if (result) parts.push(`website ${result.leaderboards.length} board(s)`);
-    if (discord && !discord.error) parts.push("Discord image updated");
-    if (discord?.error) parts.push(`Discord: ${discord.error}`);
-    if (!parts.length) return interaction.editReply("No stats to push yet.");
-    return interaction.editReply(`Pushed: ${parts.join(" · ")}`);
+    if (discord?.error) return interaction.editReply(`Failed: ${discord.error}`);
+    if (!discord) return interaction.editReply("No stats to push yet.");
+    return interaction.editReply("Leaderboard image updated in Discord.");
   }
 
   if (!getRconStatus().connected) {

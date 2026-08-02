@@ -9,9 +9,7 @@
     "dev": "node --watch src/index.js",
     "build:site": "node scripts/build-site.js",
     "register-commands": "node src/register-commands.js",
-    "test:ingest": "node scripts/test-ingest-server.js",
-    "debug:leaderboard": "node scripts/debug-leaderboard.js",
-    "seed:astral-org": "node scripts/seed-astral-org.js"
+    "debug:leaderboard": "node scripts/debug-leaderboard.js"
   },
   "engines": {
     "node": ">=18"

@@ -72,7 +72,7 @@ Stripe keys aren't enforced at boot, but `/signup` can't take payment without
 them, so signup stays broken until they're set.
 
 3. Custom domains on the Railway service: `app.usely.dev` **and** `*.usely.dev`
-   (wildcard — this is what makes `astral.usely.dev` org panels work).
+   (wildcard — this is what makes `myserver.usely.dev` org panels work).
 4. Discord Developer Portal (the **bot** application matching `DISCORD_CLIENT_ID`):
    - Bot → enable **Public Bot** (required so customers can invite it)
    - Bot → Privileged Gateway Intents: Message Content + Server Members
@@ -142,11 +142,4 @@ Stripe can stay empty until you set price IDs; checkout will fail gracefully.
 npm.cmd run register-commands
 ```
 
-## Seed first org (optional)
-
-```powershell
-$env:ASTRAL_OWNER_DISCORD_ID="your_discord_user_id"
-npm.cmd run seed:astral-org
-```
-
-That seeds an **org named Astral** (a customer server), not the product brand.
+Sign up through `/signup` to create a customer workspace (no seed script).

@@ -1,6 +1,5 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { config } from "./config.js";
-import { relayDiscordMessage, syncServerPop } from "./services/website.js";
 import { createWebhookServer } from "./server/webhook.js";
 import { attachInteractionRouter } from "./interactions/router.js";
 import { runAutomod, trackMemberJoin } from "./modules/automod/engine.js";
@@ -8,7 +7,7 @@ import { triggerRaidAlert } from "./modules/moderation/actions.js";
 import { handleMemberJoin } from "./modules/welcome/handlers.js";
 import { checkExpiredGiveaways } from "./modules/giveaways/manager.js";
 import { relayDiscordToGame, shutdownRcon, startRcon } from "./modules/rcon/index.js";
-import { isRconEnabled, getOnlinePlayers, getServerInfo } from "./modules/rcon/client.js";
+import { getOnlinePlayers, getServerInfo } from "./modules/rcon/client.js";
 import { handleVipRoleChange } from "./modules/rcon/vip-sync.js";
 import { loadChannelOverrides } from "./modules/admin/channel-settings.js";
 import { assertDataPersistence } from "./data/store.js";
@@ -65,16 +64,6 @@ export function createBotClient() {
     await loadChannelOverrides().catch((e) =>
       console.error("Channel overrides failed:", e.message),
     );
-    console.log(`Watching ${config.channels.watch.size} relay channel(s)`);
-
-    // With RCON connected we get live player counts straight from the game,
-    // so the KAOS voice-channel scrape is only a fallback.
-    if (config.channels.pop && !isRconEnabled()) {
-      syncServerPop(client, { force: true }).catch((e) =>
-        console.error("Initial pop sync failed:", e.message),
-      );
-      setInterval(() => syncServerPop(client, { silent: true }).catch(() => {}), config.server.pollMs);
-    }
 
     setInterval(() => {
       const players = getOnlinePlayers();
@@ -107,16 +96,6 @@ export function createBotClient() {
     }
   });
 
-  client.on("channelUpdate", async (oldChannel, newChannel) => {
-    if (!config.channels.pop || newChannel.id !== config.channels.pop) return;
-    if (oldChannel?.name === newChannel?.name) return;
-    try {
-      await syncServerPop(client);
-    } catch (error) {
-      console.error("Pop sync failed:", error.message);
-    }
-  });
-
   client.on("guildMemberAdd", async (member) => {
     try {
       await handleMemberJoin(member);
@@ -146,7 +125,6 @@ export function createBotClient() {
     try {
       await runAutomod(message);
       await relayDiscordToGame(message);
-      await relayDiscordMessage(message);
     } catch (error) {
       console.error(`Message handler failed ${message.id}:`, error.message);
     }
@@ -156,7 +134,6 @@ export function createBotClient() {
     try {
       if (newMessage.partial) await newMessage.fetch();
       await runAutomod(newMessage);
-      await relayDiscordMessage(newMessage);
     } catch (error) {
       console.error(`Message update failed ${newMessage.id}:`, error.message);
     }

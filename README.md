@@ -2,7 +2,7 @@
 
 **Usely** (`usely.dev`) is a multi-tenant Discord + WebRCON admin panel for Rust Console Edition servers.
 
-Communities (e.g. Astral, Aces) sign in with Discord, invite the shared bot, add one or more Nitrado WebRCON servers, map staff roles to permissions, and manage players from the web panel.
+Communities sign in with Discord, invite the shared bot, add one or more Nitrado WebRCON servers, create staff access keys, and manage players from the web panel.
 
 ## Stack
 

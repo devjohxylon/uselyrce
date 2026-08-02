@@ -4,7 +4,6 @@ import {
   wipeEmbed,
 } from "../utils/format.js";
 import { config } from "../config.js";
-import { markRelayed } from "../services/website.js";
 
 function resolveChannel(client, type) {
   const channelId = config.channels.outbound[type];
@@ -77,7 +76,8 @@ function buildPayload(body) {
   };
 }
 
-export async function publishFromWebsite(client, body) {
+/** Post an announcement / wipe / event embed into the configured Discord channel. */
+export async function publishToDiscord(client, body) {
   const type = body.type;
   if (!["announcement", "wipe", "event"].includes(type)) {
     throw new Error(`Unsupported publish type "${type}"`);
@@ -93,7 +93,6 @@ export async function publishFromWebsite(client, body) {
     });
   }
 
-  markRelayed(message.id);
   return {
     messageId: message.id,
     channelId: channel.id,
@@ -102,7 +101,6 @@ export async function publishFromWebsite(client, body) {
 }
 
 export async function getBotStatus(client) {
-  const watched = [...config.channels.watch];
   const outbound = Object.entries(config.channels.outbound)
     .filter(([, id]) => Boolean(id))
     .map(([type, id]) => ({ type, id }));
@@ -111,10 +109,7 @@ export async function getBotStatus(client) {
     ready: client.isReady(),
     user: client.user?.tag ?? null,
     guildId: config.discord.guildId || null,
-    watchedChannels: watched,
     outboundChannels: outbound,
-    websiteIngestUrl: config.website.ingestUrl,
-    websiteLeaderboardUrl: config.website.leaderboardUrl || config.website.ingestUrl,
     leaderboardChannelId: config.channels.leaderboard,
     uptimeSeconds: Math.floor(process.uptime()),
   };

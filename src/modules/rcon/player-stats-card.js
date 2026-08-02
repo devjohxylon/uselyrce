@@ -121,7 +121,7 @@ export async function renderPlayerStatsCard(card) {
 
   ctx.fillStyle = T.chromeDim || T.muted;
   ctx.font = `600 11px ${FONT_UI}`;
-  ctx.fillText("ASTRAL VANILLA+", PAD + 22, PAD + 28);
+  ctx.fillText("USELY", PAD + 22, PAD + 28);
 
   const titleGrad = ctx.createLinearGradient(PAD + 22, PAD + 36, PAD + 22, PAD + 68);
   titleGrad.addColorStop(0, "#ffffff");

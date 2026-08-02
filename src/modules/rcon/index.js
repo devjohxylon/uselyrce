@@ -1,6 +1,5 @@
 import { RCEEvent } from "rce.js";
 import { config } from "../../config.js";
-import { sendToWebsite } from "../../services/website.js";
 import {
   connectRcon,
   getOnlinePlayers,
@@ -109,7 +108,6 @@ export async function startRcon(client) {
     wrap(async (payload) => {
       const serverId = eventServerId(payload);
       syncServerStatus(client, getServerInfo(serverId), { force: true, serverId }).catch(() => {});
-      pushLeaderboardToWebsite().catch(() => {});
       publishLeaderboardToDiscord(client).catch((e) =>
         console.error("Leaderboard Discord publish failed:", e.message),
       );
@@ -235,9 +233,6 @@ export async function startRcon(client) {
   setInterval(() => flushStats().catch(() => {}), 60_000);
   setInterval(
     () => {
-      pushLeaderboardToWebsite().catch((error) =>
-        console.error("Leaderboard push failed:", error.message),
-      );
       publishLeaderboardToDiscord(client).catch((error) =>
         console.error("Leaderboard Discord publish failed:", error.message),
       );
@@ -279,7 +274,6 @@ export async function syncServerStatus(client, info = getServerInfo(), { force =
     online: true,
   };
 
-  await sendToWebsite(payload).catch(() => {});
   await updateStatusChannel(client, info, force, serverId);
   return payload;
 }
@@ -327,27 +321,6 @@ export async function buildLeaderboardPayload(limit = 10) {
   }
 
   return boards;
-}
-
-export async function pushLeaderboardToWebsite() {
-  const leaderboards = await buildLeaderboardPayload();
-  if (!leaderboards.length) return null;
-
-  const payload = {
-    type: "leaderboard",
-    source: "rcon",
-    format: "text",
-    parsed: true,
-    primaryImageUrl: null,
-    images: [],
-    leaderboards,
-    messageId: `rcon-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-  };
-
-  await sendToWebsite(payload, config.website.leaderboardUrl || config.website.ingestUrl);
-  console.log(`Leaderboard pushed to website (${leaderboards.length} board(s))`);
-  return payload;
 }
 
 export async function relayDiscordToGame(message) {

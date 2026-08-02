@@ -2877,9 +2877,9 @@ async function renderStats() {
       </div>
       <div class="card">
         <h3>Community actions</h3>
-        <p class="card-desc">Push the current wipe boards to the website, or look up one player.</p>
+        <p class="card-desc">Push the current wipe boards to Discord, or look up one player.</p>
         <div class="actions">
-          <button class="primary" data-action="pushStats">Push to website</button>
+          <button class="primary" data-action="pushStats">Push to Discord</button>
           ${can("statsReset") ? `<button class="danger" data-action="resetStats">Reset wipe stats</button>` : ""}
         </div>
         <h3 style="margin-top:1.35rem">Player lookup</h3>
@@ -5297,7 +5297,7 @@ async function renderWipe() {
 
     <div class="card" style="margin-top:1rem;max-width:640px">
       <div class="card-head"><h3>Countdown</h3><span class="pill">${esc(o.stats?.wipe || "—")}</span></div>
-      <p class="card-desc">Status channel / website. Current: ${esc(wipeLabel)}</p>
+      <p class="card-desc">Status channel rename. Current: ${esc(wipeLabel)}</p>
       <div class="form-row" style="margin-top:0">
         <input id="wipeAtInput" type="datetime-local" value="${esc(o.wipe?.localInput || "")}" />
         <button class="primary" data-action="saveWipe">Save</button>
@@ -6176,7 +6176,7 @@ function bindView() {
           render();
           document.getElementById("rconCmd")?.focus();
         }
-        if (a === "pushStats") { await api("/stats/push", { method: "POST", body: {} }); toast("Leaderboard pushed"); }
+        if (a === "pushStats") { await api("/stats/push", { method: "POST", body: {} }); toast("Leaderboard pushed to Discord"); }
         if (a === "statsCategory") {
           state.statsCategory = el.dataset.cat || "kills";
           render();

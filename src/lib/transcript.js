@@ -59,7 +59,7 @@ export async function sendTicketTranscript(guild, ticket, closedById) {
   const transcript = await buildChannelTranscript(ticketChannel);
   const filename = `ticket-${ticket.type}-${ticket.userId}-${Date.now()}.txt`;
   const header = [
-    "ASTRAL SUPPORT TICKET TRANSCRIPT",
+    "USELY SUPPORT TICKET TRANSCRIPT",
     "==============================",
     `Ticket ID: ${ticket.id}`,
     `Type: ${ticket.type}`,

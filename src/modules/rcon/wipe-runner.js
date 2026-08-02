@@ -170,12 +170,10 @@ async function stepClearKitCooldowns() {
 }
 
 async function stepPublishLeaderboard(client) {
-  const { pushLeaderboardToWebsite } = await import("./index.js");
-  const website = await pushLeaderboardToWebsite().catch((e) => ({ error: e.message }));
   const discord = await publishLeaderboardToDiscord(client).catch((e) => ({
     error: e.message,
   }));
-  return { website, discord: discord?.id ? { messageId: discord.id } : discord };
+  return { discord: discord?.id ? { messageId: discord.id } : discord };
 }
 
 async function stepAnnounce(client, wipeLabel) {

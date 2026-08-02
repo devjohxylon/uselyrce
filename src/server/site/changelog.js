@@ -8,6 +8,14 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "No more external website stats sync",
+    changes: [
+      { type: "changed", text: "Leaderboards and server status are no longer pushed to an external community website." },
+      { type: "changed", text: "Panel and <code>/rcon pushstats</code> only refresh the Discord leaderboard image." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Full kit catalog in the demo",
     changes: [
       { type: "fixed", text: "The interactive demo’s kit builder now uses the full Rust Console Edition item catalog instead of four sample items." },

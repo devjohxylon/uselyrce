@@ -60,41 +60,11 @@ function parseWordList(name) {
     .filter(Boolean);
 }
 
-const ingestUrl = optional("WEBSITE_INGEST_URL") || null;
-const leaderboardUrlOverride = optional("WEBSITE_LEADERBOARD_URL");
-const websiteApiSecret = optional("WEBSITE_API_SECRET") || null;
-const skipWebsiteSync =
-  parseBool("SKIP_WEBSITE_SYNC") || !ingestUrl;
-
-if (!ingestUrl) {
-  console.warn(
-    "WEBSITE_INGEST_URL not set — website sync disabled. Bot will still run Discord + RCON.",
-  );
-}
-
 const outboundChannels = {
   announcement: announcements,
   wipe: wipes,
   event: events,
 };
-
-const watchChannels = new Set(
-  [
-    kaosActivity,
-    leaderboard,
-    parseBool("INGEST_ANNOUNCEMENTS") ? announcements : null,
-  ].filter(Boolean),
-);
-
-function resolveLeaderboardIngestUrl(ingestUrl, leaderboardUrl) {
-  if (!leaderboardUrl) return ingestUrl;
-  if (!ingestUrl) return leaderboardUrl.includes("/api/") ? leaderboardUrl : null;
-  if (leaderboardUrl.includes("/api/")) return leaderboardUrl;
-  console.warn(
-    `WEBSITE_LEADERBOARD_URL must be an API path (e.g. .../api/discord/ingest), not a public page. Using WEBSITE_INGEST_URL instead.`,
-  );
-  return ingestUrl;
-}
 
 function parseRconEndpoint() {
   let host = optional("RCON_HOST") || null;
@@ -216,7 +186,6 @@ export const config = {
     wipeStatus,
     reports,
     outbound: outboundChannels,
-    watch: watchChannels,
   },
   groups: {
     // Trio wipe: flag teams larger than this (Discord + Reports tab)
@@ -285,16 +254,9 @@ export const config = {
     playtimeMinutes: Number(optional("ECONOMY_PLAYTIME_MINUTES", "30")) || 30,
     startingBalance: Number(optional("ECONOMY_STARTING_BALANCE", "100")) || 100,
   },
-  ingestAnnouncements: parseBool("INGEST_ANNOUNCEMENTS"),
   leaderboard: {
     minEntries: Number(optional("LEADERBOARD_MIN_ENTRIES", "1")),
     sendRawOnParseFail: parseBool("LEADERBOARD_SEND_RAW"),
-  },
-  website: {
-    ingestUrl,
-    leaderboardUrl: resolveLeaderboardIngestUrl(ingestUrl, leaderboardUrlOverride),
-    apiSecret: websiteApiSecret,
-    skipSync: skipWebsiteSync,
   },
   webhook: {
     secret: optional("BOT_WEBHOOK_SECRET", "change-me-webhook-secret"),
@@ -334,15 +296,6 @@ export const config = {
   },
   adminUserIds: new Set(parseIdList("ADMIN_USER_IDS")),
 };
-
-export function channelTypeForId(channelId) {
-  if (channelId === config.channels.announcements) return "announcement";
-  if (channelId === config.channels.wipes) return "wipe";
-  if (channelId === config.channels.events) return "event";
-  if (channelId === config.channels.kaosActivity) return "kaos_activity";
-  if (channelId === config.channels.leaderboard) return "leaderboard";
-  return "unknown";
-}
 
 export function isAdmin(userId) {
   if (config.adminUserIds.size === 0) return true;

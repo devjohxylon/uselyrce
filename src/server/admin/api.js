@@ -49,7 +49,6 @@ import {
   toggleScheduledCommand,
   updateScheduledCommand,
 } from "../../modules/rcon/scheduler.js";
-import { pushLeaderboardToWebsite } from "../../modules/rcon/index.js";
 import { listRustItems } from "../../data/rust-items.js";
 import {
   addServerKitItem,
@@ -793,16 +792,15 @@ export async function attachAdminPanel(app, client) {
 
   app.post("/admin/api/stats/push", requireAuth, requirePerm("stats"), async (req, res) => {
     try {
-      const result = await pushLeaderboardToWebsite();
       const { publishLeaderboardToDiscord } = await import("../../modules/rcon/leaderboard-publish.js");
       const discordMsg = await publishLeaderboardToDiscord(client).catch((e) => ({ error: e.message }));
       await audit(req, "stats_push");
+      if (discordMsg?.error) {
+        return res.status(500).json({ ok: false, error: discordMsg.error });
+      }
       res.json({
         ok: true,
-        result,
-        discord: discordMsg?.error
-          ? { ok: false, error: discordMsg.error }
-          : { ok: true, messageId: discordMsg?.id || null },
+        discord: { ok: true, messageId: discordMsg?.id || null },
       });
     } catch (error) {
       res.status(500).json({ ok: false, error: error.message });

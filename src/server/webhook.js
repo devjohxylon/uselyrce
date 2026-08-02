@@ -3,8 +3,7 @@ import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import { config } from "../config.js";
-import { publishFromWebsite, getBotStatus } from "../services/discordPublish.js";
-import { backfillChannel, syncLatestLeaderboard } from "../services/website.js";
+import { publishToDiscord, getBotStatus } from "../services/discordPublish.js";
 import { attachAdminPanel } from "./admin/api.js";
 import { createWebSocketServer } from "./websocket.js";
 import { attachMarketingSite } from "./site/routes.js";
@@ -109,43 +108,11 @@ export async function createWebhookServer(client) {
 
   app.post("/publish", authorize, async (req, res) => {
     try {
-      const result = await publishFromWebsite(client, req.body ?? {});
+      const result = await publishToDiscord(client, req.body ?? {});
       res.status(201).json({ ok: true, ...result });
     } catch (error) {
       console.error("Publish webhook failed:", error);
       res.status(400).json({ ok: false, error: error.message });
-    }
-  });
-
-  app.post("/sync/leaderboard", authorize, async (_req, res) => {
-    try {
-      const messageIds = await syncLatestLeaderboard(client);
-      res.json({ ok: true, synced: messageIds.length, messageIds });
-    } catch (error) {
-      console.error("Leaderboard sync failed:", error);
-      res.status(500).json({ ok: false, error: error.message });
-    }
-  });
-
-  app.post("/sync/backfill", authorize, async (req, res) => {
-    try {
-      const { channelId, limit = 25 } = req.body ?? {};
-      const targetId = channelId || config.channels.kaosActivity;
-
-      if (!targetId) {
-        return res.status(400).json({ ok: false, error: "No channel configured for backfill" });
-      }
-
-      const channel = client.channels.cache.get(targetId);
-      if (!channel?.isTextBased()) {
-        return res.status(404).json({ ok: false, error: `Channel ${targetId} not found` });
-      }
-
-      const messageIds = await backfillChannel(channel, Math.min(Number(limit) || 25, 100));
-      res.json({ ok: true, synced: messageIds.length, messageIds });
-    } catch (error) {
-      console.error("Backfill failed:", error);
-      res.status(500).json({ ok: false, error: error.message });
     }
   });
 

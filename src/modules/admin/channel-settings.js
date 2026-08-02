@@ -166,15 +166,6 @@ export function applyChannelOverrides(overrides = {}) {
   config.channels.outbound.announcement = config.channels.announcements;
   config.channels.outbound.wipe = config.channels.wipes;
   config.channels.outbound.event = config.channels.events;
-
-  config.channels.watch.clear();
-  for (const id of [
-    config.channels.kaosActivity,
-    config.channels.leaderboard,
-    config.ingestAnnouncements ? config.channels.announcements : null,
-  ].filter(Boolean)) {
-    config.channels.watch.add(id);
-  }
 }
 
 export async function loadChannelOverrides() {

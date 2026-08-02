@@ -13,9 +13,6 @@ export async function handleMemberJoin(member) {
     .setColor(0xe67e22)
     .setDescription(
       `Hey <@${member.id}> — welcome to the server.\n\n` +
-        "🔗 **Store:** https://acesrust.com\n" +
-        "🏆 **Leaderboard:** https://acesrust.com/leaderboard\n" +
-        "📅 **Wipes:** https://acesrust.com/wipes\n\n" +
         "Read the rules and verify below to unlock the full server.",
     )
     .setThumbnail(member.user.displayAvatarURL({ size: 128 }));

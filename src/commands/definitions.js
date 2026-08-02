@@ -115,7 +115,7 @@ export const commandDefinitions = [
         ),
     )
     .addSubcommand((sub) =>
-      sub.setName("pushstats").setDescription("Push the leaderboard to the website now"),
+      sub.setName("pushstats").setDescription("Push the leaderboard image to Discord now"),
     ),
 
   // ——— Player systems (link / teleports / shop) ———

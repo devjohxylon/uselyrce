@@ -1,7 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 import { config } from "../../config.js";
 import { getSettings, saveSettings } from "../../data/store.js";
-import { sendToWebsite } from "../../services/website.js";
 import { wipeEmbed } from "../../utils/format.js";
 import { resolveChannelId } from "../../saas/tenant-channels.js";
 import { forEachAttachedTenant } from "../../saas/tenant-context.js";
@@ -168,7 +167,6 @@ async function maybePostWipeCountdown(client, wipeAt, countdown) {
 
 async function syncOneWipe(client, { force = false, renameKey = "legacy" } = {}) {
   const payload = await buildWipePayload();
-  await sendToWebsite(payload).catch(() => {});
   await renameWipeChannel(client, force, renameKey);
   await maybePostWipeCountdown(client, payload.wipeAt, {
     remainingMs: payload.remainingMs,

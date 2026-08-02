@@ -7,19 +7,19 @@ import { buildHealth, serializeServerForOps } from "./health.js";
 
 function seed() {
   return {
-    astral: {
+    ridge: {
       org: {
         id: "ops-mock-1",
-        name: "Astral Rust",
-        slug: "astral",
+        name: "Ridge Rust",
+        slug: "ridge",
         plan: "pro",
         plan_status: "active",
         created_at: "2026-06-12T14:22:00.000Z",
-        owner_email: "owner@astral.example",
+        owner_email: "owner@ridge.example",
         owner_discord_id: "1001",
-        discord_guild_id: "guild-astral",
-        stripe_customer_id: "cus_mock_astral",
-        stripe_subscription_id: "sub_mock_astral",
+        discord_guild_id: "guild-ridge",
+        stripe_customer_id: "cus_mock_ridge",
+        stripe_subscription_id: "sub_mock_ridge",
         default_server_id: "ops-srv-a1",
       },
       botInGuild: true,
