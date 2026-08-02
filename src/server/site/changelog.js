@@ -10,7 +10,7 @@ export const entries = [
     date: "2026-08-02",
     title: "Tighter docs, changelog, and panel copy",
     changes: [
-      { type: "changed", text: "Docs and changelog use month/topic accordions instead of one long scroll." },
+      { type: "changed", text: "Docs use a sticky table of contents and normal page scroll instead of an accordion." },
       { type: "changed", text: "Panel labels and fields drop the extra helper paragraphs — titles and placeholders stay." },
     ],
   },

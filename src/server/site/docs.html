@@ -3,71 +3,109 @@
 <head>
 <!--HEAD:docs-->
   <style>
-    .docs-acc {
+    .docs {
+      display: grid;
+      grid-template-columns: 11.5rem minmax(0, 1fr);
+      gap: 3.5rem;
+      align-items: start;
+      padding-bottom: clamp(3rem, 8vh, 5rem);
       animation: rise .55s ease .05s both;
-      padding-bottom: clamp(2.5rem, 6vh, 3.5rem);
     }
-    .docs-acc details {
-      border-top: 1px solid var(--line);
+
+    .toc {
+      position: sticky;
+      top: 1.5rem;
+      display: grid;
+      gap: .15rem;
+      padding-top: .15rem;
     }
-    .docs-acc details:last-of-type { border-bottom: 1px solid var(--line); }
-    .docs-acc summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1.5rem;
-      padding: 1.15rem 0;
-      cursor: pointer;
-      font-size: 1.05rem;
+    .toc .label { margin: 0 0 .65rem; }
+    .toc a {
+      color: var(--muted);
+      font-size: .8125rem;
+      line-height: 1.35;
+      padding: .4rem 0 .4rem .85rem;
+      border-left: 1px solid var(--line);
+      transition: color .15s ease, border-color .15s ease;
+    }
+    .toc a:hover { color: var(--text); }
+    .toc a.is-active {
+      color: var(--text);
+      border-left-color: var(--chrome);
+    }
+
+    .doc-body {
+      min-width: 0;
+      max-width: 42rem;
+      display: grid;
+      gap: 2.75rem;
+    }
+    .doc-body section { scroll-margin-top: 1.5rem; }
+    .doc-body h2 {
+      margin: 0 0 .85rem;
+      font-size: 1.35rem;
       font-weight: 600;
-      letter-spacing: -.015em;
-      list-style: none;
+      letter-spacing: -.02em;
+      line-height: 1.2;
     }
-    .docs-acc summary::-webkit-details-marker { display: none; }
-    .docs-acc summary:hover { color: var(--chrome); }
-    .docs-acc summary::after {
-      content: "+";
-      font-family: var(--mono);
-      font-size: 1.1rem;
-      font-weight: 400;
-      color: var(--chrome-dim);
-      flex: none;
+    .doc-body h3 {
+      margin: 1.35rem 0 .45rem;
+      font-size: .95rem;
+      font-weight: 600;
     }
-    .docs-acc details[open] > summary::after { content: "−"; }
-    .docs-acc .acc-body {
-      padding: 0 0 1.35rem;
-      max-width: 68ch;
-    }
-    .docs-acc .acc-body p,
-    .docs-acc .acc-body li {
+    .doc-body p,
+    .doc-body li {
       color: var(--muted);
       font-size: .95rem;
-      line-height: 1.65;
+      line-height: 1.7;
     }
-    .docs-acc .acc-body p { margin: 0 0 .75rem; }
-    .docs-acc .acc-body ul,
-    .docs-acc .acc-body ol { margin: 0 0 .75rem; padding-left: 1.15rem; }
-    .docs-acc .acc-body li { margin-bottom: .35rem; }
-    .docs-acc .acc-body li strong { color: var(--text); font-weight: 600; }
-    .docs-acc .acc-body a { color: var(--chrome); text-decoration: underline; }
-    .docs-acc .acc-body h3 {
-      margin: 1.1rem 0 .45rem;
-      font-size: .95rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .docs-acc .acc-body dl { margin: 0 0 .75rem; }
-    .docs-acc .acc-body dt {
-      margin-top: .75rem;
+    .doc-body p { margin: 0 0 .75rem; }
+    .doc-body p:last-child,
+    .doc-body ul:last-child,
+    .doc-body ol:last-child,
+    .doc-body dl:last-child { margin-bottom: 0; }
+    .doc-body ul,
+    .doc-body ol { margin: 0 0 .75rem; padding-left: 1.15rem; }
+    .doc-body li { margin-bottom: .35rem; }
+    .doc-body li strong { color: var(--text); font-weight: 600; }
+    .doc-body a { color: var(--chrome); text-decoration: underline; text-underline-offset: 2px; }
+
+    .doc-body dl { margin: 0 0 .75rem; }
+    .doc-body dt {
+      margin-top: .85rem;
       font-size: .9rem;
       font-weight: 600;
       color: var(--text);
     }
-    .docs-acc .acc-body dd {
-      margin: .25rem 0 0;
+    .doc-body dt:first-child { margin-top: 0; }
+    .doc-body dd {
+      margin: .2rem 0 0;
       color: var(--muted);
       font-size: .925rem;
       line-height: 1.6;
+    }
+
+    @media (max-width: 900px) {
+      .docs { grid-template-columns: 1fr; gap: 1.75rem; }
+      .toc {
+        position: static;
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0;
+        overflow-x: auto;
+        padding-bottom: .35rem;
+        margin: 0 -.25rem;
+        -webkit-overflow-scrolling: touch;
+      }
+      .toc .label { display: none; }
+      .toc a {
+        border-left: 0;
+        border-bottom: 1px solid var(--line);
+        padding: .55rem .85rem;
+        white-space: nowrap;
+        flex: none;
+      }
+      .toc a.is-active { border-bottom-color: var(--chrome); }
     }
   </style>
 </head>
@@ -81,22 +119,34 @@
       <p>Setup, servers, kits, Discord, and billing.</p>
     </section>
 
-    <div class="docs-acc" data-acc>
-      <details open>
-        <summary>How it works</summary>
-        <div class="acc-body">
+    <div class="docs">
+      <nav class="toc" aria-label="On this page">
+        <p class="label">On this page</p>
+        <a href="#how-it-works">How it works</a>
+        <a href="#workspace">Create workspace</a>
+        <a href="#connect">Connect a server</a>
+        <a href="#players">Players</a>
+        <a href="#kits">Kits</a>
+        <a href="#discord">Discord bot</a>
+        <a href="#staff">Staff</a>
+        <a href="#multi">Multiple servers</a>
+        <a href="#billing">Billing</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </nav>
+
+      <article class="doc-body">
+        <section id="how-it-works">
+          <h2>How it works</h2>
           <p>Usely is hosted. You add WebRCON once; we keep the connection for the panel and Discord bot.</p>
           <ul>
             <li><strong>Panel</strong> — players, kits, bans, RCON.</li>
             <li><strong>Discord bot</strong> — feeds, pop channels, staff tools.</li>
             <li><strong>Workspace</strong> — your servers and billing at <code>*.usely.dev</code>.</li>
           </ul>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Create your workspace</summary>
-        <div class="acc-body">
+        <section id="workspace">
+          <h2>Create your workspace</h2>
           <ol>
             <li>Pick a plan on <a href="/pricing">pricing</a> and pay.</li>
             <li>Open the setup link from email (7 days).</li>
@@ -104,12 +154,10 @@
             <li>Create staff keys under <strong>Workspace → Staff keys</strong>.</li>
           </ol>
           <p>Pick an address you’ll keep — staff bookmarks depend on it.</p>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Connect a server</summary>
-        <div class="acc-body">
+        <section id="connect">
+          <h2>Connect a server</h2>
           <dl>
             <dt>Host</dt>
             <dd>WebRCON IP or hostname.</dd>
@@ -119,12 +167,10 @@
             <dd>RCON password — stored encrypted.</dd>
           </dl>
           <p>Values come from your host’s control panel. Offline servers retry automatically.</p>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Players and moderation</summary>
-        <div class="acc-body">
+        <section id="players">
+          <h2>Players and moderation</h2>
           <ul>
             <li>Kick / ban with a reason</li>
             <li>Ban list + unban (including prior server bans)</li>
@@ -132,19 +178,15 @@
             <li>Linked Discord accounts</li>
             <li>Raw RCON console (separate permission)</li>
           </ul>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Kits</summary>
-        <div class="acc-body">
+        <section id="kits">
+          <h2>Kits</h2>
           <p>Build kits from the Console item catalog. Players claim via quick-chat phrases you set. Kits are workspace-scoped.</p>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Discord bot</summary>
-        <div class="acc-body">
+        <section id="discord">
+          <h2>Discord bot</h2>
           <p>Invite from <strong>Workspace → Setup</strong> (Manage Server required), then link the guild.</p>
           <ul>
             <li>Pop channel rename</li>
@@ -152,33 +194,25 @@
             <li>Slash commands</li>
           </ul>
           <p>Panel stays up if the bot is offline.</p>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Staff permissions</summary>
-        <div class="acc-body">
+        <section id="staff">
+          <h2>Staff permissions</h2>
           <p>Staff use access keys from <strong>Workspace → Staff keys</strong>. Permissions are checked per action. Billing and credentials stay on the owner login.</p>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Multiple servers</summary>
-        <div class="acc-body">
+        <section id="multi">
+          <h2>Multiple servers</h2>
           <p>Basic = 1, Pro = 2, Network = more. Switch servers from the panel header. Kits and staff keys are shared. Downgrade only after disconnecting extras.</p>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Billing</summary>
-        <div class="acc-body">
+        <section id="billing">
+          <h2>Billing</h2>
           <p>Monthly via Stripe. Change plan, payment method, invoices, and cancel from the panel. Upgrades apply immediately; cancel keeps access until period end.</p>
-        </div>
-      </details>
+        </section>
 
-      <details>
-        <summary>Troubleshooting</summary>
-        <div class="acc-body">
+        <section id="troubleshooting">
+          <h2>Troubleshooting</h2>
           <h3>Server offline</h3>
           <p>Check WebRCON host, port, and password.</p>
           <h3>Online but empty player list</h3>
@@ -188,11 +222,36 @@
           <h3>Staff can’t sign in</h3>
           <p>They must use your panel URL and a full enabled <code>ask_…</code> key.</p>
           <p>Still stuck? <a href="/faq">FAQ</a> or <a href="/contact">contact</a> with your panel address.</p>
-        </div>
-      </details>
+        </section>
+      </article>
     </div>
 
 <!--FOOTER-->
   </div>
+  <script>
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a[href^='#']"));
+      if (!links.length) return;
+      var map = {};
+      links.forEach(function (a) {
+        var id = a.getAttribute("href").slice(1);
+        var el = document.getElementById(id);
+        if (el) map[id] = a;
+      });
+      var sections = Object.keys(map).map(function (id) { return document.getElementById(id); });
+      function setActive(id) {
+        links.forEach(function (a) { a.classList.toggle("is-active", a.getAttribute("href") === "#" + id); });
+      }
+      if ("IntersectionObserver" in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) setActive(entry.target.id);
+          });
+        }, { rootMargin: "-20% 0px -65% 0px", threshold: 0 });
+        sections.forEach(function (s) { if (s) io.observe(s); });
+      }
+      if (sections[0]) setActive(sections[0].id);
+    })();
+  </script>
 </body>
 </html>
