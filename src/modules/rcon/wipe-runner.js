@@ -56,7 +56,7 @@ export const WIPE_STEPS = [
   {
     id: "publishLeaderboard",
     label: "Republish boards",
-    hint: "Discord + website image",
+    hint: "Discord leaderboard image",
     defaultOn: true,
   },
   {

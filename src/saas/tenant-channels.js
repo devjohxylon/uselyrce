@@ -13,7 +13,6 @@ const CHANNEL_ENV = [
   ["tpLog", "CHANNEL_TP_LOG"],
   ["popStatus", "CHANNEL_POP_STATUS"],
   ["wipeStatus", "CHANNEL_WIPE_STATUS"],
-  ["pop", "POP_CHANNEL_ID"],
   ["modLog", "CHANNEL_MOD_LOG"],
   ["ticketLog", "CHANNEL_TICKET_LOG"],
   ["welcome", "CHANNEL_WELCOME"],
@@ -22,7 +21,6 @@ const CHANNEL_ENV = [
   ["announcements", "CHANNEL_ANNOUNCEMENTS"],
   ["wipes", "CHANNEL_WIPES"],
   ["events", "CHANNEL_EVENTS"],
-  ["kaosActivity", "CHANNEL_KAOS_ACTIVITY"],
 ];
 
 /** @type {Map<string, Record<string, string|null>>} */

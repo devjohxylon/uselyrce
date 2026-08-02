@@ -1,6 +1,6 @@
-# Astral Bot — Server + Community + Mod + Website
+# Usely — Discord + RCON for Rust Console Edition
 
-Connects **directly to the Rust Console Edition server over RCON** — no KAOS required. Handles in-game feeds, stats, admin controls, Discord community, moderation, giveaways, tickets, and website sync for **Astral Vanilla+**.
+Connects **directly to the Rust Console Edition server over RCON**. Handles in-game feeds, stats, admin controls, Discord community, moderation, giveaways, and tickets.
 
 ## Features
 
@@ -17,7 +17,7 @@ Connects **directly to the Rust Console Edition server over RCON** — no KAOS r
 ### Own stats + leaderboard
 - Tracks kills, deaths, K/D, NPC kills, suicides and playtime per player
 - `/leaderboard` and `/stats <player>` in Discord
-- Auto-pushes boards to the website (no more KAOS image scraping)
+- Auto-publishes the wipe leaderboard image to `CHANNEL_LEADERBOARD`
 - `/rcon resetstats` on wipe day
 
 ### Account linking
@@ -42,12 +42,6 @@ Connects **directly to the Rust Console Edition server over RCON** — no KAOS r
 
 ### Auto-messages
 - Staff `/automessage add|list|remove|toggle` — or manage in the panel
-
-### Website sync
-- Live server status (players, queue, map, uptime, FPS) → site
-- Leaderboard data → site
-- Optional announcements/wipes/events publish
-- Legacy KAOS channel scraping still available as a fallback
 
 ### Auto-mod
 - Link filter (allowlist)
@@ -83,10 +77,9 @@ Connects **directly to the Rust Console Edition server over RCON** — no KAOS r
 ## Setup
 
 1. Enable **Server Members Intent** + **Message Content Intent** in Discord Developer Portal
-2. Rename the app to **Astral Bot** in the portal (General Information + Bot username)
-3. Copy `.env.example` → `.env`
-4. Set channel + role IDs
-5. `npm install && npm run register-commands && npm start`
+2. Copy `.env.example` → `.env`
+3. Set channel + role IDs
+4. `npm install && npm run register-commands && npm start`
 
 ## Staff commands quick reference
 
@@ -101,7 +94,7 @@ Connects **directly to the Rust Console Edition server over RCON** — no KAOS r
 | `/rcon kick` `/rcon ban` `/rcon unban` | Player control |
 | `/rcon give` | Give an item to a player |
 | `/rcon resetstats` | Wipe tracked stats after a server wipe |
-| `/rcon pushstats` | Push leaderboard to the website now |
+| `/rcon pushstats` | Refresh the Discord leaderboard image now |
 | `/warn` | Warn member |
 | `/mute` | Timeout member |
 | `/kick` `/ban` | Remove member |
@@ -110,9 +103,6 @@ Connects **directly to the Rust Console Edition server over RCON** — no KAOS r
 | `/giveaway create` | Start giveaway |
 | `/ticket setup` | Post ticket panel |
 | `/poll` | Quick poll |
-| `/astral-leaderboard` | Sync KAOS → site |
-| `/astral-status` | Bot health |
-| `/astral-sync` | Backfill channel to site |
 
 ## Deploy 24/7
 

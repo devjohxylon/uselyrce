@@ -33,9 +33,7 @@ function parseIdList(name) {
 const announcements = parseChannelId("CHANNEL_ANNOUNCEMENTS");
 const wipes = parseChannelId("CHANNEL_WIPES");
 const events = parseChannelId("CHANNEL_EVENTS");
-const kaosActivity = parseChannelId("CHANNEL_KAOS_ACTIVITY");
 const leaderboard = parseChannelId("CHANNEL_LEADERBOARD");
-const pop = parseChannelId("POP_CHANNEL_ID");
 const modLog = parseChannelId("CHANNEL_MOD_LOG");
 const ticketLog = parseChannelId("CHANNEL_TICKET_LOG") || modLog;
 const welcome = parseChannelId("CHANNEL_WELCOME");
@@ -168,9 +166,7 @@ export const config = {
     announcements,
     wipes,
     events,
-    kaosActivity,
     leaderboard,
-    pop,
     modLog,
     ticketLog,
     welcome,
@@ -220,8 +216,7 @@ export const config = {
     autoVip: parseBool("GIVEAWAY_AUTO_VIP"),
   },
   server: {
-    // Optional fixed slot count, since the KAOS channel name has no max.
-    // Set SERVER_MAX in .env (e.g. 100) to show "23/100"; leave unset for "23 online".
+    // Optional fixed slot count. Set SERVER_MAX (e.g. 100) to show "23/100"; leave unset for "23 online".
     max: Number(optional("SERVER_MAX", "0")) || 0,
     pollMs: Number(optional("POP_POLL_MS", "30000")) || 30000,
   },

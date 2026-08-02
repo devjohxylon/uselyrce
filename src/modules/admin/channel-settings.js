@@ -72,13 +72,6 @@ export const CHANNEL_FIELDS = [
     hint: "Channel renamed to wipe countdown",
   },
   {
-    group: "Status",
-    key: "pop",
-    label: "KAOS pop scrape",
-    env: "POP_CHANNEL_ID",
-    hint: "Fallback when RCON is off",
-  },
-  {
     group: "Community",
     key: "modLog",
     label: "Mod log",
@@ -107,39 +100,32 @@ export const CHANNEL_FIELDS = [
     hint: "Raid / urgent alerts",
   },
   {
-    group: "Website",
+    group: "Posts",
     key: "leaderboard",
     label: "Leaderboard",
     env: "CHANNEL_LEADERBOARD",
-    hint: "Leaderboard images / relay",
+    hint: "Where Usely posts the wipe leaderboard image",
   },
   {
-    group: "Website",
+    group: "Posts",
     key: "announcements",
     label: "Announcements",
     env: "CHANNEL_ANNOUNCEMENTS",
     hint: "Outbound announcement posts",
   },
   {
-    group: "Website",
+    group: "Posts",
     key: "wipes",
     label: "Wipes",
     env: "CHANNEL_WIPES",
     hint: "Wipe announcement posts",
   },
   {
-    group: "Website",
+    group: "Posts",
     key: "events",
     label: "Events",
     env: "CHANNEL_EVENTS",
     hint: "Community event posts",
-  },
-  {
-    group: "Website",
-    key: "kaosActivity",
-    label: "KAOS activity",
-    env: "CHANNEL_KAOS_ACTIVITY",
-    hint: "Activity feed relay",
   },
 ];
 

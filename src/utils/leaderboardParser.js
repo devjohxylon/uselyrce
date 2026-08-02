@@ -219,7 +219,7 @@ export function isLeaderboardMessage(message) {
   return hasEntries || hasImages;
 }
 
-export function isLikelyKaosLeaderboardPost(message) {
+export function isLikelyLeaderboardPost(message) {
   if (isLeaderboardMessage(message)) return true;
 
   if (!message.author?.bot) return false;

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Astral Bot admin panel has been upgraded with real-time WebSocket updates, advanced analytics, live map visualization, and comprehensive player profile management.
+The Usely admin panel has been upgraded with real-time WebSocket updates, advanced analytics, live map visualization, and comprehensive player profile management.
 
 ## New Features
 
@@ -268,7 +268,7 @@ alert:new { message, level, timestamp }
 
 ## Credits
 
-Built for **Astral Vanilla+** Rust RCE server.  
+Built for Rust Console Edition servers on Usely.  
 Stack: Node.js, Socket.IO, Chart.js, Discord.js, Express, rce.js
 
 Last Updated: 2026-07-26

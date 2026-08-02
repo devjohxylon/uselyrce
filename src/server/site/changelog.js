@@ -29,6 +29,7 @@ export const entries = [
     changes: [
       { type: "changed", text: "Leaderboards and server status are no longer pushed to an external community website." },
       { type: "changed", text: "Panel and <code>/rcon pushstats</code> only refresh the Discord leaderboard image." },
+      { type: "changed", text: "Channel settings no longer list leftover scrape or activity fields from other bots — only Usely Discord channels." },
     ],
   },
   {

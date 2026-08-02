@@ -3,7 +3,7 @@ import { config } from "../src/config.js";
 import {
   describeMessageForDebug,
   extractLeaderboardImages,
-  isLikelyKaosLeaderboardPost,
+  isLikelyLeaderboardPost,
 } from "../src/utils/leaderboardParser.js";
 
 const client = new Client({
@@ -44,7 +44,7 @@ client.once("ready", async () => {
     for (const message of messages.values()) {
       const full = await ensureFullMessage(message);
       const debug = describeMessageForDebug(full);
-      const likely = isLikelyKaosLeaderboardPost(full);
+      const likely = isLikelyLeaderboardPost(full);
       const images = extractLeaderboardImages(full);
 
       console.log(`--- ${debug.id} ---`);
