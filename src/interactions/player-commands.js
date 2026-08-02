@@ -26,7 +26,7 @@ import {
 } from "../modules/rcon/automessages.js";
 import { syncVipForDiscord } from "../modules/rcon/vip-sync.js";
 import { postLinkPanel } from "../modules/panels/link-panel.js";
-import { okEmbed, warnEmbed, staffEmbed, formatNameList } from "../lib/staff-embed.js";
+import { warnEmbed, staffEmbed, formatNameList } from "../lib/staff-embed.js";
 
 async function reply(interaction, content, ephemeral = true) {
   if (interaction.deferred || interaction.replied) {
