@@ -31,14 +31,17 @@ export async function sendEmail({ to, subject, html, text, replyTo }) {
     );
   }
 
+  const from = config.saas.emailFrom || "Usely <onboarding@usely.dev>";
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${config.saas.resendApiKey}`,
       "Content-Type": "application/json",
+      // Resend blocks requests with no User-Agent (403 / error 1010).
+      "User-Agent": "usely/1.0 (+https://usely.dev)",
     },
     body: JSON.stringify({
-      from: config.saas.emailFrom,
+      from,
       to: [to],
       subject,
       html,
@@ -48,6 +51,7 @@ export async function sendEmail({ to, subject, html, text, replyTo }) {
   });
   if (!res.ok) {
     const body = await res.text();
+    console.error(`Resend send failed from=${from} to=${to} status=${res.status} body=${body}`);
     throw new Error(`Email send failed (${res.status}): ${body}`);
   }
   return res.json();
