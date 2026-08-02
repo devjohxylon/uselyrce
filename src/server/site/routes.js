@@ -8,8 +8,6 @@ import { attachContactRoute } from "./contact-api.js";
 import { attachStatusRoute } from "./status-api.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(__dirname, "../../..");
-const SITE_MEDIA = path.join(root, "assets", "site");
 const read = (file) => readFileSync(path.join(__dirname, file), "utf8");
 
 /** Placeholders resolved once at boot — the pages are static after that. */
@@ -30,21 +28,11 @@ const CSS = new Map([
   ["/legal.css", read("legal.css")],
 ]);
 
-const MEDIA_OK = /^showcase-[a-z0-9-]+\.(png|jpe?g|webp)$/i;
-
 export function attachMarketingSite(app, client) {
   app.get("/", (req, res) => {
     // Org subdomains skip marketing and go straight to their panel.
     if (req.orgFromHost) return res.redirect(302, "/admin");
     res.type("html").send(HOME);
-  });
-
-  app.get("/media/:file", (req, res) => {
-    const name = path.basename(String(req.params.file || ""));
-    if (!MEDIA_OK.test(name)) return res.status(404).end();
-    res.sendFile(path.join(SITE_MEDIA, name), (err) => {
-      if (err) res.status(404).end();
-    });
   });
 
   for (const [route, css] of CSS) {

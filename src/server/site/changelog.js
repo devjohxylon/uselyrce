@@ -15,13 +15,6 @@ export const entries = [
   },
   {
     date: "2026-08-02",
-    title: "Homepage product walkthrough",
-    changes: [
-      { type: "added", text: "Full-bleed scroll sections on the home page that show the kit builder and workspace setup, with short copy for each." },
-    ],
-  },
-  {
-    date: "2026-08-02",
     title: "Clearer Discord link errors",
     changes: [
       { type: "fixed", text: "Linking a Discord server that’s already tied to another workspace now shows a clear message instead of a database error." },
