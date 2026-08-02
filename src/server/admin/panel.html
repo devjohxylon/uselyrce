@@ -2014,6 +2014,7 @@ const state = {
   editingServerKit: null,
   editingServerKitData: null,
   kitBuilderOpen: false,
+  kitLockHours: 6,
   statsCategory: "kills",
   analyticsData: null,
   mapCal: (() => {
@@ -4479,15 +4480,15 @@ async function renderKits() {
   const lockedSet = new Set(locks.kitIds || []);
   const roles = data.discordRoles || [];
   const roleName = (id) => (id ? (roles.find((r) => r.id === id)?.name || id) : "Anyone");
-  const toLocalInput = (iso) => {
-    if (!iso) return "";
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "";
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
+  const hoursLeft = (() => {
+    if (!locks.enabled || !locks.until) return null;
+    const ms = Date.parse(locks.until) - Date.now();
+    if (!Number.isFinite(ms) || ms <= 0) return 0;
+    return Math.max(1, Math.ceil(ms / 3600_000));
+  })();
+  const lockHours = Number(state.kitLockHours) || 0;
   const lockStatus = locks.enabled
-    ? `On · ${(locks.kitIds || []).length} kit(s)${locks.until ? ` · ends ${new Date(locks.until).toLocaleString()}` : ""}`
+    ? `On · ${(locks.kitIds || []).length} kit(s)${hoursLeft != null ? ` · ${hoursLeft}h left` : " · until ended manually"}`
     : `Off · ${(locks.kitIds || []).length} kit(s) saved`;
   const claimable = (data.kits || []).filter((k) => k.claimPhrase);
   const lockPool = claimable.length ? claimable : (data.kits || []);
@@ -4669,7 +4670,7 @@ async function renderKits() {
           <span class="pill ${locks.enabled ? "warn" : "info"}">${locks.enabled ? "Locked" : "Open"}</span>
           <h4 style="margin:.55rem 0 .2rem">${locks.enabled ? "Quick-chat claims are paused" : "Players can claim kits"}</h4>
           ${locks.enabled
-            ? `<p>Selected kits cannot be claimed in-game until you end the lock.${locks.until ? ` Auto-ends ${esc(new Date(locks.until).toLocaleString())}.` : ""} Staff Give still works.</p>`
+            ? `<p>Selected kits cannot be claimed in-game until you end the lock.${hoursLeft != null ? ` About ${hoursLeft}h left.` : ""} Staff Give still works.</p>`
             : ""}
         </div>
         <div class="actions">
@@ -4684,17 +4685,16 @@ async function renderKits() {
         <div style="display:grid;gap:.45rem;max-height:220px;overflow:auto;padding-right:.25rem">${lockChecks}</div>
       </div>
       <div class="kit-lock-step">
-        <h4>2 · How long (optional)</h4>
+        <h4>2 · How long</h4>
         <div class="kit-lock-presets">
-          <button type="button" data-action="kitLockPreset" data-hours="2">2 hours</button>
-          <button type="button" data-action="kitLockPreset" data-hours="6">6 hours</button>
-          <button type="button" data-action="kitLockPreset" data-hours="12">12 hours</button>
-          <button type="button" data-action="kitLockPreset" data-hours="24">24 hours</button>
-          <button type="button" data-action="kitLockPreset" data-hours="0">No end time</button>
+          ${[2, 6, 12, 24].map((h) =>
+            `<button type="button" data-action="kitLockPreset" data-hours="${h}" class="${lockHours === h ? "active" : ""}">${h} hours</button>`,
+          ).join("")}
+          <button type="button" data-action="kitLockPreset" data-hours="0" class="${lockHours === 0 ? "active" : ""}">Until I end it</button>
         </div>
-        <div class="form-row" style="grid-template-columns:auto 1fr;align-items:center;margin:0">
-          <label class="muted" style="font-family:var(--mono);font-size:.72rem">Or pick a time</label>
-          <input id="kitLockUntil" type="datetime-local" value="${esc(toLocalInput(locks.until))}" />
+        <div class="form-row" style="grid-template-columns:auto 7rem;align-items:center;margin:0;max-width:16rem">
+          <label class="muted" style="font-family:var(--mono);font-size:.72rem">Custom hours</label>
+          <input id="kitLockHours" type="number" min="0" max="168" step="1" value="${lockHours}" />
         </div>
       </div>
       <p class="muted" style="font-family:var(--mono);font-size:.68rem;margin:1rem 0 0">${esc(lockStatus)}</p>
@@ -5989,30 +5989,20 @@ function bindView() {
           return;
         }
         if (a === "kitLockPreset") {
-          const hours = Number(el.dataset.hours) || 0;
-          const input = document.getElementById("kitLockUntil");
-          if (!input) return;
-          if (hours <= 0) {
-            input.value = "";
-          } else {
-            const d = new Date(Date.now() + hours * 3600_000);
-            const pad = (n) => String(n).padStart(2, "0");
-            input.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-          }
+          state.kitLockHours = Number(el.dataset.hours) || 0;
+          const input = document.getElementById("kitLockHours");
+          if (input) input.value = String(state.kitLockHours);
           document.querySelectorAll('[data-action="kitLockPreset"]').forEach((btn) => {
-            btn.classList.toggle("active", btn === el);
+            btn.classList.toggle("active", Number(btn.dataset.hours) === state.kitLockHours);
           });
           return;
         }
         if (a === "startKitLock" || a === "endKitLock") {
           const selected = [...document.querySelectorAll("[data-kit-lock-id]:checked")].map((el) => el.dataset.kitLockId);
-          const untilRaw = document.getElementById("kitLockUntil")?.value || "";
-          let until = null;
-          if (untilRaw) {
-            const d = new Date(untilRaw);
-            if (Number.isNaN(d.getTime())) { toast("Invalid end time", true); return; }
-            until = d.toISOString();
-          }
+          const hoursEl = document.getElementById("kitLockHours");
+          const hours = Math.max(0, Math.min(168, Number(hoursEl?.value ?? state.kitLockHours) || 0));
+          state.kitLockHours = hours;
+          const until = hours > 0 ? new Date(Date.now() + hours * 3600_000).toISOString() : null;
           const enabled = a === "startKitLock";
           if (enabled && !selected.length) {
             toast("Select at least one kit to lock", true);
@@ -6029,7 +6019,7 @@ function bindView() {
             },
           });
           if (!r.ok) { toast(r.error || "Could not update kit locks", true); return; }
-          toast(enabled ? "Kit lock started" : "Kit lock ended");
+          toast(enabled ? (hours ? `Kit lock started · ${hours}h` : "Kit lock started") : "Kit lock ended");
           render();
           return;
         }
