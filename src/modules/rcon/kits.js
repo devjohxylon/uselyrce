@@ -120,6 +120,8 @@ export async function listKits() {
     label: kit.label || id,
     source: "panel",
     cooldownMinutes: Number(kit.cooldownMinutes) || 0,
+    claimPhrase: kit.claimPhrase || "",
+    claimRoleId: kit.claimRoleId || "",
     items: Array.isArray(kit.items) ? kit.items : [],
     updatedAt: kit.updatedAt || null,
   }));
@@ -136,6 +138,8 @@ export async function getKit(id) {
     label: kit.label || key,
     source: "panel",
     cooldownMinutes: Number(kit.cooldownMinutes) || 0,
+    claimPhrase: kit.claimPhrase || "",
+    claimRoleId: kit.claimRoleId || "",
     items: Array.isArray(kit.items) ? kit.items : [],
     updatedAt: kit.updatedAt || null,
   };
@@ -360,7 +364,7 @@ export async function deleteServerKit(kitName) {
   }
 }
 
-export async function upsertKit({ id, label, items, cooldownMinutes } = {}) {
+export async function upsertKit({ id, label, items, cooldownMinutes, claimPhrase, claimRoleId } = {}) {
   const key = normalizeId(id);
   if (!key) return { ok: false, error: "Kit id required (letters, numbers, _ -)" };
 
@@ -368,10 +372,22 @@ export async function upsertKit({ id, label, items, cooldownMinutes } = {}) {
   if (!cleanItems.length) return { ok: false, error: "Add at least one valid item shortname" };
 
   const data = await getKits();
+  const existing = data.kits?.[key] || {};
+  const phrase =
+    claimPhrase !== undefined
+      ? String(claimPhrase ?? "").trim().slice(0, 120)
+      : existing.claimPhrase || "";
+  const roleId =
+    claimRoleId !== undefined
+      ? String(claimRoleId ?? "").trim().replace(/\D/g, "").slice(0, 32)
+      : existing.claimRoleId || "";
+
   data.kits = data.kits || {};
   data.kits[key] = {
-    label: String(label ?? key).trim().slice(0, 48) || key,
-    cooldownMinutes: Math.max(0, Number(cooldownMinutes) || 0),
+    label: String(label ?? existing.label ?? key).trim().slice(0, 48) || key,
+    cooldownMinutes: Math.max(0, Number(cooldownMinutes ?? existing.cooldownMinutes) || 0),
+    claimPhrase: phrase,
+    claimRoleId: roleId,
     items: cleanItems,
     updatedAt: new Date().toISOString(),
   };

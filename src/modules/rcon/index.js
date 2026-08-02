@@ -33,6 +33,7 @@ import { startScheduler, stopScheduler } from "./scheduler.js";
 import { startWipeScheduler, stopWipeScheduler, syncWipeStatus } from "./wipe.js";
 import { startConnectionAlerts } from "./connection-alerts.js";
 import { syncVipForDiscord, syncVipOnJoin, tryClaimVipFromQuickChat, attachVipClient } from "./vip-sync.js";
+import { tryClaimKitFromQuickChat, attachKitClaimClient, tickKitLocks } from "./kit-claims.js";
 import {
   attachReportsClient,
   checkTeamSize,
@@ -91,6 +92,7 @@ export async function startRcon(client) {
   attachReportsClient(client);
   attachLeaderboardClient(client);
   attachVipClient(client);
+  attachKitClaimClient(client);
   const manager = await connectRcon();
   if (!manager) {
     startWipeScheduler(client);
@@ -194,9 +196,12 @@ export async function startRcon(client) {
     RCEEvent.QuickChat,
     wrap(({ player, message, type }) => {
       feedQuickChat({ player, message, type });
-      tryClaimVipFromQuickChat({ player, message }).catch((e) =>
-        console.error("VIP quick-chat claim failed:", e.message),
-      );
+      tryClaimVipFromQuickChat({ player, message })
+        .then((vip) => {
+          if (vip) return null;
+          return tryClaimKitFromQuickChat({ player, message });
+        })
+        .catch((e) => console.error("Kit quick-chat claim failed:", e.message));
     }),
   );
 
@@ -231,6 +236,7 @@ export async function startRcon(client) {
   );
 
   setInterval(() => flushStats().catch(() => {}), 60_000);
+  setInterval(() => tickKitLocks().catch(() => {}), 60_000);
   setInterval(
     () => {
       publishLeaderboardToDiscord(client).catch((error) =>

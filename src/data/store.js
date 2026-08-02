@@ -211,6 +211,14 @@ export async function saveKits(data) {
   await writeJson("kits.json", data);
 }
 
+export async function getKitClaimCooldowns() {
+  return readJson("kit-claim-cooldowns.json", { claims: {} });
+}
+
+export async function saveKitClaimCooldowns(data) {
+  await writeJson("kit-claim-cooldowns.json", data);
+}
+
 export async function getAnalytics() {
   return readJson("analytics.json", {
     hourly: {},

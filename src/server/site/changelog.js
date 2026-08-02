@@ -8,6 +8,14 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Kit claim phrases and wipe-day locks",
+    changes: [
+      { type: "added", text: "Panel kits can use a custom quick-chat claim phrase and an optional Discord role requirement." },
+      { type: "added", text: "Kit locks pause claims for a saved list of kits with one on/off switch and an optional end time — useful for boom kits on wipe day." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "No more external website stats sync",
     changes: [
       { type: "changed", text: "Leaderboards and server status are no longer pushed to an external community website." },

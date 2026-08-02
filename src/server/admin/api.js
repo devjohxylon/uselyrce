@@ -91,6 +91,10 @@ import {
   getVipSettingsForPanel,
   saveVipSettings,
 } from "../../modules/admin/vip-settings.js";
+import {
+  getKitLocks,
+  saveKitLocks,
+} from "../../modules/rcon/kit-claims.js";
 import { listReports, scanAllTeams, searchCombat } from "../../modules/rcon/reports.js";
 import {
   STAFF_PERMISSIONS,
@@ -1014,6 +1018,7 @@ export async function attachAdminPanel(app, client) {
     const refresh = String(req.query.refresh ?? "1") !== "0";
     const force = String(req.query.force ?? "0") === "1";
     const panel = await listKits();
+    const kitLocks = await getKitLocks();
     const server = await listServerKits({ refresh: refresh || force, force }).catch((error) => ({
       ok: false,
       error: error.message,
@@ -1023,9 +1028,35 @@ export async function attachAdminPanel(app, client) {
       endpointKey: null,
       rawPreview: null,
     }));
+
+    let discordRoles = [];
+    try {
+      const guildId =
+        req.session?.org?.discord_guild_id ||
+        req.session?.org?.guildId ||
+        config.discord.guildId ||
+        null;
+      const guild = guildId
+        ? await client.guilds.fetch(guildId).catch(() => null)
+        : client.guilds.cache.first() || null;
+      if (guild) {
+        const roles = await guild.roles.fetch().catch(() => null);
+        if (roles) {
+          discordRoles = [...roles.values()]
+            .filter((r) => r && !r.managed && r.id !== guild.id)
+            .map((r) => ({ id: r.id, name: r.name, color: r.hexColor }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        }
+      }
+    } catch {
+      /* roles optional for claim UI */
+    }
+
     res.json({
       ok: true,
       kits: panel,
+      kitLocks,
+      discordRoles,
       serverKits: server.kits || [],
       serverOk: server.ok !== false,
       serverError: server.error || null,
@@ -1034,6 +1065,29 @@ export async function attachAdminPanel(app, client) {
       serverEndpoint: server.endpointKey || null,
       serverRaw: server.rawPreview || null,
     });
+  });
+
+  app.get("/admin/api/kit-locks", requireAuth, requirePerm("kits"), async (_req, res) => {
+    try {
+      res.json({ ok: true, kitLocks: await getKitLocks() });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/api/kit-locks", requireAuth, requirePerm("kits"), async (req, res) => {
+    try {
+      const result = await saveKitLocks(req.body ?? {});
+      if (!result.ok) return res.status(400).json(result);
+      await audit(req, "kit_locks_save", {
+        enabled: result.kitLocks.enabled,
+        count: result.kitLocks.kitIds.length,
+        until: result.kitLocks.until,
+      });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
   });
 
   app.post("/admin/api/kits/resync", requireAuth, requirePerm("kits"), async (req, res) => {
@@ -1108,8 +1162,8 @@ export async function attachAdminPanel(app, client) {
   });
 
   app.post("/admin/api/kits", requireAuth, requirePerm("kits"), async (req, res) => {
-    const { id, label, items, cooldownMinutes } = req.body ?? {};
-    const result = await upsertKit({ id, label, items, cooldownMinutes });
+    const { id, label, items, cooldownMinutes, claimPhrase, claimRoleId } = req.body ?? {};
+    const result = await upsertKit({ id, label, items, cooldownMinutes, claimPhrase, claimRoleId });
     if (!result.ok) return res.status(400).json(result);
     await audit(req, "kit_upsert", { id: result.kit.id });
     res.json(result);

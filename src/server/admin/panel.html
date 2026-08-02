@@ -1955,6 +1955,8 @@ const state = {
     id: "",
     label: "",
     cooldownMinutes: 0,
+    claimPhrase: "",
+    claimRoleId: "",
     items: [], // { item, amount, name? }
     category: "All",
     query: "",
@@ -2255,6 +2257,12 @@ async function demoApi(path, opts = {}) {
   }
 
   if (key === "session") return data.session;
+  if (key === "kit-locks") {
+    return {
+      ok: true,
+      kitLocks: data.kits?.kitLocks || { enabled: false, until: null, kitIds: [] },
+    };
+  }
   if (key === "overview") return data.overview;
   if (key === "players") return data.players;
   if (key === "players/search") {
@@ -3621,9 +3629,13 @@ function syncKitDraftFromForm() {
   const idEl = document.getElementById("kitId");
   const labelEl = document.getElementById("kitLabel");
   const cdEl = document.getElementById("kitCooldown");
+  const phraseEl = document.getElementById("kitClaimPhrase");
+  const roleEl = document.getElementById("kitClaimRole");
   if (idEl) state.kitDraft.id = idEl.value;
   if (labelEl) state.kitDraft.label = labelEl.value;
   if (cdEl) state.kitDraft.cooldownMinutes = Number(cdEl.value) || 0;
+  if (phraseEl) state.kitDraft.claimPhrase = phraseEl.value;
+  if (roleEl) state.kitDraft.claimRoleId = roleEl.value;
   document.querySelectorAll("[data-kit-amount]").forEach((input) => {
     const idx = Number(input.dataset.kitAmount);
     if (state.kitDraft.items[idx]) {
@@ -4385,7 +4397,7 @@ function bindKitBuilderEvents() {
           return;
         }
         if (a === "kitClearDraft") {
-          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, items: [], category: "All", query: "" };
+          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
           render();
           return;
         }
@@ -4402,11 +4414,13 @@ function bindKitBuilderEvents() {
               id: state.kitDraft.id || document.getElementById("kitId").value,
               label: state.kitDraft.label || document.getElementById("kitLabel").value,
               cooldownMinutes: state.kitDraft.cooldownMinutes,
+              claimPhrase: state.kitDraft.claimPhrase || "",
+              claimRoleId: state.kitDraft.claimRoleId || "",
               items,
             },
           });
           toast("Kit saved");
-          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, items: [], category: "All", query: "" };
+          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
           state.kitBuilderOpen = false;
           render();
         }
@@ -4420,17 +4434,37 @@ function bindKitBuilderEvents() {
 async function renderKits() {
   const data = await api("/kits?refresh=1");
   const catalog = await ensureItemCatalog();
+  const locks = data.kitLocks || { enabled: false, until: null, kitIds: [] };
+  const lockedSet = new Set(locks.kitIds || []);
+  const roles = data.discordRoles || [];
+  const roleName = (id) => (id ? (roles.find((r) => r.id === id)?.name || id) : "Anyone");
+  const toLocalInput = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const lockStatus = locks.enabled
+    ? `On · ${(locks.kitIds || []).length} kit(s)${locks.until ? ` · ends ${new Date(locks.until).toLocaleString()}` : ""}`
+    : `Off · ${(locks.kitIds || []).length} kit(s) saved`;
+  const lockChecks = (data.kits || []).map((k) => `
+    <label class="wipe-auto" style="margin:0">
+      <input type="checkbox" data-kit-lock-id="${esc(k.id)}" ${lockedSet.has(k.id) ? "checked" : ""} />
+      <span class="wipe-copy"><b>${esc(k.label || k.id)}</b><span><code>${esc(k.id)}</code>${k.claimPhrase ? ` · “${esc(k.claimPhrase)}”` : " · no claim phrase"}</span></span>
+    </label>`).join("") || `<p class="hint" style="margin:0">Create panel kits first, then add them to the lock list.</p>`;
   const panelRows = (data.kits || []).map((k) => `
     <tr>
-      <td data-label="Kit"><strong>${esc(k.label)}</strong><div class="muted"><code>${esc(k.id)}</code> · panel</div></td>
+      <td data-label="Kit"><strong>${esc(k.label)}</strong><div class="muted"><code>${esc(k.id)}</code> · panel${lockedSet.has(k.id) && locks.enabled ? ` · <span class="pill warn">locked</span>` : lockedSet.has(k.id) ? ` · <span class="pill">on lock list</span>` : ""}</div></td>
       <td data-label="Items">${(k.items || []).map((i) => `${esc(i.item)}×${i.amount}`).join(", ") || "—"}</td>
+      <td data-label="Claim">${k.claimPhrase ? `<code>${esc(k.claimPhrase)}</code><div class="muted">${esc(roleName(k.claimRoleId))}</div>` : `<span class="muted">—</span>`}</td>
       <td data-label="Cooldown">${k.cooldownMinutes || 0}m</td>
       <td data-label="Actions" class="actions">
         <button data-action="editKit" data-id="${esc(k.id)}">Edit</button>
         <button data-action="giveKit" data-id="${esc(k.id)}" data-source="panel">Give</button>
         <button class="danger" data-action="delKit" data-id="${esc(k.id)}">Delete</button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="4"><div class="empty">No panel kits yet<span class="empty-hint">Create a custom bundle with Create kit</span></div></td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="5"><div class="empty">No panel kits yet<span class="empty-hint">Create a custom bundle with Create kit</span></div></td></tr>`;
 
   const serverRows = (data.serverKits || []).map((k) => {
     const itemPreview = (k.items || []).length
@@ -4457,6 +4491,12 @@ async function renderKits() {
     const hit = (catalog.items || []).find((i) => i.id === shortname);
     return hit?.name || shortname;
   };
+  const roleOptions = [
+    `<option value="">Anyone online</option>`,
+    ...roles.map((r) =>
+      `<option value="${esc(r.id)}" ${d.claimRoleId === r.id ? "selected" : ""}>${esc(r.name)}</option>`,
+    ),
+  ].join("");
 
   const serverEndpoint =
     data.serverHost && data.serverPort
@@ -4545,6 +4585,18 @@ async function renderKits() {
                 <input id="kitLabel" placeholder="Display Name" value="${esc(d.label)}" />
                 <input id="kitCooldown" type="number" min="0" value="${Number(d.cooldownMinutes) || 0}" placeholder="CD min" />
               </div>
+              <div class="form-grid" style="grid-template-columns: 1fr 1fr">
+                <div>
+                  <p class="kit-modal-add-label">Claim phrase (quick chat)</p>
+                  <input id="kitClaimPhrase" placeholder="e.g. boom kit|need boom" value="${esc(d.claimPhrase || "")}" />
+                  <p class="hint" style="margin:.35rem 0 0">Empty = not claimable via quick chat. Use | for aliases.</p>
+                </div>
+                <div>
+                  <p class="kit-modal-add-label">Required Discord role</p>
+                  <select id="kitClaimRole">${roleOptions}</select>
+                  <p class="hint" style="margin:.35rem 0 0">Optional. Role-gated claims need a linked IGN.</p>
+                </div>
+              </div>
               <div>
                 <p class="kit-modal-add-label">Selected items (${d.items.length})</p>
                 <div class="kit-picked" id="kitPicked">${kitDraftRowsHtml()}</div>
@@ -4569,6 +4621,24 @@ async function renderKits() {
 
   return `
     <div class="card" style="margin-bottom:.9rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap">
+        <div>
+          <h3 style="margin:0">Kit locks</h3>
+          <p class="card-desc" style="margin:.35rem 0 0">Pause quick-chat claims for selected panel kits (wipe-day boom lock). Staff Give still works.</p>
+          <p class="muted" style="font-family:var(--mono);font-size:.72rem;margin:.45rem 0 0">${esc(lockStatus)}</p>
+        </div>
+        <div class="actions">
+          <button class="${locks.enabled ? "danger" : "primary"}" data-action="toggleKitLocks">${locks.enabled ? "Turn locks off" : "Turn locks on"}</button>
+          <button data-action="saveKitLocks">Save list</button>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:.85rem;grid-template-columns:auto 1fr;align-items:center">
+        <label class="muted" style="font-family:var(--mono);font-size:.72rem">Until (optional)</label>
+        <input id="kitLockUntil" type="datetime-local" value="${esc(toLocalInput(locks.until))}" />
+      </div>
+      <div style="display:grid;gap:.45rem;margin-top:.85rem;max-height:220px;overflow:auto;padding-right:.25rem">${lockChecks}</div>
+    </div>
+    <div class="card" style="margin-bottom:.9rem">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap">
         <div>
           <h3 style="margin:0">In-game kits (server)</h3>
@@ -4587,12 +4657,12 @@ async function renderKits() {
         <div>
           <h3 style="margin:0">Panel kit bundles</h3>
           <p class="muted" style="font-family:var(--mono);font-size:.72rem;margin:.35rem 0 0">
-            Custom bundles granted item-by-item with <code>inventory.giveto</code>.
+            Custom bundles granted with <code>inventory.giveto</code>. Set a claim phrase for quick-chat redeem.
           </p>
         </div>
         <button class="primary" data-action="openKitBuilder">Create kit</button>
       </div>
-      <table class="table" style="margin-top:.75rem"><thead><tr><th>Kit</th><th>Items</th><th>CD</th><th></th></tr></thead><tbody>${panelRows}</tbody></table>
+      <table class="table" style="margin-top:.75rem"><thead><tr><th>Kit</th><th>Items</th><th>Claim</th><th>CD</th><th></th></tr></thead><tbody>${panelRows}</tbody></table>
       <h3 style="margin-top:1.35rem">Give any kit</h3>
       <div class="form-row">
         <input id="kitGiveIgn" placeholder="Online player IGN" />
@@ -5852,8 +5922,30 @@ function bindView() {
         if (a === "openKitBuilder") {
           state.editingServerKit = null;
           state.editingServerKitData = null;
-          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, items: [], category: "All", query: "" };
+          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
           state.kitBuilderOpen = true;
+          render();
+          return;
+        }
+        if (a === "saveKitLocks" || a === "toggleKitLocks") {
+          const kitIds = [...document.querySelectorAll("[data-kit-lock-id]:checked")].map((el) => el.dataset.kitLockId);
+          const untilRaw = document.getElementById("kitLockUntil")?.value || "";
+          let until = null;
+          if (untilRaw) {
+            const d = new Date(untilRaw);
+            if (Number.isNaN(d.getTime())) { toast("Invalid until time", true); return; }
+            until = d.toISOString();
+          }
+          const current = await api("/kit-locks");
+          const enabled = a === "toggleKitLocks"
+            ? !Boolean(current.kitLocks?.enabled)
+            : Boolean(current.kitLocks?.enabled);
+          const r = await api("/kit-locks", {
+            method: "POST",
+            body: { enabled, until, kitIds },
+          });
+          if (!r.ok) { toast(r.error || "Could not save kit locks", true); return; }
+          toast(enabled ? "Kit locks on" : "Kit locks saved");
           render();
           return;
         }
@@ -6087,7 +6179,7 @@ function bindView() {
           return;
         }
         if (a === "kitClearDraft") {
-          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, items: [], category: "All", query: "" };
+          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
           render();
           return;
         }
@@ -6104,11 +6196,13 @@ function bindView() {
               id: state.kitDraft.id || document.getElementById("kitId").value,
               label: state.kitDraft.label || document.getElementById("kitLabel").value,
               cooldownMinutes: state.kitDraft.cooldownMinutes,
+              claimPhrase: state.kitDraft.claimPhrase || "",
+              claimRoleId: state.kitDraft.claimRoleId || "",
               items,
             },
           });
           toast("Kit saved");
-          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, items: [], category: "All", query: "" };
+          state.kitDraft = { id: "", label: "", cooldownMinutes: 0, claimPhrase: "", claimRoleId: "", items: [], category: "All", query: "" };
           state.kitBuilderOpen = false;
           render();
         }
@@ -6124,6 +6218,8 @@ function bindView() {
             id: kit.id,
             label: kit.label || "",
             cooldownMinutes: kit.cooldownMinutes || 0,
+            claimPhrase: kit.claimPhrase || "",
+            claimRoleId: kit.claimRoleId || "",
             items: (kit.items || []).map((i) => ({
               item: i.item,
               amount: i.amount,
