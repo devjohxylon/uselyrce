@@ -8,6 +8,17 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Multi-tenant hardening for launch",
+    changes: [
+      { type: "fixed", text: "Each workspace’s kits, links, bans, wipe time, and Discord feed channels stay isolated per server — no cross-customer bleed on a shared host." },
+      { type: "fixed", text: "Owners can only edit or delete their own WebRCON servers (and set defaults only within their workspace)." },
+      { type: "fixed", text: "Checkout retries no longer create duplicate workspaces for the same Stripe subscription." },
+      { type: "added", text: "Owner forgot-password and resend-setup-link on the panel login screen." },
+      { type: "changed", text: "WebRCON rejects private/local hosts; unpaid workspaces no longer stay attached to the live RCON pool." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Status page, RCON alerts, and clearer bans",
     changes: [
       { type: "added", text: "Workspace status at <code>yourslug.usely.dev/status</code> shows that workspace’s Discord and WebRCON health (with a Powered by Usely mark)." },

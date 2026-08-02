@@ -149,6 +149,18 @@ const saasConfig = {
   opsMock: parseBool("USELY_OPS_MOCK", false),
 };
 
+const onRailway = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
+const isProdLike =
+  onRailway ||
+  process.env.NODE_ENV === "production" ||
+  String(process.env.RAILWAY_ENVIRONMENT || "").toLowerCase() === "production";
+
+if (isProdLike && (saasMock || saasConfig.opsMock)) {
+  throw new Error(
+    "SAAS_MOCK / USELY_OPS_MOCK cannot be enabled on Railway or NODE_ENV=production.",
+  );
+}
+
 if (saasEnabled && !saasMock) {
   const missing = [];
   if (!saasConfig.supabaseUrl) missing.push("SUPABASE_URL");
@@ -156,6 +168,7 @@ if (saasEnabled && !saasMock) {
   if (!saasConfig.supabaseAnonKey) missing.push("SUPABASE_ANON_KEY");
   if (!saasConfig.rconEncryptionKey) missing.push("RCON_ENCRYPTION_KEY");
   if (!saasConfig.discordOAuthClientSecret) missing.push("DISCORD_OAUTH_CLIENT_SECRET");
+  if (isProdLike && !saasConfig.resendApiKey) missing.push("RESEND_API_KEY");
   if (missing.length) {
     throw new Error(
       `SAAS_MODE=true requires: ${missing.join(", ")}. See .env.example.`,

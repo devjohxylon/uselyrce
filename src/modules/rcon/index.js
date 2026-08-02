@@ -44,6 +44,18 @@ import {
 import { startPositionPolling, stopPositionPolling } from "./live-map.js";
 import { attachLeaderboardClient, publishLeaderboardToDiscord } from "./leaderboard-publish.js";
 import { formatPopChannelName, getStatusSettingsSync } from "../admin/status-settings.js";
+import { resolveChannelId } from "../../saas/tenant-channels.js";
+import {
+  eventServerId,
+  tenantEventHandler,
+  withTenant,
+} from "../../saas/tenant-context.js";
+import {
+  getServerOrgId,
+  markPoolHandlersWired,
+  poolHandlersWired,
+} from "../../saas/rcon/pool.js";
+import { getOrg } from "../../saas/db/orgs.js";
 
 const LEADERBOARD_BOARDS = [
   { category: "kills", title: "Top Kills" },
@@ -51,9 +63,17 @@ const LEADERBOARD_BOARDS = [
   { category: "playtime", title: "Most Playtime" },
 ];
 
-let lastStatusName = null;
-let lastStatusRenameAt = 0;
+/** @type {Map<string, { name: string|null, at: number }>} */
+const statusRenameByServer = new Map();
 let discordClient = null;
+
+function resolveOrgForServer(serverId) {
+  return getServerOrgId(serverId);
+}
+
+function wrap(handler) {
+  return tenantEventHandler(handler, resolveOrgForServer);
+}
 
 export async function startRcon(client) {
   startConnectionAlerts(client);
@@ -78,87 +98,139 @@ export async function startRcon(client) {
     return null;
   }
 
-  manager.on(RCEEvent.Ready, () => {
-    syncServerStatus(client, getServerInfo(), { force: true }).catch(() => {});
-    pushLeaderboardToWebsite().catch(() => {});
-    publishLeaderboardToDiscord(client).catch((e) =>
-      console.error("Leaderboard Discord publish failed:", e.message),
-    );
-    syncWipeStatus(client, { force: true }).catch(() => {});
-    scanTeamsSoon(manager);
-  });
+  if (poolHandlersWired()) {
+    startWipeScheduler(client);
+    return manager;
+  }
+  markPoolHandlersWired();
 
-  manager.on(RCEEvent.PlayerKill, async (data) => {
-    feedKill(data);
-    recordCombatEvent(data);
-    await recordKill(data).catch(() => {});
+  manager.on(
+    RCEEvent.Ready,
+    wrap(async (payload) => {
+      const serverId = eventServerId(payload);
+      syncServerStatus(client, getServerInfo(serverId), { force: true, serverId }).catch(() => {});
+      pushLeaderboardToWebsite().catch(() => {});
+      publishLeaderboardToDiscord(client).catch((e) =>
+        console.error("Leaderboard Discord publish failed:", e.message),
+      );
+      syncWipeStatus(client, { force: true }).catch(() => {});
+      scanTeamsSoon(manager, serverId);
+    }),
+  );
 
-    if (config.rcon.ingameKillfeed && data.killer?.type === "Player") {
-      await sendGameCommand(
-        `say <color=#ff5555>${data.killer.name}</color> killed <color=#ff5555>${data.victim.name}</color>`,
-      ).catch(() => {});
-    }
-  });
+  manager.on(
+    RCEEvent.PlayerKill,
+    wrap(async (data) => {
+      feedKill(data);
+      recordCombatEvent(data);
+      await recordKill(data).catch(() => {});
+
+      if (config.rcon.ingameKillfeed && data.killer?.type === "Player") {
+        await sendGameCommand(
+          `say <color=#ff5555>${data.killer.name}</color> killed <color=#ff5555>${data.victim.name}</color>`,
+        ).catch(() => {});
+      }
+    }),
+  );
 
   for (const evt of [RCEEvent.TeamCreated, RCEEvent.TeamJoin]) {
-    manager.on(evt, ({ team }) => {
-      checkTeamSize(team).catch(() => {});
-    });
+    manager.on(
+      evt,
+      wrap(({ team, ...rest }) => {
+        checkTeamSize(team).catch(() => {});
+        const serverId = eventServerId({ team, ...rest });
+        if (serverId) scanTeamsSoon(manager, serverId);
+      }),
+    );
   }
 
-  manager.on(RCEEvent.TeamLeave, () => {
-    // Re-scan shortly so shrunk teams clear and oversized ones still alert
-    setTimeout(() => scanTeamsSoon(manager), 2000);
-  });
+  manager.on(
+    RCEEvent.TeamLeave,
+    wrap((payload) => {
+      setTimeout(() => scanTeamsSoon(manager, eventServerId(payload)), 2000);
+    }),
+  );
 
-  manager.on(RCEEvent.PlayerJoined, async ({ player }) => {
-    feedJoin(player);
-    await startSession(player.ign).catch(() => {});
+  manager.on(
+    RCEEvent.PlayerJoined,
+    wrap(async ({ player, ...rest }) => {
+      feedJoin(player);
+      await startSession(player.ign).catch(() => {});
 
-    const linked = await syncVipOnJoin(player.ign).catch(() => null);
-    if (linked?.discordId && client) {
-      const guild = config.discord.guildId
-        ? await client.guilds.fetch(config.discord.guildId).catch(() => null)
-        : client.guilds.cache.first();
-      const member = await guild?.members.fetch(linked.discordId).catch(() => null);
-      if (member) {
-        await syncVipForDiscord(linked.discordId, member).catch(() => {});
+      const linked = await syncVipOnJoin(player.ign).catch(() => null);
+      if (linked?.discordId && client) {
+        const serverId = eventServerId({ player, ...rest });
+        const orgId = serverId ? getServerOrgId(serverId) : null;
+        let guildId = config.discord.guildId;
+        if (orgId) {
+          const org = await getOrg(orgId).catch(() => null);
+          if (org?.discord_guild_id) guildId = org.discord_guild_id;
+        }
+        const guild = guildId
+          ? await client.guilds.fetch(guildId).catch(() => null)
+          : client.guilds.cache.first();
+        const member = await guild?.members.fetch(linked.discordId).catch(() => null);
+        if (member) {
+          await syncVipForDiscord(linked.discordId, member).catch(() => {});
+        }
       }
-    }
-  });
+    }),
+  );
 
-  manager.on(RCEEvent.PlayerLeft, async ({ player }) => {
-    feedLeave(player);
-    await endSession(player.ign).catch(() => {});
-  });
+  manager.on(
+    RCEEvent.PlayerLeft,
+    wrap(async ({ player }) => {
+      feedLeave(player);
+      await endSession(player.ign).catch(() => {});
+    }),
+  );
 
-  manager.on(RCEEvent.PlayerSuicide, async ({ player }) => {
-    await recordSuicide(player.ign).catch(() => {});
-  });
+  manager.on(
+    RCEEvent.PlayerSuicide,
+    wrap(async ({ player }) => {
+      await recordSuicide(player.ign).catch(() => {});
+    }),
+  );
 
-  manager.on(RCEEvent.QuickChat, ({ player, message, type }) => {
-    feedQuickChat({ player, message, type });
-    tryClaimVipFromQuickChat({ player, message }).catch((e) =>
-      console.error("VIP quick-chat claim failed:", e.message),
-    );
-  });
+  manager.on(
+    RCEEvent.QuickChat,
+    wrap(({ player, message, type }) => {
+      feedQuickChat({ player, message, type });
+      tryClaimVipFromQuickChat({ player, message }).catch((e) =>
+        console.error("VIP quick-chat claim failed:", e.message),
+      );
+    }),
+  );
 
-  manager.on(RCEEvent.EventStart, (data) => {
-    feedServerEvent(data).catch(() => {});
-  });
+  manager.on(
+    RCEEvent.EventStart,
+    wrap((data) => {
+      feedServerEvent(data).catch(() => {});
+    }),
+  );
 
-  manager.on(RCEEvent.PlayerBanned, feedPlayerBanned);
-  manager.on(RCEEvent.PlayerUnbanned, feedPlayerUnbanned);
-  manager.on(RCEEvent.ItemSpawn, feedItemSpawn);
-  manager.on(RCEEvent.KitSpawn, feedKitSpawn);
-  manager.on(RCEEvent.PlayerRoleAdd, (d) => feedRoleChange({ ...d, added: true }));
-  manager.on(RCEEvent.PlayerRoleRemove, (d) => feedRoleChange({ ...d, added: false }));
+  manager.on(RCEEvent.PlayerBanned, wrap(feedPlayerBanned));
+  manager.on(RCEEvent.PlayerUnbanned, wrap(feedPlayerUnbanned));
+  manager.on(RCEEvent.ItemSpawn, wrap(feedItemSpawn));
+  manager.on(RCEEvent.KitSpawn, wrap(feedKitSpawn));
+  manager.on(
+    RCEEvent.PlayerRoleAdd,
+    wrap((d) => feedRoleChange({ ...d, added: true })),
+  );
+  manager.on(
+    RCEEvent.PlayerRoleRemove,
+    wrap((d) => feedRoleChange({ ...d, added: false })),
+  );
 
-  manager.on(RCEEvent.ServerInfoUpdated, ({ info }) => {
-    syncServerStatus(client, info).catch((error) =>
-      console.error("Server status sync failed:", error.message),
-    );
-  });
+  manager.on(
+    RCEEvent.ServerInfoUpdated,
+    wrap(({ info, ...rest }) => {
+      const serverId = eventServerId({ info, ...rest });
+      syncServerStatus(client, info, { serverId }).catch((error) =>
+        console.error("Server status sync failed:", error.message),
+      );
+    }),
+  );
 
   setInterval(() => flushStats().catch(() => {}), 60_000);
   setInterval(
@@ -180,14 +252,15 @@ export async function startRcon(client) {
   return manager;
 }
 
-function scanTeamsSoon(manager) {
+function scanTeamsSoon(manager, serverId) {
+  const id = serverId || config.rcon.identifier;
   setTimeout(() => {
-    const teams = manager?.getTeams?.(config.rcon.identifier) || [];
+    const teams = manager?.getTeams?.(id) || [];
     for (const team of teams) checkTeamSize(team).catch(() => {});
   }, 3000);
 }
 
-export async function syncServerStatus(client, info = getServerInfo(), { force = false } = {}) {
+export async function syncServerStatus(client, info = getServerInfo(), { force = false, serverId } = {}) {
   if (!info) return null;
 
   const payload = {
@@ -207,29 +280,30 @@ export async function syncServerStatus(client, info = getServerInfo(), { force =
   };
 
   await sendToWebsite(payload).catch(() => {});
-  await updateStatusChannel(client, info, force);
+  await updateStatusChannel(client, info, force, serverId);
   return payload;
 }
 
-async function updateStatusChannel(client, info, force = false) {
-  const channelId = config.channels.popStatus;
+async function updateStatusChannel(client, info, force = false, serverId = null) {
+  const channelId = resolveChannelId("popStatus");
   if (!channelId || !client) return;
 
   const popSettings = getStatusSettingsSync().popStatus;
   if (popSettings?.enabled === false) return;
 
   const name = formatPopChannelName(info, popSettings);
-  if (!force && name === lastStatusName) return;
+  const key = serverId || "legacy";
+  const prev = statusRenameByServer.get(key) || { name: null, at: 0 };
+  if (!force && name === prev.name) return;
 
   const now = Date.now();
-  if (!force && now - lastStatusRenameAt < config.rcon.statusUpdateMs) return;
+  if (!force && now - prev.at < config.rcon.statusUpdateMs) return;
 
   const channel = await client.channels.fetch(channelId).catch(() => null);
   if (!channel) return;
 
   await channel.setName(name).catch(() => {});
-  lastStatusName = name;
-  lastStatusRenameAt = now;
+  statusRenameByServer.set(key, { name, at: now });
 }
 
 export async function buildLeaderboardPayload(limit = 10) {
@@ -278,8 +352,9 @@ export async function pushLeaderboardToWebsite() {
 
 export async function relayDiscordToGame(message) {
   if (!config.rcon.chatBridge) return false;
-  if (!config.channels.gameChat) return false;
-  if (message.channelId !== config.channels.gameChat) return false;
+  const gameChat = resolveChannelId("gameChat");
+  if (!gameChat) return false;
+  if (message.channelId !== gameChat) return false;
   if (message.author.bot) return false;
 
   const text = message.cleanContent?.trim();
@@ -303,3 +378,4 @@ export async function shutdownRcon() {
 
 export { publishLeaderboardToDiscord, buildLeaderboardAttachment } from "./leaderboard-publish.js";
 export { getOnlinePlayers, getServerInfo, sendGameCommand };
+export { withTenant };

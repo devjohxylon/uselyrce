@@ -1,4 +1,5 @@
 import { getSettings, saveSettings } from "../../data/store.js";
+import { getDataContext } from "../../saas/data-path.js";
 
 /** Live channel rename displays (pop / wipe) — editable on the Discord tab. */
 export const STATUS_SETTING_DEFS = [
@@ -108,7 +109,14 @@ export const STATUS_SETTING_DEFS = [
   },
 ];
 
-let cache = null;
+/** @type {Map<string, any>} */
+const caches = new Map();
+
+function cacheKey() {
+  const c = getDataContext();
+  if (c?.orgId && c?.serverId) return `${c.orgId}:${c.serverId}`;
+  return "legacy";
+}
 
 function defaultsFor(def) {
   const out = {};
@@ -163,17 +171,19 @@ export function normalizeStatusSettings(stored = {}) {
 
 export async function loadStatusSettings() {
   const settings = await getSettings();
-  cache = normalizeStatusSettings(settings.statusDisplays || {});
-  return cache;
+  const normalized = normalizeStatusSettings(settings.statusDisplays || {});
+  caches.set(cacheKey(), normalized);
+  return normalized;
 }
 
 export async function getStatusSettings() {
-  if (!cache) await loadStatusSettings();
-  return cache;
+  const key = cacheKey();
+  if (!caches.has(key)) await loadStatusSettings();
+  return caches.get(key);
 }
 
 export function getStatusSettingsSync() {
-  return cache || defaultStatusSettings();
+  return caches.get(cacheKey()) || defaultStatusSettings();
 }
 
 export async function getStatusSettingsForPanel() {
@@ -204,7 +214,7 @@ export async function saveStatusSettings(patch = {}) {
 
   settings.statusDisplays = current;
   await saveSettings(settings);
-  cache = current;
+  caches.set(cacheKey(), current);
   return { ok: true, ...(await getStatusSettingsForPanel()) };
 }
 

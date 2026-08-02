@@ -18,11 +18,17 @@ async function writeToOutbox(message) {
 }
 
 export async function sendEmail({ to, subject, html, text, replyTo }) {
-  if (config.saas.mock || !config.saas.resendApiKey) {
+  if (config.saas.mock) {
     await writeToOutbox({ to, subject, html, text, replyTo });
     console.log(`MOCK EMAIL → ${to} | ${subject}`);
     if (text) console.log(`  ${text}`);
     return { mock: true };
+  }
+
+  if (!config.saas.resendApiKey) {
+    throw new Error(
+      "RESEND_API_KEY is not configured — cannot send email in live SaaS mode.",
+    );
   }
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -64,6 +70,26 @@ export function setupEmailHtml({ setupUrl, plan }) {
     <p style="color:#5e646f;font-size:13px;margin:1.75rem 0 0;line-height:1.5">
       This link expires in 7 days. If the button doesn't work, paste this into your
       browser:<br><span style="color:#9aa0ab">${setupUrl}</span>
+    </p>
+  </div>
+</body></html>`;
+}
+
+export function resetPasswordEmailHtml({ resetUrl }) {
+  return `<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#050506;font-family:system-ui,sans-serif">
+  <div style="max-width:520px;margin:0 auto;padding:2.5rem 1.5rem;color:#f0f2f5">
+    <p style="letter-spacing:.14em;font-weight:700;font-size:14px;margin:0 0 1.5rem">USELY</p>
+    <h1 style="font-size:22px;margin:0 0 .75rem">Reset your password</h1>
+    <p style="color:#9aa0ab;line-height:1.6;margin:0 0 1.5rem">
+      Someone requested a password reset for your Usely owner account.
+      If that was you, use the button below. If not, you can ignore this email.
+    </p>
+    <a href="${resetUrl}"
+       style="display:inline-block;background:#e8edf4;color:#0b0c0e;font-weight:600;
+              padding:12px 22px;border-radius:4px;text-decoration:none">Choose a new password</a>
+    <p style="color:#5e646f;font-size:13px;margin:1.75rem 0 0;line-height:1.5">
+      This link expires in 1 hour.<br><span style="color:#9aa0ab">${resetUrl}</span>
     </p>
   </div>
 </body></html>`;

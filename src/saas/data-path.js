@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "async_hooks";
 import path from "path";
-import { DATA_DIR } from "../data/store.js";
+import { DATA_DIR } from "../data/data-dir.js";
 
 const ctx = new AsyncLocalStorage();
 

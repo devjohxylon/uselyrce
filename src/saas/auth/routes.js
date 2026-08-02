@@ -18,9 +18,22 @@ import {
   setSaasSessionCookie,
   readSaasCookie,
 } from "./discord-session.js";
-import { getAccountByEmail } from "../db/accounts.js";
-import { verifyPassword } from "./passwords.js";
-import { createOrg, setGuild, setDefaultServer, getOrg } from "../db/orgs.js";
+import {
+  createPasswordResetToken,
+  createSetupToken,
+  getAccountByEmail,
+  getValidPasswordResetToken,
+  markPasswordResetTokenUsed,
+  setAccountPassword,
+} from "../db/accounts.js";
+import { hashPassword, verifyPassword } from "./passwords.js";
+import {
+  createOrg,
+  setGuild,
+  setDefaultServer,
+  getOrg,
+  listOrgsOwnedByAccount,
+} from "../db/orgs.js";
 import {
   createServer,
   deleteServer,
@@ -32,6 +45,8 @@ import {
   createCheckoutSession,
   createPortalSession,
 } from "../billing/stripe.js";
+import { createRateLimiter } from "../rate-limit.js";
+import { sendEmail, setupEmailHtml, resetPasswordEmailHtml } from "../email/send.js";
 
 function oauthStates() {
   if (!globalThis.__uselyOAuthStates) globalThis.__uselyOAuthStates = new Map();
@@ -41,6 +56,9 @@ function oauthStates() {
 function requireOwnerServers(session) {
   return session?.permissions?.servers || session?.role === "owner";
 }
+
+const emailLoginLimit = createRateLimiter({ maxAttempts: 5, windowMs: 15 * 60 * 1000, lockMs: 15 * 60 * 1000 });
+const forgotLimit = createRateLimiter({ maxAttempts: 5, windowMs: 60 * 60 * 1000, lockMs: 60 * 60 * 1000 });
 
 export function attachSaasRoutes(app, client) {
   if (!config.saas.enabled) {
@@ -117,12 +135,22 @@ export function attachSaasRoutes(app, client) {
 
   app.post("/admin/auth/email", async (req, res) => {
     try {
+      const ip = emailLoginLimit.clientIp(req);
+      const gate = emailLoginLimit.check(ip);
+      if (!gate.ok) {
+        return res.status(429).json({
+          ok: false,
+          error: `Too many attempts. Try again in ${gate.retryAfterSec}s.`,
+        });
+      }
       const email = String(req.body?.email || "").toLowerCase().trim();
       const password = String(req.body?.password || "");
       const account = email ? await getAccountByEmail(email) : null;
       if (!account?.password_hash || !verifyPassword(password, account.password_hash)) {
+        emailLoginLimit.fail(ip);
         return res.status(401).json({ ok: false, error: "Invalid email or password" });
       }
+      emailLoginLimit.clear(ip);
       setSaasSessionCookie(res, {
         accountId: account.id,
         email: account.email,
@@ -131,6 +159,84 @@ export function attachSaasRoutes(app, client) {
       res.json({ ok: true });
     } catch (error) {
       res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/auth/forgot-password", async (req, res) => {
+    try {
+      const ip = forgotLimit.clientIp(req);
+      const gate = forgotLimit.check(ip);
+      if (!gate.ok) {
+        return res.status(429).json({ ok: false, error: "Too many requests. Try again later." });
+      }
+      forgotLimit.fail(ip);
+      const email = String(req.body?.email || "").toLowerCase().trim();
+      const account = email ? await getAccountByEmail(email) : null;
+      // Always succeed — don't leak whether the email exists.
+      if (account?.password_hash) {
+        const token = await createPasswordResetToken(account.id);
+        const resetUrl = `${config.saas.publicUrl.replace(/\/$/, "")}/admin?reset=${token}`;
+        await sendEmail({
+          to: account.email,
+          subject: "Reset your Usely password",
+          html: resetPasswordEmailHtml({ resetUrl }),
+          text: `Reset your Usely password: ${resetUrl}`,
+        });
+      }
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("forgot-password failed:", error.message);
+      res.status(500).json({ ok: false, error: "Could not start password reset" });
+    }
+  });
+
+  app.post("/admin/auth/reset-password", async (req, res) => {
+    try {
+      const token = String(req.body?.token || "");
+      const password = String(req.body?.password || "");
+      if (password.length < 8) {
+        return res.status(400).json({ ok: false, error: "Password must be at least 8 characters" });
+      }
+      const row = await getValidPasswordResetToken(token);
+      if (!row) {
+        return res.status(400).json({ ok: false, error: "Reset link is invalid or expired" });
+      }
+      await setAccountPassword(row.account_id, hashPassword(password));
+      await markPasswordResetTokenUsed(token);
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  app.post("/admin/auth/resend-setup", async (req, res) => {
+    try {
+      const ip = forgotLimit.clientIp(req);
+      const gate = forgotLimit.check(ip);
+      if (!gate.ok) {
+        return res.status(429).json({ ok: false, error: "Too many requests. Try again later." });
+      }
+      forgotLimit.fail(ip);
+      const email = String(req.body?.email || "").toLowerCase().trim();
+      const account = email ? await getAccountByEmail(email) : null;
+      if (account && !account.password_hash) {
+        const orgs = await listOrgsOwnedByAccount(account.id);
+        const org = orgs[0];
+        if (org) {
+          const token = await createSetupToken({ accountId: account.id, orgId: org.id });
+          const setupUrl = `${config.saas.publicUrl.replace(/\/$/, "")}/setup?token=${token}`;
+          await sendEmail({
+            to: account.email,
+            subject: "Finish setting up your Usely workspace",
+            html: setupEmailHtml({ setupUrl, plan: org.plan || "basic" }),
+            text: `Finish setup: ${setupUrl}`,
+          });
+        }
+      }
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("resend-setup failed:", error.message);
+      res.status(500).json({ ok: false, error: "Could not resend setup link" });
     }
   });
 
@@ -322,34 +428,53 @@ export function attachSaasRoutes(app, client) {
   });
 
   app.patch("/admin/api/saas/servers/:id", async (req, res) => {
-    const session = await resolveSaasSession(req, client);
-    if (!requireOwnerServers(session)) return res.status(403).json({ error: "Owner only" });
-    const server = await updateServer(req.params.id, req.body || {});
-    if (!config.saas.mock && (req.body?.password || req.body?.host || req.body?.port)) {
-      detachSaasServer(req.params.id);
-      const raw = await getServerRaw(req.params.id);
-      if (raw?.enabled) {
-        await attachSaasServer(withCredentials(raw)).catch(() => {});
+    try {
+      const session = await resolveSaasSession(req, client);
+      if (!session?.orgId || !requireOwnerServers(session)) {
+        return res.status(403).json({ error: "Owner only" });
       }
+      const server = await updateServer(session.orgId, req.params.id, req.body || {});
+      if (!config.saas.mock && (req.body?.password || req.body?.host || req.body?.port)) {
+        detachSaasServer(req.params.id);
+        const raw = await getServerRaw(req.params.id);
+        if (raw?.enabled && raw.org_id === session.orgId) {
+          await attachSaasServer(withCredentials(raw)).catch(() => {});
+        }
+      }
+      res.json({ ok: true, server });
+    } catch (error) {
+      const status = error.code === "NOT_FOUND" ? 404 : 400;
+      res.status(status).json({ error: error.message, code: error.code });
     }
-    res.json({ ok: true, server });
   });
 
   app.delete("/admin/api/saas/servers/:id", async (req, res) => {
-    const session = await resolveSaasSession(req, client);
-    if (!requireOwnerServers(session)) return res.status(403).json({ error: "Owner only" });
-    detachSaasServer(req.params.id);
-    await deleteServer(req.params.id);
-    res.json({ ok: true });
+    try {
+      const session = await resolveSaasSession(req, client);
+      if (!session?.orgId || !requireOwnerServers(session)) {
+        return res.status(403).json({ error: "Owner only" });
+      }
+      detachSaasServer(req.params.id);
+      await deleteServer(session.orgId, req.params.id);
+      res.json({ ok: true });
+    } catch (error) {
+      const status = error.code === "NOT_FOUND" ? 404 : 400;
+      res.status(status).json({ error: error.message, code: error.code });
+    }
   });
 
   app.post("/admin/api/saas/servers/:id/default", async (req, res) => {
-    const session = await resolveSaasSession(req, client);
-    if (!session?.orgId || !requireOwnerServers(session)) {
-      return res.status(403).json({ error: "Owner only" });
+    try {
+      const session = await resolveSaasSession(req, client);
+      if (!session?.orgId || !requireOwnerServers(session)) {
+        return res.status(403).json({ error: "Owner only" });
+      }
+      const org = await setDefaultServer(session.orgId, req.params.id);
+      res.json({ ok: true, org });
+    } catch (error) {
+      const status = error.code === "NOT_FOUND" ? 404 : 400;
+      res.status(status).json({ error: error.message, code: error.code });
     }
-    const org = await setDefaultServer(session.orgId, req.params.id);
-    res.json({ ok: true, org });
   });
 
   const roleMapsGone = (_req, res) => {

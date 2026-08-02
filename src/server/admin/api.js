@@ -199,6 +199,22 @@ async function requireAuth(req, res, next) {
       return res.status(401).json({ error: "Unauthorized" });
     }
     req.session = session;
+    if (config.saas.enabled && session.orgId && session.serverId) {
+      const { runWithDataContext } = await import("../../saas/data-path.js");
+      const { loadTenantChannels } = await import("../../saas/tenant-channels.js");
+      const { loadFeedSettings } = await import("../../modules/admin/feed-settings.js");
+      const { loadStatusSettings } = await import("../../modules/admin/status-settings.js");
+      return runWithDataContext({ orgId: session.orgId, serverId: session.serverId }, () =>
+        runWithServer(session.serverId, async () => {
+          await Promise.all([
+            loadTenantChannels().catch(() => {}),
+            loadFeedSettings().catch(() => {}),
+            loadStatusSettings().catch(() => {}),
+          ]);
+          return next();
+        }),
+      );
+    }
     if (config.saas.enabled && session.serverId) {
       return runWithServer(session.serverId, () => next());
     }

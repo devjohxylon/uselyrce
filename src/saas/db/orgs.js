@@ -88,6 +88,15 @@ export async function setGuild(orgId, guildId) {
 }
 
 export async function setDefaultServer(orgId, serverId) {
+  if (serverId) {
+    const { getServerRaw } = await import("./servers.js");
+    const raw = await getServerRaw(serverId);
+    if (!raw || raw.org_id !== orgId) {
+      const err = new Error("Server not found");
+      err.code = "NOT_FOUND";
+      throw err;
+    }
+  }
   if (useMock()) return mockdb.updateOrg(orgId, { default_server_id: serverId || null });
   const db = getServiceClient();
   const { data, error } = await db
@@ -120,6 +129,19 @@ export async function getOrgByStripeCustomer(customerId) {
     .from("orgs")
     .select("*")
     .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getOrgByStripeSubscription(subscriptionId) {
+  if (!subscriptionId) return null;
+  if (useMock()) return mockdb.getOrgByStripeSubscription?.(subscriptionId) ?? null;
+  const db = getServiceClient();
+  const { data, error } = await db
+    .from("orgs")
+    .select("*")
+    .eq("stripe_subscription_id", subscriptionId)
     .maybeSingle();
   if (error) throw error;
   return data;

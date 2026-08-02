@@ -1,5 +1,10 @@
 import { config } from "../../config.js";
 import { getSettings, saveSettings } from "../../data/store.js";
+import {
+  invalidateTenantChannels,
+  loadTenantChannels,
+  resolveChannelId,
+} from "../../saas/tenant-channels.js";
 
 /** Channels editable from the admin Server Commands tab. */
 export const CHANNEL_FIELDS = [
@@ -147,14 +152,17 @@ function normalizeId(value) {
   return raw;
 }
 
-/** Apply overrides from settings.json onto the live config object. */
+/** Apply overrides onto the process-global config (legacy single-tenant only). */
 export function applyChannelOverrides(overrides = {}) {
+  if (config.saas?.enabled) {
+    // SaaS tenants keep channels in namespaced settings — never mutate global config.
+    return;
+  }
   for (const [key, value] of Object.entries(overrides)) {
     if (!ALLOWED.has(key)) continue;
     config.channels[key] = value || null;
   }
 
-  // Keep outbound / watch sets in sync with mutable channel ids
   config.channels.outbound.announcement = config.channels.announcements;
   config.channels.outbound.wipe = config.channels.wipes;
   config.channels.outbound.event = config.channels.events;
@@ -172,19 +180,24 @@ export function applyChannelOverrides(overrides = {}) {
 export async function loadChannelOverrides() {
   const settings = await getSettings();
   const overrides = settings.channels || {};
-  applyChannelOverrides(overrides);
+  if (config.saas?.enabled) {
+    await loadTenantChannels();
+  } else {
+    applyChannelOverrides(overrides);
+  }
   return overrides;
 }
 
 export async function getChannelConfig() {
   const settings = await getSettings();
   const overrides = settings.channels || {};
+  await loadTenantChannels();
 
   return CHANNEL_FIELDS.map((field) => {
     const override = Object.prototype.hasOwnProperty.call(overrides, field.key)
       ? overrides[field.key] || null
       : undefined;
-    const effective = config.channels[field.key] || null;
+    const effective = resolveChannelId(field.key);
     return {
       ...field,
       value: effective,
@@ -211,8 +224,6 @@ export async function saveChannelConfig(patch = {}) {
     }
     if (raw === "" || raw == null) {
       delete settings.channels[key];
-      // Fall back to env default for that key — reload from process.env via re-read
-      // We store explicit null as "cleared override" by deleting; then apply env.
       continue;
     }
     const id = normalizeId(raw);
@@ -226,16 +237,18 @@ export async function saveChannelConfig(patch = {}) {
   if (errors.length) return { ok: false, error: errors.join("; ") };
 
   await saveSettings(settings);
+  invalidateTenantChannels();
+  await loadTenantChannels();
 
-  // Rebuild effective map: start from env defaults already on config, then apply overrides.
-  // Env defaults were loaded at boot; for keys we deleted, restore from process.env.
-  for (const field of CHANNEL_FIELDS) {
-    if (!Object.prototype.hasOwnProperty.call(settings.channels, field.key)) {
-      const envVal = process.env[field.env]?.trim() || null;
-      config.channels[field.key] = envVal;
+  if (!config.saas?.enabled) {
+    for (const field of CHANNEL_FIELDS) {
+      if (!Object.prototype.hasOwnProperty.call(settings.channels, field.key)) {
+        const envVal = process.env[field.env]?.trim() || null;
+        config.channels[field.key] = envVal;
+      }
     }
+    applyChannelOverrides(settings.channels);
   }
-  applyChannelOverrides(settings.channels);
 
   return { ok: true, channels: await getChannelConfig() };
 }

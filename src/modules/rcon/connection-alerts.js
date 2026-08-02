@@ -1,5 +1,7 @@
 import { EmbedBuilder } from "discord.js";
-import { config } from "../../config.js";
+import { resolveChannelId, ensureTenantChannels } from "../../saas/tenant-channels.js";
+import { withTenant } from "../../saas/tenant-context.js";
+import { getServerOrgId } from "../../saas/rcon/pool.js";
 
 let discordClient = null;
 /** @type {Map<string, "up" | "down">} */
@@ -14,14 +16,15 @@ export function startConnectionAlerts(client) {
 
 function alertChannelId() {
   return (
-    config.channels.announcements ||
-    config.channels.wipes ||
-    config.channels.killfeed ||
+    resolveChannelId("announcements") ||
+    resolveChannelId("wipes") ||
+    resolveChannelId("killfeed") ||
     null
   );
 }
 
 async function sendAlert(embed) {
+  await ensureTenantChannels().catch(() => {});
   const channelId = alertChannelId();
   if (!discordClient || !channelId) return;
   const channel = await discordClient.channels.fetch(channelId).catch(() => null);
@@ -54,30 +57,31 @@ export async function noteRconState(serverId, connected, meta = {}) {
   const where =
     meta.host && meta.port ? `\`${meta.host}:${meta.port}\`` : null;
 
-  if (next === "down") {
-    await sendAlert(
-      new EmbedBuilder()
-        .setColor(0xe74c3c)
-        .setTitle("WebRCON disconnected")
-        .setDescription(
-          [
-            `**${label}** lost its WebRCON connection.`,
-            where ? `Endpoint: ${where}` : null,
-            "Usely is reconnecting automatically. Check **Workspace → Setup** if this keeps happening.",
-          ]
-            .filter(Boolean)
-            .join("\n"),
-        )
-        .setTimestamp(new Date()),
-    );
-    return;
-  }
+  const embed =
+    next === "down"
+      ? new EmbedBuilder()
+          .setColor(0xe74c3c)
+          .setTitle("WebRCON disconnected")
+          .setDescription(
+            [
+              `**${label}** lost its WebRCON connection.`,
+              where ? `Endpoint: ${where}` : null,
+              "Usely is reconnecting automatically. Check **Workspace → Setup** if this keeps happening.",
+            ]
+              .filter(Boolean)
+              .join("\n"),
+          )
+          .setTimestamp(new Date())
+      : new EmbedBuilder()
+          .setColor(0x2ecc71)
+          .setTitle("WebRCON back online")
+          .setDescription(`**${label}** is connected again.`)
+          .setTimestamp(new Date());
 
-  await sendAlert(
-    new EmbedBuilder()
-      .setColor(0x2ecc71)
-      .setTitle("WebRCON back online")
-      .setDescription(`**${label}** is connected again.`)
-      .setTimestamp(new Date()),
-  );
+  const orgId = getServerOrgId(id);
+  if (orgId) {
+    await withTenant({ orgId, serverId: id }, () => sendAlert(embed));
+  } else {
+    await sendAlert(embed);
+  }
 }

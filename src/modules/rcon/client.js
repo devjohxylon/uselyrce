@@ -234,10 +234,11 @@ export async function connectRcon() {
       return [];
     });
     if (!servers.length) {
-      console.log("SaaS mode: no enabled servers in database yet.");
-      return null;
+      console.log("SaaS mode: RCON pool idle — waiting for paid workspace servers.");
+    } else {
+      console.log(`SaaS mode: attaching ${servers.length} RCON server(s)…`);
     }
-    console.log(`SaaS mode: attaching ${servers.length} RCON server(s)…`);
+    // Always return a manager so event handlers wire once; servers attach later.
     return startPool(servers);
   }
 
@@ -316,6 +317,16 @@ export async function broadcast(message, serverId) {
 }
 
 export async function attachSaasServer(server) {
+  if (server?.orgId && !mockOn()) {
+    const { getOrg } = await import("../../saas/db/orgs.js");
+    const { isPlanLive } = await import("../../saas/billing/plans.js");
+    const org = await getOrg(server.orgId);
+    if (!org || !isPlanLive(org.plan_status)) {
+      const err = new Error("Subscription is not active — WebRCON stays disconnected.");
+      err.code = "PLAN_REQUIRED";
+      throw err;
+    }
+  }
   return poolAttach(server);
 }
 

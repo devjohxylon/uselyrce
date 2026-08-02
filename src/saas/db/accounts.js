@@ -102,3 +102,51 @@ export async function markSetupTokenUsed(token) {
     .eq("token", String(token));
   if (error) throw error;
 }
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+
+export async function createPasswordResetToken(accountId) {
+  const row = {
+    token: crypto.randomBytes(24).toString("base64url"),
+    account_id: accountId,
+    expires_at: new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString(),
+    used_at: null,
+  };
+  if (useMock()) {
+    await mockdb.insertPasswordResetToken?.(row);
+    return row.token;
+  }
+  const db = getServiceClient();
+  const { error } = await db.from("password_reset_tokens").insert(row);
+  if (error) throw error;
+  return row.token;
+}
+
+export async function getValidPasswordResetToken(token) {
+  let row;
+  if (useMock()) {
+    row = await mockdb.getPasswordResetToken?.(String(token));
+  } else {
+    const db = getServiceClient();
+    const { data, error } = await db
+      .from("password_reset_tokens")
+      .select("*")
+      .eq("token", String(token))
+      .maybeSingle();
+    if (error) throw error;
+    row = data;
+  }
+  if (!row || row.used_at) return null;
+  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+  return row;
+}
+
+export async function markPasswordResetTokenUsed(token) {
+  if (useMock()) return mockdb.markPasswordResetTokenUsed?.(String(token));
+  const db = getServiceClient();
+  const { error } = await db
+    .from("password_reset_tokens")
+    .update({ used_at: new Date().toISOString() })
+    .eq("token", String(token));
+  if (error) throw error;
+}

@@ -1,17 +1,19 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { resolveDataFile } from "../saas/data-path.js";
+import { DATA_DIR } from "./data-dir.js";
 
-export const DATA_DIR = process.env.DATA_DIR?.trim()
-  || path.join(process.cwd(), ".data");
+export { DATA_DIR };
 
 async function ensureDir() {
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
 async function readJson(file, fallback) {
-  await ensureDir();
+  const target = resolveDataFile(file);
+  await fs.mkdir(path.dirname(target), { recursive: true });
   try {
-    const raw = await fs.readFile(path.join(DATA_DIR, file), "utf8");
+    const raw = await fs.readFile(target, "utf8");
     return JSON.parse(raw);
   } catch {
     return structuredClone(fallback);
@@ -19,8 +21,9 @@ async function readJson(file, fallback) {
 }
 
 async function writeJson(file, data) {
-  await ensureDir();
-  await fs.writeFile(path.join(DATA_DIR, file), JSON.stringify(data, null, 2), "utf8");
+  const target = resolveDataFile(file);
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target, JSON.stringify(data, null, 2), "utf8");
 }
 
 /**

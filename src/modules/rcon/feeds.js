@@ -1,9 +1,9 @@
 import { EmbedBuilder } from "discord.js";
-import { config } from "../../config.js";
 import {
   getFeedSettingsSync,
   shouldPostKill,
 } from "../admin/feed-settings.js";
+import { resolveChannelId } from "../../saas/tenant-channels.js";
 import { getPositionFor } from "./live-map.js";
 
 const FLUSH_MS = 3000;
@@ -190,7 +190,7 @@ function formatCompactPvp({
 }
 
 export function feedKill(data) {
-  const channelId = config.channels.killfeed;
+  const channelId = resolveChannelId("killfeed");
   const kf = getFeedSettingsSync().killfeed;
 
   const killer = data?.killer ?? data;
@@ -337,7 +337,7 @@ export function feedJoin(player) {
     wsModule.broadcastPlayerJoin(player?.ign);
   }
   if (!feedEnabled("joinLeave")) return;
-  queueFeedLine(config.channels.joinLeave, `📥 **${clean(player?.ign)}** joined the server`);
+  queueFeedLine(resolveChannelId("joinLeave"), `📥 **${clean(player?.ign)}** joined the server`);
 }
 
 export function feedLeave(player) {
@@ -345,13 +345,13 @@ export function feedLeave(player) {
     wsModule.broadcastPlayerLeave(player?.ign);
   }
   if (!feedEnabled("joinLeave")) return;
-  queueFeedLine(config.channels.joinLeave, `📤 **${clean(player?.ign)}** left the server`);
+  queueFeedLine(resolveChannelId("joinLeave"), `📤 **${clean(player?.ign)}** left the server`);
 }
 
 export function feedQuickChat({ player, message, type }) {
   if (!feedEnabled("gameChat")) return;
   const channel = type ? `[${type}] ` : "";
-  queueFeedLine(config.channels.gameChat, `💬 ${channel}**${clean(player?.ign)}**: ${clean(message)}`);
+  queueFeedLine(resolveChannelId("gameChat"), `💬 ${channel}**${clean(player?.ign)}**: ${clean(message)}`);
 }
 
 const EVENT_META = {
@@ -376,12 +376,12 @@ export async function feedServerEvent({ event, special }) {
     .setColor(meta.color)
     .setTimestamp();
 
-  await sendEmbed(config.channels.gameEvents, embed);
+  await sendEmbed(resolveChannelId("gameEvents"), embed);
 }
 
 export function feedAdminAction(text) {
   if (!feedEnabled("adminLog")) return;
-  queueFeedLine(config.channels.adminLog, text);
+  queueFeedLine(resolveChannelId("adminLog"), text);
 }
 
 export function feedPlayerBanned({ player, admin }) {
@@ -450,7 +450,7 @@ const KIT_DEDUPE_MS = 5_000;
 
 export function feedKitSpawn({ player, kit, admin }) {
   if (!feedEnabled("adminLog")) return;
-  const channelId = config.channels.adminLog;
+  const channelId = resolveChannelId("adminLog");
   if (!channelId) return;
 
   const playerName = clean(player?.ign);

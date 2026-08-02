@@ -21,6 +21,13 @@ import {
   opsCodeConfigured,
   setOpsCookie,
 } from "./session.js";
+import { createRateLimiter } from "../rate-limit.js";
+
+const opsLoginLimit = createRateLimiter({
+  maxAttempts: 8,
+  windowMs: 15 * 60 * 1000,
+  lockMs: 15 * 60 * 1000,
+});
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const OPS_HTML = path.resolve(DIR, "ops.html");
@@ -279,10 +286,20 @@ export function attachOpsRoutes(app, client = null) {
   });
 
   app.post("/ops/login", (req, res) => {
+    const ip = opsLoginLimit.clientIp(req);
+    const gate = opsLoginLimit.check(ip);
+    if (!gate.ok) {
+      return res
+        .status(429)
+        .type("html")
+        .send(gateHtml({ error: `Too many attempts. Try again in ${gate.retryAfterSec}s.` }));
+    }
     const code = req.body?.code ?? req.body?.accessCode ?? "";
     if (!codesMatch(code)) {
+      opsLoginLimit.fail(ip);
       return res.status(401).type("html").send(gateHtml({ error: "Wrong access code." }));
     }
+    opsLoginLimit.clear(ip);
     setOpsCookie(res);
     const next = String(req.body?.next || req.query?.next || "/ops");
     const safe = next.startsWith("/ops") ? next : "/ops";

@@ -84,34 +84,68 @@ export async function createServer(orgId, { name, host, port, password }) {
   return publicServer(data);
 }
 
-export async function updateServer(serverId, patch) {
+export async function assertServerOwnedByOrg(orgId, serverId) {
+  const raw = await getServerRaw(serverId);
+  if (!raw || raw.org_id !== orgId) {
+    const err = new Error("Server not found");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+  return raw;
+}
+
+export async function updateServer(orgId, serverId, patch) {
+  const raw = await assertServerOwnedByOrg(orgId, serverId);
   const updates = {};
-  if (patch.name != null) updates.name = String(patch.name).trim();
-  if (patch.host != null) updates.rcon_host = String(patch.host).trim();
-  if (patch.port != null) updates.rcon_port = Number(patch.port);
+
+  if (patch.host != null || patch.port != null || patch.password) {
+    const endpoint = normalizeRconEndpoint({
+      name: patch.name != null ? patch.name : raw.name,
+      host: patch.host != null ? patch.host : raw.rcon_host,
+      port: patch.port != null ? patch.port : raw.rcon_port,
+      password: patch.password || decryptSecret(raw.rcon_password_enc),
+    });
+    if (patch.name != null) updates.name = endpoint.name;
+    if (patch.host != null) updates.rcon_host = endpoint.host;
+    if (patch.port != null) updates.rcon_port = endpoint.port;
+    if (patch.password) updates.rcon_password_enc = encryptSecret(endpoint.password);
+  } else if (patch.name != null) {
+    const name = String(patch.name).trim();
+    if (!name || name.length > 64) {
+      const err = new Error("Enter a server display name (max 64 characters).");
+      err.code = "RCON_INVALID";
+      throw err;
+    }
+    updates.name = name;
+  }
+
   if (patch.enabled != null) updates.enabled = Boolean(patch.enabled);
+
+  if (!Object.keys(updates).length) {
+    return publicServer(raw);
+  }
 
   if (useMock()) {
     return publicServer(await mockdb.patchServer(serverId, updates));
   }
-
-  if (patch.password) updates.rcon_password_enc = encryptSecret(patch.password);
 
   const db = getServiceClient();
   const { data, error } = await db
     .from("servers")
     .update(updates)
     .eq("id", serverId)
+    .eq("org_id", orgId)
     .select("*")
     .single();
   if (error) throw error;
   return publicServer(data);
 }
 
-export async function deleteServer(serverId) {
+export async function deleteServer(orgId, serverId) {
+  await assertServerOwnedByOrg(orgId, serverId);
   if (useMock()) return mockdb.removeServer(serverId);
   const db = getServiceClient();
-  const { error } = await db.from("servers").delete().eq("id", serverId);
+  const { error } = await db.from("servers").delete().eq("id", serverId).eq("org_id", orgId);
   if (error) throw error;
 }
 
@@ -128,7 +162,7 @@ export async function listAllEnabledForPool() {
   if (error) throw error;
 
   return (data || [])
-    .filter((row) => isPlanLive(row.orgs.plan_status) || row.orgs.plan_status === "inactive")
+    .filter((row) => isPlanLive(row.orgs.plan_status))
     .map((row) => ({
       id: row.id,
       orgId: row.org_id,

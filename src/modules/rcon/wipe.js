@@ -3,9 +3,12 @@ import { config } from "../../config.js";
 import { getSettings, saveSettings } from "../../data/store.js";
 import { sendToWebsite } from "../../services/website.js";
 import { wipeEmbed } from "../../utils/format.js";
+import { resolveChannelId } from "../../saas/tenant-channels.js";
+import { forEachAttachedTenant } from "../../saas/tenant-context.js";
+import { maybeAutoRunWipe } from "./wipe-runner.js";
 
-let lastWipeName = null;
-let lastWipeRenameAt = 0;
+/** @type {Map<string, { name: string|null, at: number }>} */
+const wipeRenameByKey = new Map();
 let wipeTimer = null;
 let discordClient = null;
 
@@ -90,24 +93,24 @@ export async function buildWipePayload() {
   };
 }
 
-async function renameWipeChannel(client, force = false) {
-  const channelId = config.channels.wipeStatus;
+async function renameWipeChannel(client, force = false, renameKey = "legacy") {
+  const channelId = resolveChannelId("wipeStatus");
   if (!channelId || !client) return;
 
   const wipeAt = await getWipeAt();
   const { label } = formatWipeCountdown(wipeAt);
   const name = label.slice(0, 90);
-  if (!force && name === lastWipeName) return;
+  const prev = wipeRenameByKey.get(renameKey) || { name: null, at: 0 };
+  if (!force && name === prev.name) return;
 
   const now = Date.now();
-  if (!force && now - lastWipeRenameAt < config.rcon.statusUpdateMs) return;
+  if (!force && now - prev.at < config.rcon.statusUpdateMs) return;
 
   const channel = await client.channels.fetch(channelId).catch(() => null);
   if (!channel) return;
 
   await channel.setName(name).catch(() => {});
-  lastWipeName = name;
-  lastWipeRenameAt = now;
+  wipeRenameByKey.set(renameKey, { name, at: now });
 }
 
 function milestoneDue(milestone, countdown) {
@@ -115,13 +118,12 @@ function milestoneDue(milestone, countdown) {
     return Boolean(countdown.past || (countdown.remainingMs != null && countdown.remainingMs <= 0));
   }
   if (countdown.remainingMs == null) return false;
-  // Crossed under threshold (including catch-up after downtime).
   return countdown.remainingMs <= milestone.ms;
 }
 
 async function maybePostWipeCountdown(client, wipeAt, countdown) {
   if (!client || !wipeAt) return;
-  const channelId = config.channels.wipes || config.channels.announcements;
+  const channelId = resolveChannelId("wipes") || resolveChannelId("announcements");
   if (!channelId) return;
 
   const settings = await getSettings();
@@ -164,17 +166,34 @@ async function maybePostWipeCountdown(client, wipeAt, countdown) {
   await saveSettings(settings);
 }
 
-export async function syncWipeStatus(client = discordClient, { force = false } = {}) {
+async function syncOneWipe(client, { force = false, renameKey = "legacy" } = {}) {
   const payload = await buildWipePayload();
   await sendToWebsite(payload).catch(() => {});
-  await renameWipeChannel(client, force);
+  await renameWipeChannel(client, force, renameKey);
   await maybePostWipeCountdown(client, payload.wipeAt, {
     remainingMs: payload.remainingMs,
     past: payload.past,
   }).catch((error) => {
     console.warn("Wipe countdown posts failed:", error.message);
   });
+  await maybeAutoRunWipe(client).catch((error) => {
+    console.warn("Scheduled wipe automation failed:", error.message);
+  });
   return payload;
+}
+
+export async function syncWipeStatus(client = discordClient, { force = false } = {}) {
+  if (config.saas?.enabled) {
+    let last = null;
+    await forEachAttachedTenant(async (t) => {
+      last = await syncOneWipe(client, {
+        force,
+        renameKey: `${t.orgId}:${t.serverId}`,
+      });
+    });
+    return last;
+  }
+  return syncOneWipe(client, { force });
 }
 
 export function startWipeScheduler(client) {

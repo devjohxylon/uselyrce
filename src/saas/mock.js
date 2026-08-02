@@ -45,6 +45,7 @@ function seedData() {
   return {
     accounts: [ownerAccount],
     setupTokens: [],
+    passwordResetTokens: [],
     orgs: [
       {
         id: "mock-org-1",
@@ -170,6 +171,11 @@ export async function getOrgByStripeCustomer(customerId) {
   return db.orgs.find((o) => o.stripe_customer_id === customerId) || null;
 }
 
+export async function getOrgByStripeSubscription(subscriptionId) {
+  const db = await load();
+  return db.orgs.find((o) => o.stripe_subscription_id === subscriptionId) || null;
+}
+
 export async function getOrgBySlug(slug) {
   const db = await load();
   return db.orgs.find((o) => o.slug === String(slug)) || null;
@@ -252,6 +258,28 @@ export async function getSetupToken(token) {
 export async function markSetupTokenUsed(token) {
   const db = await load();
   const row = db.setupTokens.find((t) => t.token === token);
+  if (row) {
+    row.used_at = new Date().toISOString();
+    await save();
+  }
+}
+
+export async function insertPasswordResetToken(row) {
+  const db = await load();
+  if (!db.passwordResetTokens) db.passwordResetTokens = [];
+  db.passwordResetTokens.push(row);
+  await save();
+  return row;
+}
+
+export async function getPasswordResetToken(token) {
+  const db = await load();
+  return (db.passwordResetTokens || []).find((t) => t.token === token) || null;
+}
+
+export async function markPasswordResetTokenUsed(token) {
+  const db = await load();
+  const row = (db.passwordResetTokens || []).find((t) => t.token === token);
   if (row) {
     row.used_at = new Date().toISOString();
     await save();

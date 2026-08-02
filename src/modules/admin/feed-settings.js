@@ -1,4 +1,5 @@
 import { getSettings, saveSettings } from "../../data/store.js";
+import { getDataContext } from "../../saas/data-path.js";
 
 /** Per-feed options shown on the Discord tab. Only feeds that need knobs get extras. */
 export const FEED_SETTING_DEFS = [
@@ -133,7 +134,14 @@ export const FEED_SETTING_DEFS = [
 const ANIMAL_RE =
   /\b(bear|wolf|boar|chicken|stag|horse|shark|crocodile|panther|deer|polarbear|tiger|snake|ridablehorse|simpleshark)\b/i;
 
-let cache = null;
+/** @type {Map<string, any>} */
+const caches = new Map();
+
+function cacheKey() {
+  const c = getDataContext();
+  if (c?.orgId && c?.serverId) return `${c.orgId}:${c.serverId}`;
+  return "legacy";
+}
 
 function defaultsFor(def) {
   const out = {};
@@ -175,18 +183,20 @@ export function normalizeFeedSettings(stored = {}) {
 
 export async function loadFeedSettings() {
   const settings = await getSettings();
-  cache = normalizeFeedSettings(settings.feeds || {});
-  return cache;
+  const normalized = normalizeFeedSettings(settings.feeds || {});
+  caches.set(cacheKey(), normalized);
+  return normalized;
 }
 
 export async function getFeedSettings() {
-  if (!cache) await loadFeedSettings();
-  return cache;
+  const key = cacheKey();
+  if (!caches.has(key)) await loadFeedSettings();
+  return caches.get(key);
 }
 
 /** Sync snapshot for hot path (feeds). Falls back to defaults if not loaded yet. */
 export function getFeedSettingsSync() {
-  return cache || defaultFeedSettings();
+  return caches.get(cacheKey()) || defaultFeedSettings();
 }
 
 export async function getFeedSettingsForPanel() {
@@ -217,7 +227,7 @@ export async function saveFeedSettings(patch = {}) {
 
   settings.feeds = current;
   await saveSettings(settings);
-  cache = current;
+  caches.set(cacheKey(), current);
   return { ok: true, ...(await getFeedSettingsForPanel()) };
 }
 

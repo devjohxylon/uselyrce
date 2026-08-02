@@ -6,9 +6,10 @@ const WATCHDOG_MS = 12_000;
 const serverContext = new AsyncLocalStorage();
 
 let manager = null;
-/** @type {Map<string, { host: string, port: number, lastError: string|null, connectedAt: Date|null, reattaching: boolean, reconnectAttempts: number, name?: string }>} */
+/** @type {Map<string, { host: string, port: number, lastError: string|null, connectedAt: Date|null, reattaching: boolean, reconnectAttempts: number, name?: string, orgId?: string|null }>} */
 const states = new Map();
 let watchdog = null;
+let handlersWired = false;
 
 export function getActiveServerId() {
   return serverContext.getStore()?.serverId ?? null;
@@ -20,6 +21,27 @@ export function runWithServer(serverId, fn) {
 
 export function getPoolManager() {
   return manager;
+}
+
+export function getServerOrgId(serverId) {
+  return states.get(serverId)?.orgId ?? null;
+}
+
+/** @returns {{ serverId: string, orgId: string|null, name?: string }[]} */
+export function listAttachedTenants() {
+  return [...states.entries()].map(([serverId, st]) => ({
+    serverId,
+    orgId: st.orgId || null,
+    name: st.name,
+  }));
+}
+
+export function markPoolHandlersWired() {
+  handlersWired = true;
+}
+
+export function poolHandlersWired() {
+  return handlersWired;
 }
 
 function ensureManager() {
@@ -77,6 +99,7 @@ async function attachOne(server) {
     host: server.host,
     port: server.port,
     name: server.name || prev?.name || server.id,
+    orgId: server.orgId ?? prev?.orgId ?? null,
     lastError: null,
     connectedAt: null,
     reattaching: false,
@@ -133,21 +156,9 @@ async function watchdogTick(serverId) {
 /**
  * @param {Array<{ id: string, host: string, port: number, password: string, name?: string }>} servers
  */
-export async function startPool(servers) {
+export async function startPool(servers = []) {
   ensureManager();
   for (const server of servers) {
-    const st = states.get(server.id) || {};
-    st._password = server.password;
-    states.set(server.id, {
-      host: server.host,
-      port: server.port,
-      name: server.name || server.id,
-      lastError: null,
-      connectedAt: null,
-      reattaching: false,
-      reconnectAttempts: 0,
-      _password: server.password,
-    });
     await attachOne(server);
   }
   if (!watchdog) {
@@ -162,16 +173,6 @@ export async function startPool(servers) {
 
 export async function attachServer(server) {
   ensureManager();
-  states.set(server.id, {
-    host: server.host,
-    port: server.port,
-    name: server.name || server.id,
-    lastError: null,
-    connectedAt: null,
-    reattaching: false,
-    reconnectAttempts: 0,
-    _password: server.password,
-  });
   return attachOne(server);
 }
 

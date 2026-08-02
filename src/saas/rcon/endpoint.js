@@ -2,6 +2,43 @@
  * Shared WebRCON endpoint checks for setup + panel.
  * Returns normalized fields or throws Error with a customer-facing message.
  */
+
+function isBlockedHost(host) {
+  const h = String(host || "").toLowerCase().replace(/\.$/, "");
+  if (
+    h === "localhost" ||
+    h === "metadata" ||
+    h === "metadata.google.internal" ||
+    h.endsWith(".localhost") ||
+    h.endsWith(".local") ||
+    h.endsWith(".internal")
+  ) {
+    return true;
+  }
+
+  // IPv4
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) {
+    const parts = m.slice(1).map(Number);
+    if (parts.some((n) => n > 255)) return true;
+    const [a, b] = parts;
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  }
+
+  // IPv6 condensed checks
+  if (h === "::1" || h.startsWith("fc") || h.startsWith("fd") || h.startsWith("fe80")) {
+    return true;
+  }
+
+  return false;
+}
+
 export function normalizeRconEndpoint({ name, host, port, password } = {}) {
   const displayName = String(name || "").trim();
   let h = String(host || "").trim();
@@ -43,6 +80,14 @@ export function normalizeRconEndpoint({ name, host, port, password } = {}) {
 
   if (h.length > 253) {
     const err = new Error("Host is too long.");
+    err.code = "RCON_INVALID";
+    throw err;
+  }
+
+  if (isBlockedHost(h)) {
+    const err = new Error(
+      "That host looks like a private or local address. Use your game host’s public WebRCON IP or hostname.",
+    );
     err.code = "RCON_INVALID";
     throw err;
   }
