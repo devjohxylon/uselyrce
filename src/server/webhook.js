@@ -94,10 +94,15 @@ export async function createWebhookServer(client) {
       }
       next();
     });
+    const { sentryRequestContext } = await import("../observability/sentry.js");
+    app.use(sentryRequestContext);
     const { attachSignupRoutes } = await import("../saas/signup/routes.js");
     attachSignupRoutes(app, client);
     const { attachOpsRoutes } = await import("../saas/ops/routes.js");
     attachOpsRoutes(app, client);
+  } else {
+    const { sentryRequestContext } = await import("../observability/sentry.js");
+    app.use(sentryRequestContext);
   }
 
   app.get("/logo.svg", (_req, res) => {

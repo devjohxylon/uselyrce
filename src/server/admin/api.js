@@ -202,6 +202,12 @@ async function requireAuth(req, res, next) {
       return res.status(401).json({ error: "Unauthorized" });
     }
     req.session = session;
+    try {
+      const { tagSentryRequest } = await import("../../observability/sentry.js");
+      tagSentryRequest(req);
+    } catch {
+      /* optional */
+    }
     if (config.saas.enabled && session.orgId && session.serverId) {
       const { runWithDataContext } = await import("../../saas/data-path.js");
       const { loadTenantChannels } = await import("../../saas/tenant-channels.js");
@@ -266,6 +272,7 @@ export async function attachAdminPanel(app, client) {
   attachSaasRoutes(app, client);
 
   app.get("/admin", (_req, res) => {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
     res.type("html").send(PANEL_HTML);
   });
 
@@ -615,7 +622,7 @@ export async function attachAdminPanel(app, client) {
       imageStatus: preview?.status || (seed ? "needs_upload" : "no_seed"),
       imageMessage: preview?.message || null,
       imageSource: preview?.source || meta?.source || null,
-      players: getPlayersWithPositions(),
+      players: getPlayersWithPositions(req.session?.serverId),
     });
   });
 
@@ -685,14 +692,19 @@ export async function attachAdminPanel(app, client) {
     try {
       const ign = String(req.body?.ign ?? "").trim();
       if (!ign) return res.status(400).json({ ok: false, error: "Missing player IGN" });
-      const coords = await fetchPlayerPosition(ign);
+      const coords = await fetchPlayerPosition(ign, req.session?.serverId);
       if (!coords) {
         return res.status(404).json({
           ok: false,
           error: `No position for ${ign} — are they online?`,
         });
       }
-      res.json({ ok: true, ign, coords, players: getPlayersWithPositions() });
+      res.json({
+        ok: true,
+        ign,
+        coords,
+        players: getPlayersWithPositions(req.session?.serverId),
+      });
     } catch (error) {
       res.status(500).json({ ok: false, error: error.message });
     }

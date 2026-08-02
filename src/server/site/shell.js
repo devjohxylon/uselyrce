@@ -136,10 +136,17 @@ const ORG_JSON_LD = JSON.stringify({
   description:
     "Hosted admin panel and Discord bot for Rust Console Edition servers, with player management, a kit builder, and WebRCON access.",
   offers: {
-    "@type": "Offer",
-    price: "20.00",
+    "@type": "AggregateOffer",
+    lowPrice: "20.00",
+    highPrice: "99.00",
     priceCurrency: "USD",
+    offerCount: 3,
     url: `${SITE_URL}/pricing`,
+    offers: [
+      { "@type": "Offer", name: "Basic", price: "20.00", priceCurrency: "USD", url: `${SITE_URL}/signup?plan=basic` },
+      { "@type": "Offer", name: "Pro", price: "49.00", priceCurrency: "USD", url: `${SITE_URL}/signup?plan=pro` },
+      { "@type": "Offer", name: "Network", price: "99.00", priceCurrency: "USD", url: `${SITE_URL}/signup?plan=network` },
+    ],
   },
 });
 
@@ -148,7 +155,7 @@ function renderHead(key) {
   if (!meta) throw new Error(`Unknown page key in <!--HEAD:${key}-->`);
 
   const canonical = `${SITE_URL}${meta.path}`;
-  const image = `${SITE_URL}/logo.png`;
+  const image = `${SITE_URL}/og.png`;
   const jsonLd = [key === "home" ? ORG_JSON_LD : null, meta.jsonLd?.()].filter(Boolean);
 
   return `  <meta charset="utf-8" />
@@ -163,14 +170,13 @@ function renderHead(key) {
   <meta property="og:description" content="${escapeAttr(meta.description)}" />
   <meta property="og:url" content="${canonical}" />
   <meta property="og:image" content="${image}" />
-  <meta name="twitter:card" content="summary" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeAttr(meta.title)}" />
   <meta name="twitter:description" content="${escapeAttr(meta.description)}" />
   <meta name="twitter:image" content="${image}" />
   <link rel="icon" href="/logo.png" type="image/png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />${
     meta.extraCss ? `\n  <link rel="stylesheet" href="${meta.extraCss}" />` : ""
   }${jsonLd.map((data) => `\n  <script type="application/ld+json">${data}</script>`).join("")}`;
@@ -182,32 +188,54 @@ function renderNav(active) {
       `<a href="${href}"${key === active ? ' aria-current="page"' : ""}>${label}</a>`,
   ).join("\n        ");
 
-  return `    <p class="beta-bar" role="status">
+  const drawerLinks = [
+    ...NAV_LINKS.map(([href, label, key]) => [href, label, key]),
+    ["/contact", "Contact", "contact"],
+    ["/admin", "Sign in", null],
+    ["/signup", "Get started", null],
+  ]
+    .map(
+      ([href, label, key]) =>
+        `<a href="${href}"${key === active ? ' aria-current="page"' : ""}${label === "Get started" ? ' class="btn btn-primary"' : ""}>${label}</a>`,
+    )
+    .join("\n      ");
+
+  return `    <a class="skip-link" href="#main">Skip to content</a>
+    <p class="beta-bar" role="status">
       <span><strong>Beta</strong> Usely is early — features ship fast and things may change.</span>
       <a href="/contact?topic=bug">Report a bug</a>
     </p>
     <header class="nav">
-      <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
-      <nav class="nav-links">
+      <a class="brand" href="/"><img src="/logo.png" alt="" width="24" height="24" />USELY</a>
+      <nav class="nav-links" aria-label="Primary">
         ${links}
         <a class="btn btn-ghost" href="/admin">Sign in</a>
         <a class="btn btn-primary" href="/signup">Get started</a>
       </nav>
-    </header>`;
+      <button type="button" class="nav-menu-btn" id="navMenuBtn" aria-expanded="false" aria-controls="navDrawer" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </header>
+    <div class="nav-drawer-backdrop" id="navDrawerBackdrop" hidden></div>
+    <nav class="nav-drawer" id="navDrawer" aria-label="Mobile" hidden>
+      ${drawerLinks}
+    </nav>
+    <main id="main">`;
 }
 
 function renderFooter() {
   const groups = FOOTER_GROUPS.map(
     ([title, links]) => `        <div class="foot-group">
-          <h2>${title}</h2>
+          <p class="foot-heading">${title}</p>
 ${links.map(([href, label]) => `          <a href="${href}">${label}</a>`).join("\n")}
         </div>`,
   ).join("\n");
 
-  return `    <footer>
+  return `    </main>
+    <footer>
       <div class="foot-cols">
         <div class="foot-brand">
-          <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
+          <a class="brand" href="/"><img src="/logo.png" alt="" width="24" height="24" />USELY</a>
           <p>Admin panel and Discord bot for Rust Console Edition servers.</p>
         </div>
 ${groups}
@@ -217,6 +245,45 @@ ${groups}
         <span>Not affiliated with Facepunch Studios or Double Eleven.</span>
       </div>
     </footer>`;
+}
+
+function renderNavMenuScript() {
+  return `  <script>
+    (function () {
+      var btn = document.getElementById("navMenuBtn");
+      var drawer = document.getElementById("navDrawer");
+      var backdrop = document.getElementById("navDrawerBackdrop");
+      if (!btn || !drawer || !backdrop) return;
+      var lastFocus = null;
+      function setOpen(open) {
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+        drawer.hidden = !open;
+        backdrop.hidden = !open;
+        document.body.classList.toggle("nav-open", open);
+        if (open) {
+          lastFocus = document.activeElement;
+          var first = drawer.querySelector("a");
+          if (first) first.focus();
+        } else if (lastFocus) {
+          lastFocus.focus();
+        }
+      }
+      btn.addEventListener("click", function () {
+        setOpen(btn.getAttribute("aria-expanded") !== "true");
+      });
+      backdrop.addEventListener("click", function () { setOpen(false); });
+      drawer.addEventListener("click", function (e) {
+        if (e.target.closest("a")) setOpen(false);
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && btn.getAttribute("aria-expanded") === "true") {
+          e.preventDefault();
+          setOpen(false);
+        }
+      });
+    })();
+  </script>`;
 }
 
 /** Exclusive accordion: opening one <details> inside [data-acc] closes siblings. */
@@ -269,7 +336,10 @@ export function applyShell(html) {
     .replace(/^[ \t]*<!--HEAD:([a-z]+)-->/m, (_m, key) => renderHead(key))
     .replace(/^[ \t]*<!--NAV:([a-z]*)-->/m, (_m, active) => renderNav(active))
     .replace(/^[ \t]*<!--FOOTER-->/m, renderFooter())
-    .replace(/<\/body>/i, `${renderAccScript()}\n${renderRevealScript()}\n${renderAnalytics()}\n</body>`);
+    .replace(
+      /<\/body>/i,
+      `${renderNavMenuScript()}\n${renderAccScript()}\n${renderRevealScript()}\n${renderAnalytics()}\n</body>`,
+    );
 }
 
 export function renderSitemap() {
@@ -293,19 +363,26 @@ ${urls}
 `;
 }
 
+/** Marketing host (www) robots — allow public pages, block app paths. */
 export function renderRobots() {
   return `User-agent: *
 Allow: /
 
-# The app itself is per-customer and has nothing to index.
 Disallow: /admin
 Disallow: /signup
 Disallow: /setup
 Disallow: /demo
 Disallow: /api/
+Disallow: /ops
 
 Sitemap: ${SITE_URL}/sitemap.xml
-Host: ${SITE_URL.replace("https://", "")}
+`;
+}
+
+/** App host robots — nothing customer-facing should be indexed. */
+export function renderAppRobots() {
+  return `User-agent: *
+Disallow: /
 `;
 }
 

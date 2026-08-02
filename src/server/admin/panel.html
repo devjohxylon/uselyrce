@@ -3,17 +3,33 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
+<meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#070809" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Usely</title>
 <link rel="icon" type="image/png" href="/logo.png" />
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
 <style>
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/SpaceGrotesk-Medium.ttf") format("truetype");
+  font-weight: 400 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/SpaceGrotesk-Bold.ttf") format("truetype");
+  font-weight: 600 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-SemiBold.ttf") format("truetype");
+  font-weight: 500 600; font-style: normal; font-display: swap;
+}
 :root {
   --bg: #070809;
   --bg2: #101216;
@@ -77,6 +93,10 @@ button:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 button:active { transform: translateY(0); }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 button.primary {
   background: linear-gradient(180deg, #9ad4f8, var(--accent));
   border-color: #9ad4f8; color: var(--accent-ink); font-weight: 700;
@@ -1552,6 +1572,21 @@ button { transition: all .15s ease; }
   padding: .8rem 1rem; border-radius: var(--radius-sm); font-family: var(--mono); font-size: .78rem;
   max-width: min(420px, calc(100vw - 2rem)); z-index: 20; box-shadow: var(--shadow);
 }
+.ui-dialog {
+  border: 1px solid var(--line2); border-radius: var(--radius); background: var(--bg2); color: var(--text);
+  padding: 0; max-width: min(26rem, calc(100vw - 2rem)); box-shadow: var(--shadow);
+}
+.ui-dialog::backdrop { background: rgba(0,0,0,.55); }
+.ui-dialog form { display: grid; gap: .85rem; padding: 1.25rem 1.35rem; }
+.ui-dialog h2 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.ui-dialog p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.5; white-space: pre-wrap; }
+.ui-dialog label { display: grid; gap: .35rem; font-size: .8rem; color: var(--muted); }
+.ui-dialog input {
+  width: 100%; font: inherit; color: var(--text); background: var(--bg3);
+  border: 1px solid var(--line2); border-radius: var(--radius); padding: .65rem .75rem;
+}
+.ui-dialog-actions { display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap; }
+.ui-dialog-actions button { min-width: 5.5rem; }
 .split { display: grid; gap: 1.75rem; grid-template-columns: 1.25fr .9fr; align-items: start; }
 .empty {
   color: rgba(215,221,230,.35); font-family: var(--mono); font-size: .76rem; text-align: center;
@@ -1848,7 +1883,7 @@ button { transition: all .15s ease; }
 <div id="login">
   <div class="login-stage">
     <div class="login-header">
-      <img class="login-mark" src="/logo.png" alt="Usely" />
+      <img class="login-mark" src="/logo.png" width="40" height="40" alt="Usely" />
       <h1 class="login-title">USELY</h1>
       <p class="login-subtitle">Rust Console Admin</p>
     </div>
@@ -1901,13 +1936,13 @@ button { transition: all .15s ease; }
     <button type="button" class="icon-btn ghost" id="navToggle" aria-label="Open menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
-    <div class="brand-mini"><img src="/logo.png" alt="" />USELY</div>
+    <div class="brand-mini"><img src="/logo.png" width="28" height="28" alt="" />USELY</div>
     <button type="button" class="ghost" id="logoutBtnMobile" style="font-size:.72rem;padding:.35rem .55rem">Out</button>
   </header>
 
   <aside class="nav" id="sideNav">
     <div class="brand">
-      <img class="logo" src="/logo.png" alt="Usely" /><span>USELY</span>
+      <img class="logo" src="/logo.png" width="28" height="28" alt="Usely" /><span>USELY</span>
       <button type="button" class="sidebar-toggle ghost" id="sidebarToggle" aria-label="Close menu" title="Close menu">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
@@ -1987,7 +2022,21 @@ button { transition: all .15s ease; }
     <section id="view"></section>
   </main>
 </div>
-<div id="toast" class="toast hidden"></div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+<dialog id="uiDialog" class="ui-dialog" aria-labelledby="uiDialogTitle">
+  <form method="dialog" id="uiDialogForm">
+    <h2 id="uiDialogTitle">Confirm</h2>
+    <p id="uiDialogMsg"></p>
+    <label id="uiDialogFieldWrap" class="hidden">
+      <span id="uiDialogFieldLabel">Reason</span>
+      <input id="uiDialogInput" autocomplete="off" />
+    </label>
+    <div class="ui-dialog-actions">
+      <button type="submit" value="cancel" class="ghost" formnovalidate>Cancel</button>
+      <button type="submit" value="ok" class="primary" id="uiDialogOk">Confirm</button>
+    </div>
+  </form>
+</dialog>
 
 <script>
 const state = {
@@ -2364,9 +2413,95 @@ function toast(msg, bad = false) {
   const el = document.getElementById("toast");
   el.textContent = msg;
   el.style.borderColor = bad ? "var(--bad)" : "var(--line)";
+  el.setAttribute("aria-live", bad ? "assertive" : "polite");
   el.classList.remove("hidden");
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.add("hidden"), 3200);
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
+async function ensureSocketIo() {
+  if (typeof io !== "undefined") return;
+  await loadScript("https://cdn.socket.io/4.7.2/socket.io.min.js");
+}
+
+async function ensureChart() {
+  if (typeof Chart !== "undefined") return;
+  await loadScript("https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js");
+}
+
+function openUiDialog({
+  title,
+  message,
+  okLabel = "Confirm",
+  cancelLabel = "Cancel",
+  danger = false,
+  prompt = false,
+  promptLabel = "Reason",
+  defaultValue = "",
+  required = false,
+}) {
+  const dlg = document.getElementById("uiDialog");
+  const form = document.getElementById("uiDialogForm");
+  const titleEl = document.getElementById("uiDialogTitle");
+  const msgEl = document.getElementById("uiDialogMsg");
+  const wrap = document.getElementById("uiDialogFieldWrap");
+  const labelEl = document.getElementById("uiDialogFieldLabel");
+  const input = document.getElementById("uiDialogInput");
+  const okBtn = document.getElementById("uiDialogOk");
+  const cancelBtn = form.querySelector('button[value="cancel"]');
+  titleEl.textContent = title;
+  msgEl.textContent = message || "";
+  msgEl.hidden = !message;
+  okBtn.textContent = okLabel;
+  cancelBtn.textContent = cancelLabel;
+  okBtn.classList.toggle("danger", danger);
+  okBtn.classList.toggle("primary", !danger);
+  wrap.classList.toggle("hidden", !prompt);
+  labelEl.textContent = promptLabel;
+  input.value = defaultValue || "";
+  input.required = Boolean(required && prompt);
+  return new Promise((resolve) => {
+    const onClose = () => {
+      dlg.removeEventListener("close", onClose);
+      if (dlg.returnValue === "ok") {
+        resolve(prompt ? input.value : true);
+      } else {
+        resolve(prompt ? null : false);
+      }
+    };
+    dlg.addEventListener("close", onClose);
+    if (typeof dlg.showModal === "function") dlg.showModal();
+    else {
+      const ok = window.confirm(`${title}\n\n${message || ""}`);
+      resolve(prompt ? (ok ? window.prompt(promptLabel, defaultValue) : null) : ok);
+      return;
+    }
+    if (prompt) setTimeout(() => input.focus(), 0);
+    else okBtn.focus();
+  });
+}
+
+function uiConfirm(opts) {
+  return openUiDialog({ ...opts, prompt: false });
+}
+
+function uiPrompt(opts) {
+  return openUiDialog({ ...opts, prompt: true });
 }
 
 /** Prevent double-submit on destructive / RCON actions. */
@@ -2458,7 +2593,7 @@ async function boot() {
     document.getElementById("navUserRole").textContent = roleTxt;
     document.getElementById("navAvatar").textContent = (label[0] || "A").toUpperCase();
     
-    connectWebSocket();
+    void connectWebSocket();
 
     function setSidebarCollapsed(collapsed) {
       const app = document.getElementById("app");
@@ -2528,21 +2663,27 @@ function softRefreshLiveTab() {
   refreshStatusPills();
 }
 
-function connectWebSocket() {
+async function connectWebSocket() {
   if (window.USELY_DEMO) return;
   if (state.socket) return;
-  
+  try {
+    await ensureSocketIo();
+  } catch (e) {
+    console.warn(e.message);
+    return;
+  }
+
   state.socket = io({
     path: "/admin/socket.io",
     transports: ["websocket", "polling"],
   });
 
   state.socket.on("connect", () => {
-    console.log("WebSocket connected");
+    if (state.tab === "map") state.socket.emit("map:watch");
   });
 
   state.socket.on("disconnect", () => {
-    console.log("WebSocket disconnected");
+    /* reconnect will re-emit map:watch */
   });
 
   state.socket.on("server:update", (data) => {
@@ -2573,23 +2714,29 @@ function connectWebSocket() {
   state.socket.on("kill:new", (data) => {
     if (document.hidden || isUserEditing()) return;
     if (state.tab === "overview" || state.tab === "status") {
-      toast(`🔫 ${data.killer} killed ${data.victim}`);
+      toast(`${data.killer} killed ${data.victim}`);
     }
   });
 
   state.socket.on("player:join", (data) => {
     if (document.hidden || isUserEditing()) return;
-    if (state.tab === "players") toast(`📥 ${data.ign} joined`);
+    if (state.tab === "players") toast(`${data.ign} joined`);
   });
 
   state.socket.on("player:leave", (data) => {
     if (document.hidden || isUserEditing()) return;
-    if (state.tab === "players") toast(`📤 ${data.ign} left`);
+    if (state.tab === "players") toast(`${data.ign} left`);
   });
 
   state.socket.on("alert:new", (data) => {
     toast(data.message, data.level === "error");
   });
+}
+
+function syncMapWatch(tab) {
+  if (!state.socket?.connected) return;
+  if (tab === "map") state.socket.emit("map:watch");
+  else state.socket.emit("map:unwatch");
 }
 
 function refreshStatusPills() {
@@ -2616,6 +2763,7 @@ function setTab(tab) {
   const tabChanged = state.tab !== tab;
   state.tab = tab;
   document.body.classList.toggle("map-mode", tab === "map");
+  syncMapWatch(tab);
   syncNavActive();
   const meta = TAB_META[tab] || { title: tab, sub: "" };
   const sectionId = sectionForTab(tab);
@@ -2664,7 +2812,9 @@ async function render({ animate = false } = {}) {
     if (state.tab === "logs") view.innerHTML = await renderLogs();
     bindView();
     if (state.tab === "analytics") {
-      requestAnimationFrame(() => initAnalyticsCharts());
+      requestAnimationFrame(() => {
+        void ensureChart().then(() => initAnalyticsCharts()).catch(() => {});
+      });
     }
   } catch (e) {
     view.innerHTML = `<div class="card"><p class="muted">${e.message}</p></div>`;
@@ -6285,12 +6435,20 @@ function bindView() {
           render();
         }
         if (a === "kick") {
-          const reason = prompt(`Kick reason for ${el.dataset.ign}:`, "Kicked by admin")?.trim();
-          if (reason == null) return;
+          const reasonRaw = await uiPrompt({
+            title: `Kick ${el.dataset.ign}`,
+            message: "Players see this reason in-game.",
+            promptLabel: "Kick reason",
+            defaultValue: "Kicked by admin",
+            okLabel: "Kick",
+            danger: true,
+          });
+          if (reasonRaw == null) return;
+          const reason = String(reasonRaw).trim() || "Kicked by admin";
           await withBusy(el, async () => {
             await api(`/players/${encodeURIComponent(el.dataset.ign)}/kick`, {
               method: "POST",
-              body: { reason: reason || "Kicked by admin" },
+              body: { reason },
             });
             toast(`Kicked ${el.dataset.ign}`);
             await refreshOverview().catch(() => {});
@@ -6299,10 +6457,25 @@ function bindView() {
           return;
         }
         if (a === "ban") {
-          const reason = prompt(`Ban reason for ${el.dataset.ign}:`, "")?.trim();
-          if (reason == null) return;
+          const reasonRaw = await uiPrompt({
+            title: `Ban ${el.dataset.ign}`,
+            message: "A ban reason is required.",
+            promptLabel: "Ban reason",
+            defaultValue: "",
+            okLabel: "Continue",
+            required: true,
+            danger: true,
+          });
+          if (reasonRaw == null) return;
+          const reason = String(reasonRaw).trim();
           if (!reason) { toast("Ban reason required", true); return; }
-          if (!confirm(`Ban ${el.dataset.ign}?\nReason: ${reason}`)) return;
+          const ok = await uiConfirm({
+            title: `Ban ${el.dataset.ign}?`,
+            message: `Reason: ${reason}`,
+            okLabel: "Ban player",
+            danger: true,
+          });
+          if (!ok) return;
           await withBusy(el, async () => {
             await api(`/players/${encodeURIComponent(el.dataset.ign)}/ban`, {
               method: "POST",

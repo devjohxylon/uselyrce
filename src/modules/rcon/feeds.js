@@ -5,6 +5,7 @@ import {
 } from "../admin/feed-settings.js";
 import { resolveChannelId } from "../../saas/tenant-channels.js";
 import { getPositionFor } from "./live-map.js";
+import { getActiveServerId } from "../../saas/rcon/pool.js";
 
 const FLUSH_MS = 3000;
 const MAX_CHARS = 1900;
@@ -159,9 +160,10 @@ function horizontalDistance(a, b) {
 function resolveKillDistance(data, killer, victim) {
   const fromEvent = killDistance(data);
   if (fromEvent != null) return fromEvent;
+  const serverId = getActiveServerId();
   return horizontalDistance(
-    getPositionFor(killer?.name),
-    getPositionFor(victim?.name),
+    getPositionFor(killer?.name, serverId),
+    getPositionFor(victim?.name, serverId),
   );
 }
 

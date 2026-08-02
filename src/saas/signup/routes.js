@@ -72,16 +72,26 @@ function publicServers(servers) {
 export function attachSignupRoutes(app, client = null) {
   if (!config.saas.enabled) return;
 
-  app.get("/signup", (_req, res) => res.type("html").send(SIGNUP_HTML));
-  app.get("/setup", (_req, res) => res.type("html").send(SETUP_HTML));
+  app.get("/signup", (_req, res) => {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    res.type("html").send(SIGNUP_HTML);
+  });
+  app.get("/setup", (_req, res) => {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    res.type("html").send(SETUP_HTML);
+  });
 
   app.get("/signup/sent", (_req, res) => {
-    res.type("html").send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Check your email — Usely</title>
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    res.type("html").send(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>Check your email — Usely</title>
       <style>body{font-family:"Space Grotesk",system-ui,sans-serif;background:#050506;color:#f0f2f5;display:grid;place-items:center;min-height:100vh;margin:0}
-      a{color:#d7dde6}</style></head><body><div style="max-width:26rem;padding:2rem;text-align:center">
+      a{color:#d7dde6}</style>
+      <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};va("event",{name:"signup_paid"});</script>
+      <script defer src="/_vercel/insights/script.js"></script>
+      </head><body><div style="max-width:26rem;padding:2rem;text-align:center">
       <h1 style="font-weight:600">Check your email</h1>
       <p style="color:#9aa0ab;line-height:1.6">Payment received. We emailed you a setup link — open it to pick your panel address, invite the Discord bot, and connect WebRCON.</p>
-      <p><a href="/">← usely.dev</a></p></div></body></html>`);
+      <p><a href="https://www.usely.dev/">← usely.dev</a></p></div></body></html>`);
   });
 
   app.post("/api/signup/checkout", async (req, res) => {

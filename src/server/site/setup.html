@@ -3,12 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
   <title>Set up your workspace — Usely</title>
   <link rel="icon" href="/logo.png" type="image/png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      src: url("/fonts/SpaceGrotesk-Medium.ttf") format("truetype");
+      font-weight: 400 500; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      src: url("/fonts/SpaceGrotesk-Bold.ttf") format("truetype");
+      font-weight: 600 700; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: "JetBrains Mono";
+      src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+      font-weight: 400; font-style: normal; font-display: swap;
+    }
     :root {
       --bg: #070809; --bg2: #101216; --bg3: #161b22;
       --line: rgba(126,200,245,.1); --line2: rgba(232,236,241,.14);
@@ -20,6 +33,7 @@
       --mono: "JetBrains Mono", ui-monospace, monospace;
     }
     * { box-sizing: border-box; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     body {
       margin: 0; font-family: var(--font); color: var(--text);
       background: radial-gradient(900px 500px at 50% -15%, rgba(126,200,245,.12), transparent 55%), var(--bg);
@@ -81,10 +95,14 @@
     .actions { display: flex; flex-wrap: wrap; gap: .5rem; }
     .actions > * { flex: 1; min-width: 8rem; }
   </style>
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
   <div class="card">
-    <a class="brand" href="/"><img src="/logo.png" alt="" />USELY</a>
+    <a class="brand" href="https://www.usely.dev/"><img src="/logo.png" width="28" height="28" alt="" />USELY</a>
     <div id="wizard" style="display:none">
       <div class="steps" id="stepBar" aria-hidden="true">
         <span data-s="workspace"></span>
@@ -191,6 +209,10 @@
       hasPassword: false,
     };
 
+    function track(name, data) {
+      try { window.va?.("event", { name, ...(data || {}) }); } catch {}
+    }
+
     function showErr(id, msg) {
       const el = document.getElementById(id);
       if (!msg) { el.style.display = "none"; el.textContent = ""; return; }
@@ -207,6 +229,7 @@
         el.classList.toggle("on", i === idx);
         el.classList.toggle("done", i < idx);
       });
+      track("setup_step", { step });
     }
 
     function renderServers() {
@@ -227,7 +250,12 @@
 
     async function boot() {
       const r = await fetch("/api/setup/info?token=" + encodeURIComponent(token)).then((r) => r.json());
-      if (!r.ok) { document.getElementById("invalid").style.display = "grid"; return; }
+      if (!r.ok) {
+        track("setup_invalid");
+        document.getElementById("invalid").style.display = "grid";
+        return;
+      }
+      track("setup_view", { plan: r.plan, step: r.step || "workspace" });
       document.getElementById("wizard").style.display = "grid";
       document.getElementById("email").textContent = r.email;
       document.getElementById("plan").textContent = r.plan;
@@ -414,6 +442,7 @@
           body: JSON.stringify({ token }),
         }).then((r) => r.json());
         if (!r.ok) throw new Error(r.error || "Could not finish setup");
+        track("setup_complete");
         location.href = r.redirect;
       } catch (e) {
         showErr("err-review", e.message);

@@ -2,7 +2,12 @@ import { Server } from "socket.io";
 import { config } from "../config.js";
 import { resolvePanelSession } from "../saas/auth/routes.js";
 import { getOnlinePlayers, getRconStatus, getServerInfo } from "../modules/rcon/client.js";
-import { getPlayersWithPositions } from "../modules/rcon/live-map.js";
+import {
+  getPlayersWithPositions,
+  mapWatcherCount,
+  watchMapServer,
+  unwatchMapServer,
+} from "../modules/rcon/live-map.js";
 import { statsSummary } from "../modules/rcon/stats.js";
 import { runWithServer } from "../saas/rcon/pool.js";
 import { runWithDataContext } from "../saas/data-path.js";
@@ -10,6 +15,9 @@ import { baseDomain } from "../saas/tenancy.js";
 
 let io = null;
 const connectedSockets = new Map();
+
+const TICK_IDLE_MS = 12_000;
+const TICK_MAP_MS = 3_000;
 
 function corsOriginAllowlist() {
   const list = [];
@@ -74,8 +82,24 @@ export function createWebSocketServer(httpServer, discordClient = null) {
     const room = roomFor(socket.session);
     if (room) socket.join(room);
     connectedSockets.set(socket.id, socket);
+    socket.mapWatching = false;
+
+    socket.on("map:watch", () => {
+      if (socket.mapWatching || !socket.session?.serverId) return;
+      socket.mapWatching = true;
+      watchMapServer(socket.session.serverId);
+    });
+
+    socket.on("map:unwatch", () => {
+      if (!socket.mapWatching || !socket.session?.serverId) return;
+      socket.mapWatching = false;
+      unwatchMapServer(socket.session.serverId);
+    });
 
     socket.on("disconnect", () => {
+      if (socket.mapWatching && socket.session?.serverId) {
+        unwatchMapServer(socket.session.serverId);
+      }
       connectedSockets.delete(socket.id);
     });
 
@@ -89,7 +113,7 @@ export function createWebSocketServer(httpServer, discordClient = null) {
   return io;
 }
 
-async function payloadForSession(session) {
+async function payloadForSession(session, { includePositions }) {
   const serverId = session.serverId;
   if (!serverId) return null;
 
@@ -97,7 +121,7 @@ async function payloadForSession(session) {
     const rcon = getRconStatus(serverId);
     const server = getServerInfo(serverId);
     const players = getOnlinePlayers(serverId);
-    const positions = getPlayersWithPositions();
+    const positions = includePositions ? getPlayersWithPositions(serverId) : null;
     const summary = await statsSummary().catch(() => null);
     return {
       rcon: { connected: rcon.connected, enabled: rcon.enabled },
@@ -124,32 +148,45 @@ async function payloadForSession(session) {
 }
 
 function startRealtimeUpdates() {
-  setInterval(async () => {
+  let timer = null;
+
+  const tick = async () => {
+    const delay = mapWatcherCount() > 0 ? TICK_MAP_MS : TICK_IDLE_MS;
+    timer = setTimeout(() => void tick(), delay);
+
     if (!io || connectedSockets.size === 0) return;
 
     const byRoom = new Map();
     for (const socket of connectedSockets.values()) {
       const room = roomFor(socket.session);
       if (!room) continue;
-      if (!byRoom.has(room)) byRoom.set(room, socket.session);
+      if (!byRoom.has(room)) {
+        byRoom.set(room, { session: socket.session, map: false });
+      }
+      if (socket.mapWatching) byRoom.get(room).map = true;
     }
 
-    for (const [room, session] of byRoom) {
+    for (const [room, { session, map }] of byRoom) {
       try {
-        const data = await payloadForSession(session);
+        const data = await payloadForSession(session, { includePositions: map });
         if (!data) continue;
         io.to(room).emit("server:update", {
           rcon: data.rcon,
           server: data.server,
           onlineCount: data.onlineCount,
         });
-        io.to(room).emit("players:update", data.positions);
+        if (map && data.positions) {
+          io.to(room).emit("players:update", data.positions);
+        }
         if (data.stats) io.to(room).emit("stats:update", data.stats);
       } catch {
         /* ignore per-tenant emit failures */
       }
     }
-  }, 3000);
+  };
+
+  timer = setTimeout(() => void tick(), TICK_IDLE_MS);
+  return () => clearTimeout(timer);
 }
 
 export function getIO() {

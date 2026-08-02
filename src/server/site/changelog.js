@@ -8,6 +8,16 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Faster site, clearer panel, quieter live map",
+    changes: [
+      { type: "added", text: "Marketing pages get a mobile menu, skip link, self-hosted fonts, and a proper share image." },
+      { type: "changed", text: "The live map only polls player positions while a map tab is open, so idle panels use less RCON." },
+      { type: "changed", text: "Kick and ban prompts in the panel use accessible dialogs with keyboard focus." },
+      { type: "fixed", text: "Admin, signup, and setup pages tell search engines not to index them." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Ban honesty, plan gates, and smoother setup finish",
     changes: [
       { type: "fixed", text: "The Bans tab no longer reports a successful ban when the game server rejected the command." },

@@ -17,11 +17,14 @@ async function issueSetupLink({ account, org, plan, skipEmail }) {
   const setupUrl = `${config.saas.publicUrl.replace(/\/$/, "")}/setup?token=${token}`;
 
   if (!skipEmail) {
-    await sendEmail({
+    // Don't block Stripe webhook ACK on Resend latency.
+    void sendEmail({
       to: account.email,
       subject: "Finish setting up your Usely workspace",
       html: setupEmailHtml({ setupUrl, plan: plan || org.plan || "basic" }),
       text: `Thanks for subscribing to Usely (${plan || org.plan || "basic"} plan). Finish setup: ${setupUrl}`,
+    }).catch((error) => {
+      console.error("Setup email failed:", error.message);
     });
   }
 

@@ -37,5 +37,7 @@ write("robots.txt", renderRobots());
 
 cpSync(path.join(assets, "usely-logo.png"), path.join(out, "logo.png"));
 cpSync(path.join(assets, "usely-logo.png"), path.join(out, "favicon.ico"));
+cpSync(path.join(assets, "og.png"), path.join(out, "og.png"));
+cpSync(path.join(assets, "fonts"), path.join(out, "fonts"), { recursive: true });
 
 console.log(`Marketing site built to public/ (${Object.keys(PAGES).length} pages)`);

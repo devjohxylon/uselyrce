@@ -3,7 +3,12 @@
  */
 import assert from "assert/strict";
 import { assertCanAddServer, isPlanLive, maxServersForPlan } from "../src/saas/billing/plans.js";
-import { applyShell, PAGES } from "../src/server/site/shell.js";
+import {
+  applyShell,
+  PAGES,
+  renderAppRobots,
+  renderRobots,
+} from "../src/server/site/shell.js";
 import { entries } from "../src/server/site/changelog.js";
 
 // Plan gate
@@ -41,7 +46,17 @@ const html = applyShell(`<!DOCTYPE html>
 </html>`);
 assert.match(html, /Usely/);
 assert.match(html, /og:image/);
+assert.match(html, /og\.png/);
 assert.match(html, /_vercel\/insights/);
+assert.match(html, /skip-link/);
+assert.match(html, /id="main"/);
+assert.match(html, /nav-drawer/);
+assert.match(html, /AggregateOffer/);
+assert.doesNotMatch(html, /fonts\.googleapis\.com/);
+
+assert.match(renderRobots(), /Sitemap:/);
+assert.doesNotMatch(renderRobots(), /^Host:/m);
+assert.match(renderAppRobots(), /Disallow: \//);
 
 // Changelog shape
 assert.ok(Array.isArray(entries) && entries.length > 0);
