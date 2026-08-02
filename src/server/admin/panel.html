@@ -4668,9 +4668,9 @@ async function renderKits() {
         <div>
           <span class="pill ${locks.enabled ? "warn" : "info"}">${locks.enabled ? "Locked" : "Open"}</span>
           <h4 style="margin:.55rem 0 .2rem">${locks.enabled ? "Quick-chat claims are paused" : "Players can claim kits"}</h4>
-          <p>${locks.enabled
-            ? `Selected kits cannot be claimed in-game until you end the lock.${locks.until ? ` Auto-ends ${esc(new Date(locks.until).toLocaleString())}.` : ""} Staff Give still works.`
-            : "Pick the kits below, choose how long (optional), then start the lock — useful for boom kits on wipe day."}</p>
+          ${locks.enabled
+            ? `<p>Selected kits cannot be claimed in-game until you end the lock.${locks.until ? ` Auto-ends ${esc(new Date(locks.until).toLocaleString())}.` : ""} Staff Give still works.</p>`
+            : ""}
         </div>
         <div class="actions">
           ${locks.enabled
