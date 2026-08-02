@@ -46,24 +46,53 @@ async function vercelQuery(path, params) {
   return body;
 }
 
+function pickMetrics(row) {
+  if (!row || typeof row !== "object") return { pageviews: 0, visitors: 0 };
+  const pageviews =
+    Number(
+      row.pageviews ??
+        row.pageViews ??
+        row.views ??
+        row.total ??
+        row.count ??
+        0,
+    ) || 0;
+  const visitors =
+    Number(row.visitors ?? row.uniqueVisitors ?? row.users ?? row.visitorCount ?? 0) || 0;
+  return { pageviews, visitors };
+}
+
 function normalizeCount(data) {
-  const row = data?.data && !Array.isArray(data.data) ? data.data : data?.data?.[0] || data;
-  return {
-    pageviews: Number(row?.pageviews ?? row?.pageViews ?? 0) || 0,
-    visitors: Number(row?.visitors ?? 0) || 0,
-  };
+  const d = data?.data;
+  if (d && typeof d === "object" && !Array.isArray(d)) return pickMetrics(d);
+  if (Array.isArray(d) && d[0]) return pickMetrics(d[0]);
+  return pickMetrics(data);
 }
 
 function normalizeRows(data, dimKey) {
   const rows = Array.isArray(data?.data) ? data.data : [];
   return rows
-    .map((row) => ({
-      key: String(row?.[dimKey] ?? row?.timestamp ?? "(unknown)"),
-      pageviews: Number(row?.pageviews ?? row?.pageViews ?? 0) || 0,
-      visitors: Number(row?.visitors ?? 0) || 0,
-    }))
+    .map((row) => {
+      const metrics = pickMetrics(row);
+      return {
+        key: String(row?.[dimKey] ?? row?.timestamp ?? "(unknown)"),
+        pageviews: metrics.pageviews,
+        visitors: metrics.visitors,
+      };
+    })
     .filter((r) => r.key && r.key !== "null" && r.key !== "undefined")
     .sort((a, b) => b.pageviews - a.pageviews || b.visitors - a.visitors);
+}
+
+function sumMetrics(rows) {
+  return (rows || []).reduce(
+    (acc, r) => {
+      acc.pageviews += Number(r.pageviews) || 0;
+      acc.visitors += Number(r.visitors) || 0;
+      return acc;
+    },
+    { pageviews: 0, visitors: 0 },
+  );
 }
 
 /**
@@ -84,7 +113,7 @@ export async function getOpsWebAnalytics({ days = 7 } = {}) {
   const { since, until } = rangeMs(windowDays);
 
   try {
-    const [totals, byDay, byPath, byReferrer, byCountry, byDevice] = await Promise.all([
+    const [totalsRes, byDay, byPath, byReferrer, byCountry, byDevice] = await Promise.all([
       vercelQuery("count", { since, until }),
       vercelQuery("aggregate", { since, until, by: ["day"], limit: 40 }),
       vercelQuery("aggregate", { since, until, by: ["requestPath"], limit: 15 }),
@@ -93,17 +122,26 @@ export async function getOpsWebAnalytics({ days = 7 } = {}) {
       vercelQuery("aggregate", { since, until, by: ["deviceType"], limit: 8 }),
     ]);
 
+    const daily = normalizeRows(byDay, "timestamp").sort((a, b) =>
+      String(a.key).localeCompare(String(b.key)),
+    );
+    const pages = normalizeRows(byPath, "requestPath");
+    let totals = normalizeCount(totalsRes);
+    if (!totals.pageviews && !totals.visitors) {
+      const fromDaily = sumMetrics(daily);
+      const fromPages = sumMetrics(pages);
+      totals = fromDaily.pageviews || fromDaily.visitors ? fromDaily : fromPages;
+    }
+
     return {
       ok: true,
       configured: true,
       days: windowDays,
       since: new Date(since).toISOString(),
       until: new Date(until).toISOString(),
-      totals: normalizeCount(totals),
-      daily: normalizeRows(byDay, "timestamp").sort((a, b) =>
-        String(a.key).localeCompare(String(b.key)),
-      ),
-      pages: normalizeRows(byPath, "requestPath"),
+      totals,
+      daily,
+      pages,
       referrers: normalizeRows(byReferrer, "referrerHostname"),
       countries: normalizeRows(byCountry, "country"),
       devices: normalizeRows(byDevice, "deviceType"),

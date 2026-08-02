@@ -43,49 +43,68 @@
       <div class="stat"><div class="k">Servers</div><div class="v" id="cServers">—</div></div>
     </div>
 
-    <section class="section traffic" id="traffic">
-      <div class="traffic-head">
-        <div>
-          <p class="label">Marketing site</p>
-          <h2 class="section-title">www.usely.dev traffic</h2>
-          <p class="section-sub">Vercel Web Analytics — visitors and what they open.</p>
+    <section class="traffic" id="traffic" aria-labelledby="trafficTitle">
+      <div class="traffic-shell">
+        <div class="traffic-head">
+          <div>
+            <p class="label">Marketing site</p>
+            <h2 class="section-title" id="trafficTitle">www.usely.dev</h2>
+            <p class="section-sub">Live traffic from Vercel Web Analytics.</p>
+          </div>
+          <div class="traffic-controls">
+            <div class="seg" role="group" aria-label="Date range">
+              <button type="button" class="seg-btn on" data-days="7">7d</button>
+              <button type="button" class="seg-btn" data-days="14">14d</button>
+              <button type="button" class="seg-btn" data-days="30">30d</button>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" id="trafficRefresh">Refresh</button>
+          </div>
         </div>
-        <div class="traffic-controls">
-          <select id="trafficDays" aria-label="Date range">
-            <option value="7" selected>Last 7 days</option>
-            <option value="14">Last 14 days</option>
-            <option value="30">Last 30 days</option>
-          </select>
-          <button class="btn btn-ghost btn-sm" type="button" id="trafficRefresh">Refresh</button>
+        <p class="banner" id="trafficBanner"></p>
+        <div class="traffic-hero" id="trafficBody">
+          <div class="traffic-kpis">
+            <div class="kpi">
+              <div class="k">Visitors</div>
+              <div class="v" id="tVisitors">—</div>
+            </div>
+            <div class="kpi">
+              <div class="k">Pageviews</div>
+              <div class="v" id="tViews">—</div>
+            </div>
+            <div class="kpi kpi-chart">
+              <div class="k">Views / day</div>
+              <div class="spark" id="tSpark" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="traffic-body" id="trafficGrid" hidden>
+            <div class="traffic-panel span-2">
+              <div class="panel-head">
+                <h3>Top pages</h3>
+                <span class="panel-meta" id="tPagesMeta"></span>
+              </div>
+              <div class="bars" id="tPages"></div>
+            </div>
+            <div class="traffic-panel">
+              <div class="panel-head"><h3>Referrers</h3></div>
+              <div class="bars" id="tReferrers"></div>
+            </div>
+            <div class="traffic-panel">
+              <div class="panel-head"><h3>Countries</h3></div>
+              <div class="bars" id="tCountries"></div>
+            </div>
+            <div class="traffic-panel">
+              <div class="panel-head"><h3>Devices</h3></div>
+              <div class="bars" id="tDevices"></div>
+            </div>
+            <div class="traffic-panel span-2">
+              <div class="panel-head">
+                <h3>Daily</h3>
+                <span class="panel-meta" id="tDailyMeta"></span>
+              </div>
+              <div class="day-chart" id="tDaily"></div>
+            </div>
+          </div>
         </div>
-      </div>
-      <p class="banner" id="trafficBanner"></p>
-      <div class="stats traffic-stats" id="trafficStats">
-        <div class="stat"><div class="k">Visitors</div><div class="v" id="tVisitors">—</div></div>
-        <div class="stat"><div class="k">Pageviews</div><div class="v" id="tViews">—</div></div>
-        <div class="stat"><div class="k">Range</div><div class="v sm" id="tRange">—</div></div>
-      </div>
-      <div class="traffic-grid" id="trafficGrid" hidden>
-        <div class="traffic-panel">
-          <h3>Top pages</h3>
-          <ul class="rank" id="tPages"></ul>
-        </div>
-        <div class="traffic-panel">
-          <h3>Referrers</h3>
-          <ul class="rank" id="tReferrers"></ul>
-        </div>
-        <div class="traffic-panel">
-          <h3>Countries</h3>
-          <ul class="rank" id="tCountries"></ul>
-        </div>
-        <div class="traffic-panel">
-          <h3>Devices</h3>
-          <ul class="rank" id="tDevices"></ul>
-        </div>
-      </div>
-      <div class="traffic-panel daily" id="trafficDailyWrap" hidden>
-        <h3>Daily</h3>
-        <ul class="rank daily" id="tDaily"></ul>
       </div>
     </section>
 
@@ -209,6 +228,8 @@
       );
     }
 
+    let trafficDays = 7;
+
     function fmtNum(n) {
       const x = Number(n);
       if (!Number.isFinite(x)) return "—";
@@ -223,30 +244,87 @@
       }
     }
 
-    function renderRank(el, rows, labelFn) {
+    function weekday(iso) {
+      try {
+        return new Date(iso).toLocaleDateString("en-US", { weekday: "narrow" });
+      } catch {
+        return "";
+      }
+    }
+
+    function renderBars(el, rows, labelFn) {
       if (!rows?.length) {
-        el.innerHTML = `<li class="muted">No data yet</li>`;
+        el.innerHTML = `<p class="bars-empty">No data yet</p>`;
         return;
       }
+      const list = rows.slice(0, 8);
+      const max = Math.max(1, ...list.map((r) => Number(r.pageviews) || 0));
+      el.innerHTML = list
+        .map((r) => {
+          const views = Number(r.pageviews) || 0;
+          const pct = Math.max(2, Math.round((views / max) * 100));
+          return (
+            `<div class="bar-row">` +
+            `<div class="bar-top"><span class="bar-k">${esc(labelFn(r))}</span>` +
+            `<span class="bar-v"><strong>${esc(fmtNum(views))}</strong>` +
+            `<em>${esc(fmtNum(r.visitors))} vis</em></span></div>` +
+            `<div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>` +
+            `</div>`
+          );
+        })
+        .join("");
+    }
+
+    function renderSpark(daily) {
+      const el = document.getElementById("tSpark");
+      const rows = daily || [];
+      if (!rows.length) {
+        el.innerHTML = `<span class="spark-empty">—</span>`;
+        return;
+      }
+      const max = Math.max(1, ...rows.map((r) => Number(r.pageviews) || 0));
       el.innerHTML = rows
-        .slice(0, 12)
-        .map(
-          (r) =>
-            `<li><span class="rank-k">${esc(labelFn(r))}</span>` +
-            `<span class="rank-v"><strong>${esc(fmtNum(r.pageviews))}</strong> views · ${esc(fmtNum(r.visitors))} vis</span></li>`,
-        )
+        .map((r) => {
+          const h = Math.max(4, Math.round(((Number(r.pageviews) || 0) / max) * 100));
+          const on = (Number(r.pageviews) || 0) > 0 ? " on" : "";
+          return `<span class="spark-bar${on}" style="height:${h}%" title="${escAttr(shortDay(r.key))}: ${escAttr(fmtNum(r.pageviews))} views"></span>`;
+        })
+        .join("");
+    }
+
+    function renderDaily(daily) {
+      const el = document.getElementById("tDaily");
+      const rows = daily || [];
+      if (!rows.length) {
+        el.innerHTML = `<p class="bars-empty">No daily breakdown yet</p>`;
+        return;
+      }
+      const max = Math.max(1, ...rows.map((r) => Number(r.pageviews) || 0));
+      el.innerHTML = rows
+        .map((r) => {
+          const views = Number(r.pageviews) || 0;
+          const h = Math.max(views ? 8 : 3, Math.round((views / max) * 100));
+          return (
+            `<div class="day-col${views ? " on" : ""}" title="${escAttr(shortDay(r.key))}: ${escAttr(fmtNum(views))} views">` +
+            `<div class="day-bar-wrap"><div class="day-bar" style="height:${h}%"></div></div>` +
+            `<span class="day-n">${esc(fmtNum(views))}</span>` +
+            `<span class="day-d">${esc(weekday(r.key))}</span>` +
+            `<span class="day-l">${esc(shortDay(r.key))}</span>` +
+            `</div>`
+          );
+        })
         .join("");
     }
 
     async function loadTraffic() {
       const banner = document.getElementById("trafficBanner");
       const grid = document.getElementById("trafficGrid");
-      const dailyWrap = document.getElementById("trafficDailyWrap");
-      const days = document.getElementById("trafficDays").value || "7";
+      const body = document.getElementById("trafficBody");
       banner.classList.remove("on");
       banner.textContent = "";
+      body.classList.add("loading");
       try {
-        const res = await fetch(`/api/ops/analytics?days=${encodeURIComponent(days)}`, {
+        const res = await fetch(`/api/ops/analytics?days=${encodeURIComponent(trafficDays)}`, {
           credentials: "same-origin",
         });
         if (res.status === 401) {
@@ -254,52 +332,41 @@
           return;
         }
         const data = await res.json();
-        if (!data.configured) {
+        if (!data.configured || !data.ok) {
           document.getElementById("tVisitors").textContent = "—";
           document.getElementById("tViews").textContent = "—";
-          document.getElementById("tRange").textContent = "setup";
+          document.getElementById("tSpark").innerHTML = "";
           grid.hidden = true;
-          dailyWrap.hidden = true;
-          banner.classList.add("on");
-          banner.textContent = data.error || "Analytics not configured.";
-          return;
-        }
-        if (!data.ok) {
           banner.classList.add("on");
           banner.textContent = data.error || "Could not load analytics.";
-          grid.hidden = true;
-          dailyWrap.hidden = true;
           return;
         }
         document.getElementById("tVisitors").textContent = fmtNum(data.totals?.visitors);
         document.getElementById("tViews").textContent = fmtNum(data.totals?.pageviews);
-        document.getElementById("tRange").textContent = `${data.days}d`;
-        renderRank(document.getElementById("tPages"), data.pages, (r) => r.key || "/");
-        renderRank(document.getElementById("tReferrers"), data.referrers, (r) => r.key || "(direct)");
-        renderRank(document.getElementById("tCountries"), data.countries, (r) => r.key || "—");
-        renderRank(document.getElementById("tDevices"), data.devices, (r) => r.key || "—");
-        const daily = document.getElementById("tDaily");
-        const daysRows = (data.daily || []).slice().reverse();
-        daily.innerHTML = daysRows.length
-          ? daysRows
-              .map(
-                (r) =>
-                  `<li><span class="rank-k">${esc(shortDay(r.key))}</span>` +
-                  `<span class="rank-v"><strong>${esc(fmtNum(r.pageviews))}</strong> · ${esc(fmtNum(r.visitors))} vis</span></li>`,
-              )
-              .join("")
-          : `<li class="muted">No daily breakdown yet</li>`;
+        renderSpark(data.daily);
+        renderBars(document.getElementById("tPages"), data.pages, (r) => r.key || "/");
+        renderBars(document.getElementById("tReferrers"), data.referrers, (r) => r.key || "(direct)");
+        renderBars(document.getElementById("tCountries"), data.countries, (r) => r.key || "—");
+        renderBars(document.getElementById("tDevices"), data.devices, (r) => r.key || "—");
+        renderDaily(data.daily);
+        const pageCount = (data.pages || []).length;
+        document.getElementById("tPagesMeta").textContent = pageCount
+          ? `${pageCount} path${pageCount === 1 ? "" : "s"}`
+          : "";
+        document.getElementById("tDailyMeta").textContent = `${data.days} day window`;
         grid.hidden = false;
-        dailyWrap.hidden = false;
       } catch (e) {
         banner.classList.add("on");
         banner.textContent = e.message || "Failed to load traffic";
+      } finally {
+        body.classList.remove("loading");
       }
     }
 
     async function load() {
       const err = document.getElementById("err");
       err.style.display = "none";
+      loadTraffic();
       try {
         const [sumRes, orgRes] = await Promise.all([
           fetch("/api/ops/summary", { credentials: "same-origin" }),
@@ -309,7 +376,14 @@
           location.href = "/ops";
           return;
         }
-        if (!sumRes.ok || !orgRes.ok) throw new Error("Request failed");
+        if (!sumRes.ok || !orgRes.ok) {
+          let detail = "Could not load workspaces";
+          try {
+            const bad = await (sumRes.ok ? orgRes : sumRes).json();
+            if (bad?.error) detail = bad.error;
+          } catch { /* ignore */ }
+          throw new Error(detail);
+        }
         const sum = await sumRes.json();
         const orgData = await orgRes.json();
         document.getElementById("mockBanner").classList.toggle("on", Boolean(sum.mock || orgData.mock));
@@ -323,14 +397,20 @@
           (sum.mock ? `<span><strong>mock</strong> mode</span>` : `<span><strong>live</strong> data</span>`);
         allOrgs = orgData.orgs || [];
         filter();
-        loadTraffic();
       } catch (e) {
         err.textContent = e.message || "Failed to load";
         err.style.display = "block";
       }
     }
 
-    document.getElementById("trafficDays").addEventListener("change", loadTraffic);
+    document.querySelectorAll(".seg-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("on"));
+        btn.classList.add("on");
+        trafficDays = Number(btn.dataset.days) || 7;
+        loadTraffic();
+      });
+    });
     document.getElementById("trafficRefresh").addEventListener("click", loadTraffic);
     document.getElementById("q").addEventListener("input", filter);
     document.getElementById("rows").addEventListener("click", (ev) => {
