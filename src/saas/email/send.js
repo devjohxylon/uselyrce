@@ -120,44 +120,83 @@ export function getEmailConfigPublic() {
   };
 }
 
-export function setupEmailHtml({ setupUrl, plan }) {
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Shared transactional layout — table-based for Gmail/Outlook. */
+function emailShell({ title, bodyHtml, ctaLabel, ctaUrl, footnote }) {
+  const safeTitle = escapeHtml(title);
+  const safeCta = escapeHtml(ctaLabel);
+  const safeUrl = escapeHtml(ctaUrl);
+  const safeFoot = escapeHtml(footnote);
   return `<!DOCTYPE html>
-<html><body style="margin:0;padding:0;background:#050506;font-family:system-ui,sans-serif">
-  <div style="max-width:520px;margin:0 auto;padding:2.5rem 1.5rem;color:#f0f2f5">
-    <p style="letter-spacing:.14em;font-weight:700;font-size:14px;margin:0 0 1.5rem">USELY</p>
-    <h1 style="font-size:22px;margin:0 0 .75rem">Your workspace is ready to set up</h1>
-    <p style="color:#9aa0ab;line-height:1.6;margin:0 0 1.5rem">
-      Thanks for subscribing to the <strong style="color:#f0f2f5">${plan}</strong> plan.
-      Finish setup to pick your panel address, invite the Discord bot, and connect
-      your Rust Console servers over WebRCON.
-    </p>
-    <a href="${setupUrl}"
-       style="display:inline-block;background:#e8edf4;color:#0b0c0e;font-weight:600;
-              padding:12px 22px;border-radius:4px;text-decoration:none">Finish setup</a>
-    <p style="color:#5e646f;font-size:13px;margin:1.75rem 0 0;line-height:1.5">
-      This link expires in 7 days. If the button doesn't work, paste this into your
-      browser:<br><span style="color:#9aa0ab">${setupUrl}</span>
-    </p>
-  </div>
-</body></html>`;
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${safeTitle}</title>
+</head>
+<body style="margin:0;padding:0;background:#eef0f3;-webkit-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef0f3;margin:0;padding:0;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#ffffff;border:1px solid #e2e5eb;border-radius:8px;">
+          <tr>
+            <td style="padding:32px 32px 28px;font-family:Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif;color:#12141a;">
+              <p style="margin:0 0 20px;font-size:12px;font-weight:700;letter-spacing:.16em;color:#6b7280;">USELY</p>
+              <h1 style="margin:0 0 12px;font-size:22px;line-height:1.25;font-weight:650;color:#0b0c0e;">${safeTitle}</h1>
+              <div style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">
+                ${bodyHtml}
+              </div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+                <tr>
+                  <td style="border-radius:6px;background:#111318;">
+                    <a href="${safeUrl}" style="display:inline-block;padding:12px 20px;font-family:Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">
+                      ${safeCta}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#9aa0ab;">
+                ${safeFoot}
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0;font-family:Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif;font-size:12px;color:#9aa0ab;">
+          Usely · Rust Console admin
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export function setupEmailHtml({ setupUrl, plan }) {
+  const planLabel = escapeHtml(plan || "basic");
+  return emailShell({
+    title: "Finish setting up your workspace",
+    bodyHtml: `<p style="margin:0 0 12px;">Thanks for subscribing to the <strong style="color:#12141a;">${planLabel}</strong> plan.</p>
+<p style="margin:0;">Open the link below to pick your panel address, invite the Discord bot, and connect WebRCON.</p>`,
+    ctaLabel: "Finish setup",
+    ctaUrl: setupUrl,
+    footnote: "This link expires in 7 days. If the button doesn’t work, copy it from your browser’s address bar after opening the email in a new tab, or reply to this message for help.",
+  });
 }
 
 export function resetPasswordEmailHtml({ resetUrl }) {
-  return `<!DOCTYPE html>
-<html><body style="margin:0;padding:0;background:#050506;font-family:system-ui,sans-serif">
-  <div style="max-width:520px;margin:0 auto;padding:2.5rem 1.5rem;color:#f0f2f5">
-    <p style="letter-spacing:.14em;font-weight:700;font-size:14px;margin:0 0 1.5rem">USELY</p>
-    <h1 style="font-size:22px;margin:0 0 .75rem">Reset your password</h1>
-    <p style="color:#9aa0ab;line-height:1.6;margin:0 0 1.5rem">
-      Someone requested a password reset for your Usely owner account.
-      If that was you, use the button below. If not, you can ignore this email.
-    </p>
-    <a href="${resetUrl}"
-       style="display:inline-block;background:#e8edf4;color:#0b0c0e;font-weight:600;
-              padding:12px 22px;border-radius:4px;text-decoration:none">Choose a new password</a>
-    <p style="color:#5e646f;font-size:13px;margin:1.75rem 0 0;line-height:1.5">
-      This link expires in 1 hour.<br><span style="color:#9aa0ab">${resetUrl}</span>
-    </p>
-  </div>
-</body></html>`;
+  return emailShell({
+    title: "Reset your password",
+    bodyHtml: `<p style="margin:0 0 12px;">We got a request to reset the password for your Usely owner account.</p>
+<p style="margin:0;">If that was you, choose a new password below. If it wasn’t, you can ignore this email.</p>`,
+    ctaLabel: "Choose a new password",
+    ctaUrl: resetUrl,
+    footnote: "This link expires in 1 hour.",
+  });
 }
