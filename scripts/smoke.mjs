@@ -20,6 +20,7 @@ import { friendlyRconError } from "../src/lib/rcon-messages.js";
 assert.equal(isPlanLive("active"), true);
 assert.equal(isPlanLive("past_due"), false);
 assert.equal(maxServersForPlan("pro"), 2);
+assert.equal(maxServersForPlan("network"), 20);
 
 assert.doesNotThrow(() => assertCanAddServer({ plan: "basic", plan_status: "active" }, 0));
 assert.throws(

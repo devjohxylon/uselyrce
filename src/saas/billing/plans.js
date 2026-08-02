@@ -1,8 +1,8 @@
 export const PLAN_LIMITS = {
   basic: 1,
   pro: 2,
-  // Network is marketed as "2+" — soft unlimited for practical hosts
-  network: 100,
+  // Marketed as "4+" — soft cap for multi-server networks
+  network: 20,
 };
 
 export const PLAN_PRICES_USD = {

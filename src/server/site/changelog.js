@@ -8,6 +8,13 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Network plan is 4+ servers",
+    changes: [
+      { type: "changed", text: "Network is marketed as <code>4+</code> servers — not an up-to-100 soft unlimited." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Launch QA fixes for nav, billing, and first-run setup",
     changes: [
       { type: "fixed", text: "The marketing mobile menu no longer stays stuck open on desktop and phone." },

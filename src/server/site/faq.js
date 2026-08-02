@@ -51,7 +51,7 @@ export const groups = [
       },
       {
         q: "Can I manage more than one server?",
-        a: "Pro supports two connected servers and Network supports more. Each server is a separate WebRCON connection, and you switch which one you're managing from the panel header.",
+        a: "Pro supports two connected servers and Network supports 4+. Each server is a separate WebRCON connection, and you switch which one you're managing from the panel header.",
       },
     ],
   },

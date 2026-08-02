@@ -5548,7 +5548,7 @@ async function renderBilling() {
     <div class="card">
       <h3>Plan &amp; billing</h3>
       <p class="muted">Current: <strong>${esc(org.plan || "basic")}</strong> · <strong>${esc(org.planStatus || "inactive")}</strong></p>
-      <p class="muted">Basic $20 / 1 server · Pro $49 / 2 · Network $99 / up to 100 — <a href="/pricing" style="color:var(--chrome)">pricing</a></p>
+      <p class="muted">Basic $20 / 1 server · Pro $49 / 2 · Network $99 / 4+ — <a href="/pricing" style="color:var(--chrome)">pricing</a></p>
       ${live ? `<p class="hint" style="margin:.65rem 0 0">Manage payment method, invoices, or cancel in the Stripe portal. Cancel stops future charges; access continues until the period ends. WebRCON disconnects if the subscription is past due or canceled.</p>` : ""}
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem">
         ${upgradeBtns}
