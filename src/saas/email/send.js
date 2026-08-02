@@ -128,48 +128,76 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
-/** Shared transactional layout — table-based for Gmail/Outlook. */
+function assetBaseUrl() {
+  const configured = trimEnv(config.saas.publicUrl).replace(/\/$/, "");
+  if (configured && !/localhost/i.test(configured)) return configured;
+  return "https://app.usely.dev";
+}
+
+/**
+ * Dark Usely-branded transactional layout (matches marketing / panel theme).
+ * Table-based for Gmail/Outlook; logo hosted on the app origin.
+ */
 function emailShell({ title, bodyHtml, ctaLabel, ctaUrl, footnote }) {
   const safeTitle = escapeHtml(title);
   const safeCta = escapeHtml(ctaLabel);
   const safeUrl = escapeHtml(ctaUrl);
   const safeFoot = escapeHtml(footnote);
+  const logoUrl = escapeHtml(`${assetBaseUrl()}/logo.png`);
+  const font =
+    "Space Grotesk,Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="supported-color-schemes" content="dark" />
   <title>${safeTitle}</title>
 </head>
-<body style="margin:0;padding:0;background:#eef0f3;-webkit-text-size-adjust:100%;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef0f3;margin:0;padding:0;">
+<body style="margin:0;padding:0;background:#050506;-webkit-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#050506;margin:0;padding:0;">
     <tr>
-      <td align="center" style="padding:32px 16px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#ffffff;border:1px solid #e2e5eb;border-radius:8px;">
+      <td align="center" style="padding:40px 16px;background:#050506;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#0c0d10;border:1px solid rgba(255,255,255,.1);border-radius:4px;">
           <tr>
-            <td style="padding:32px 32px 28px;font-family:Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif;color:#12141a;">
-              <p style="margin:0 0 20px;font-size:12px;font-weight:700;letter-spacing:.16em;color:#6b7280;">USELY</p>
-              <h1 style="margin:0 0 12px;font-size:22px;line-height:1.25;font-weight:650;color:#0b0c0e;">${safeTitle}</h1>
-              <div style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">
+            <td style="padding:28px 28px 8px;font-family:${font};">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:0 10px 0 0;vertical-align:middle;">
+                    <img src="${logoUrl}" width="28" height="28" alt="Usely" style="display:block;width:28px;height:28px;border-radius:6px;border:0;" />
+                  </td>
+                  <td style="vertical-align:middle;font-family:${font};font-size:12px;font-weight:700;letter-spacing:.18em;color:#d7dde6;">
+                    USELY
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px 28px;font-family:${font};color:#f0f2f5;">
+              <h1 style="margin:0 0 12px;font-size:22px;line-height:1.25;font-weight:600;letter-spacing:-.01em;color:#f0f2f5;">${safeTitle}</h1>
+              <div style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#a3aab6;">
                 ${bodyHtml}
               </div>
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">
                 <tr>
-                  <td style="border-radius:6px;background:#111318;">
-                    <a href="${safeUrl}" style="display:inline-block;padding:12px 20px;font-family:Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">
+                  <td style="border-radius:4px;background:#e8edf4;">
+                    <a href="${safeUrl}" style="display:inline-block;padding:12px 20px;font-family:${font};font-size:14px;font-weight:600;color:#0b0c0e;text-decoration:none;border-radius:4px;">
                       ${safeCta}
                     </a>
                   </td>
                 </tr>
               </table>
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#9aa0ab;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#5e646f;">
                 ${safeFoot}
               </p>
             </td>
           </tr>
         </table>
-        <p style="margin:16px 0 0;font-family:Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif;font-size:12px;color:#9aa0ab;">
-          Usely · Rust Console admin
+        <p style="margin:18px 0 0;font-family:${font};font-size:12px;letter-spacing:.04em;color:#5e646f;">
+          usely.dev · Rust Console admin
         </p>
       </td>
     </tr>
@@ -182,11 +210,11 @@ export function setupEmailHtml({ setupUrl, plan }) {
   const planLabel = escapeHtml(plan || "basic");
   return emailShell({
     title: "Finish setting up your workspace",
-    bodyHtml: `<p style="margin:0 0 12px;">Thanks for subscribing to the <strong style="color:#12141a;">${planLabel}</strong> plan.</p>
-<p style="margin:0;">Open the link below to pick your panel address, invite the Discord bot, and connect WebRCON.</p>`,
+    bodyHtml: `<p style="margin:0 0 12px;">Thanks for subscribing to the <strong style="color:#f0f2f5;">${planLabel}</strong> plan.</p>
+<p style="margin:0;">Pick your panel address, invite the Discord bot, and connect WebRCON to get online.</p>`,
     ctaLabel: "Finish setup",
     ctaUrl: setupUrl,
-    footnote: "This link expires in 7 days. If the button doesn’t work, copy it from your browser’s address bar after opening the email in a new tab, or reply to this message for help.",
+    footnote: "This link expires in 7 days. If you didn’t expect this email, you can ignore it.",
   });
 }
 
