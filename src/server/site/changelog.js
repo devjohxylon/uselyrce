@@ -8,6 +8,13 @@
 export const entries = [
   {
     date: "2026-08-01",
+    title: "Wipe countdown Discord posts",
+    changes: [
+      { type: "added", text: "When a wipe time is set, Usely posts to your Wipes channel (or Announcements) at <strong>24 hours</strong>, <strong>1 hour</strong>, and wipe time — with Discord timestamps so everyone sees local time." },
+    ],
+  },
+  {
+    date: "2026-08-01",
     title: "Workspace setup and staff keys",
     changes: [
       { type: "added", text: "Staff key presets — Helper, Moderator, and Admin — so you can grant sensible access in one click, then tweak." },

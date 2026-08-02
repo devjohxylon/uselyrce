@@ -1,11 +1,38 @@
+import { EmbedBuilder } from "discord.js";
 import { config } from "../../config.js";
 import { getSettings, saveSettings } from "../../data/store.js";
 import { sendToWebsite } from "../../services/website.js";
+import { wipeEmbed } from "../../utils/format.js";
 
 let lastWipeName = null;
 let lastWipeRenameAt = 0;
 let wipeTimer = null;
 let discordClient = null;
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+
+/** Ordered oldest-threshold first so catch-up posts 24h before 1h. */
+const COUNTDOWN_MILESTONES = [
+  {
+    id: "24h",
+    ms: DAY,
+    title: "Wipe in 24 hours",
+    content: "Wipe is about **24 hours** away. Finish bases, move loot, and get ready.",
+  },
+  {
+    id: "1h",
+    ms: HOUR,
+    title: "Wipe in 1 hour",
+    content: "Wipe is about **1 hour** away. Log off when you're done — map wipe is coming.",
+  },
+  {
+    id: "wipe",
+    ms: 0,
+    title: "Wipe time",
+    content: "It's wipe time. Good luck — see you on the new map.",
+  },
+];
 
 export async function getWipeAt() {
   const settings = await getSettings();
@@ -16,10 +43,15 @@ export async function setWipeAt(isoOrNull) {
   const settings = await getSettings();
   if (!isoOrNull) {
     delete settings.wipeAt;
+    delete settings.wipeCountdownPosted;
   } else {
     const d = new Date(isoOrNull);
     if (Number.isNaN(d.getTime())) return { ok: false, error: "Invalid datetime" };
-    settings.wipeAt = d.toISOString();
+    const next = d.toISOString();
+    if (settings.wipeAt !== next) {
+      settings.wipeCountdownPosted = { wipeAt: next, milestones: [] };
+    }
+    settings.wipeAt = next;
   }
   await saveSettings(settings);
   return { ok: true, wipeAt: settings.wipeAt || null };
@@ -64,7 +96,6 @@ async function renameWipeChannel(client, force = false) {
 
   const wipeAt = await getWipeAt();
   const { label } = formatWipeCountdown(wipeAt);
-  // Discord channel names max 100; keep short for voice
   const name = label.slice(0, 90);
   if (!force && name === lastWipeName) return;
 
@@ -79,10 +110,70 @@ async function renameWipeChannel(client, force = false) {
   lastWipeRenameAt = now;
 }
 
+function milestoneDue(milestone, countdown) {
+  if (milestone.id === "wipe") {
+    return Boolean(countdown.past || (countdown.remainingMs != null && countdown.remainingMs <= 0));
+  }
+  if (countdown.remainingMs == null) return false;
+  // Crossed under threshold (including catch-up after downtime).
+  return countdown.remainingMs <= milestone.ms;
+}
+
+async function maybePostWipeCountdown(client, wipeAt, countdown) {
+  if (!client || !wipeAt) return;
+  const channelId = config.channels.wipes || config.channels.announcements;
+  if (!channelId) return;
+
+  const settings = await getSettings();
+  let state = settings.wipeCountdownPosted;
+  if (!state || state.wipeAt !== wipeAt) {
+    state = { wipeAt, milestones: [] };
+  }
+  const posted = new Set(state.milestones || []);
+  const due = COUNTDOWN_MILESTONES.filter((m) => !posted.has(m.id) && milestoneDue(m, countdown));
+  if (!due.length) {
+    if (settings.wipeCountdownPosted?.wipeAt !== wipeAt) {
+      settings.wipeCountdownPosted = state;
+      await saveSettings(settings);
+    }
+    return;
+  }
+
+  const channel = await client.channels.fetch(channelId).catch(() => null);
+  if (!channel?.isTextBased?.()) return;
+
+  const unix = Math.floor(new Date(wipeAt).getTime() / 1000);
+
+  for (const m of due) {
+    const embedData = wipeEmbed({
+      title: m.title,
+      content: `${m.content}\n\nCountdown: <t:${unix}:R>`,
+      wipeAt,
+    });
+    const embed = EmbedBuilder.from(embedData);
+    try {
+      await channel.send({ embeds: [embed] });
+      posted.add(m.id);
+    } catch (error) {
+      console.warn(`Wipe countdown post (${m.id}) failed:`, error.message);
+      break;
+    }
+  }
+
+  settings.wipeCountdownPosted = { wipeAt, milestones: [...posted] };
+  await saveSettings(settings);
+}
+
 export async function syncWipeStatus(client = discordClient, { force = false } = {}) {
   const payload = await buildWipePayload();
   await sendToWebsite(payload).catch(() => {});
   await renameWipeChannel(client, force);
+  await maybePostWipeCountdown(client, payload.wipeAt, {
+    remainingMs: payload.remainingMs,
+    past: payload.past,
+  }).catch((error) => {
+    console.warn("Wipe countdown posts failed:", error.message);
+  });
   return payload;
 }
 
@@ -90,7 +181,6 @@ export function startWipeScheduler(client) {
   discordClient = client;
   if (wipeTimer) return;
   syncWipeStatus(client, { force: true }).catch(() => {});
-  // Voice renames are throttled separately; website push more often
   wipeTimer = setInterval(() => {
     syncWipeStatus(client).catch(() => {});
   }, 60_000);
