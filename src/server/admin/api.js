@@ -1065,6 +1065,21 @@ export async function attachAdminPanel(app, client) {
   });
 
   // ——— Kits ———
+  app.use(["/admin/api/kits", "/admin/api/kit-locks", "/admin/api/items"], async (req, res, next) => {
+    try {
+      const { featureDisabled } = await import("../../saas/ops/flags.js");
+      if (featureDisabled("kits")) {
+        return res.status(503).json({
+          ok: false,
+          error: "Kit builder is temporarily disabled. Try again shortly.",
+        });
+      }
+    } catch {
+      /* flags optional */
+    }
+    next();
+  });
+
   app.get("/admin/api/items", requireAuth, requirePerm("kits"), (req, res) => {
     const q = String(req.query.q ?? "");
     const category = String(req.query.category ?? "");

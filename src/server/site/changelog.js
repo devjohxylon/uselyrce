@@ -8,6 +8,15 @@
 export const entries = [
   {
     date: "2026-08-02",
+    title: "Ops readiness for soft launch",
+    changes: [
+      { type: "added", text: "Maintenance mode and kill switches for kits, wipe scheduler, and slash commands." },
+      { type: "added", text: "Status page can show an active incident message from the ops console." },
+      { type: "added", text: "Platform alerts for Discord disconnects, Stripe webhook failures, and WebRCON drops." },
+    ],
+  },
+  {
+    date: "2026-08-02",
     title: "Clearer legal copy, Network limits, and setup trust",
     changes: [
       { type: "changed", text: "Terms and Privacy cover public beta, Discord data categories, 30-day retention, refunds, and governing law." },

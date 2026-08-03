@@ -54,6 +54,20 @@ export function attachInteractionRouter(client) {
       if (interaction.isChatInputCommand()) {
         const name = interaction.commandName;
 
+        const { featureDisabled } = await import("../saas/ops/flags.js");
+        if (featureDisabled("slash")) {
+          return interaction.reply({
+            content: "Slash commands are temporarily disabled for maintenance.",
+            ephemeral: true,
+          });
+        }
+        if (name === "kit" && featureDisabled("kits")) {
+          return interaction.reply({
+            content: "Kit commands are temporarily disabled.",
+            ephemeral: true,
+          });
+        }
+
         if (name === "server") return await handleServerInfoCommand(interaction);
         if (name === "players") return await handlePlayersCommand(interaction);
         if (name === "stats") return await handleStatsCommand(interaction);

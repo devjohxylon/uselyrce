@@ -444,6 +444,87 @@ export function attachOpsRoutes(app, client = null) {
     }
   });
 
+  /** Public status incident banner (written to DATA_DIR/incident.json). */
+  app.get("/api/ops/incident", async (req, res) => {
+    if (!requireOps(req, res)) return;
+    const { readIncident, getFeatureFlags } = await import("./flags.js");
+    res.json({
+      ok: true,
+      incident: await readIncident(),
+      flags: getFeatureFlags(),
+    });
+  });
+
+  app.post("/api/ops/incident", async (req, res) => {
+    if (!requireOps(req, res)) return;
+    try {
+      const { writeIncident, readIncident } = await import("./flags.js");
+      if (req.body?.clear) {
+        await writeIncident(null);
+        return res.json({ ok: true, incident: null });
+      }
+      const message = String(req.body?.message || "").trim();
+      if (!message) {
+        return res.status(400).json({ ok: false, error: "Provide message or clear:true" });
+      }
+      const incident = await writeIncident({
+        message,
+        severity: req.body?.severity,
+      });
+      res.json({ ok: true, incident: incident || (await readIncident()) });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  /** Email all (or filtered) workspace owners — incident / breaking-change blast. */
+  app.post("/api/ops/broadcast", async (req, res) => {
+    if (!requireOps(req, res)) return;
+    try {
+      const subject = String(req.body?.subject || "").trim().slice(0, 160);
+      const body = String(req.body?.body || "").trim().slice(0, 8000);
+      const dryRun = Boolean(req.body?.dryRun);
+      if (!subject || body.length < 10) {
+        return res.status(400).json({
+          ok: false,
+          error: "Provide subject and body (10+ chars). Use dryRun:true to preview recipients.",
+        });
+      }
+      const orgs = config.saas.opsMock
+        ? listMockOpsOrgs()
+        : await listAllOrgsForOps();
+      const emails = [
+        ...new Set(
+          orgs
+            .map((o) => String(o.owner_email || "").toLowerCase().trim())
+            .filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) && !e.endsWith("@usely.dev")),
+        ),
+      ];
+      if (dryRun) {
+        return res.json({ ok: true, dryRun: true, recipients: emails, count: emails.length });
+      }
+      if (!emails.length) {
+        return res.status(400).json({ ok: false, error: "No owner emails to send to." });
+      }
+      const { sendEmail } = await import("../email/send.js");
+      const html = `<p>${escapeHtml(body).replace(/\n/g, "<br/>")}</p><p style="color:#888;font-size:12px">Usely ops broadcast · <a href="https://www.usely.dev/status">Status</a></p>`;
+      let sent = 0;
+      const errors = [];
+      for (const to of emails) {
+        try {
+          await sendEmail({ to, subject, text: body, html });
+          sent += 1;
+        } catch (error) {
+          errors.push({ to, error: error.message });
+        }
+      }
+      res.json({ ok: errors.length === 0, sent, failed: errors.length, errors: errors.slice(0, 10) });
+    } catch (error) {
+      console.error("ops broadcast failed:", error.message);
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
   /** Skip Stripe — create a real setup token so you can walk through /setup. */
   app.post("/api/ops/preview-setup", async (req, res) => {
     if (!requireOps(req, res)) return;

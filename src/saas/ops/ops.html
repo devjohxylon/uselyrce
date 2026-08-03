@@ -108,6 +108,46 @@
       </div>
     </section>
 
+    <section class="traffic" aria-labelledby="opsToolsTitle" style="margin-bottom:1.25rem">
+      <div class="traffic-shell">
+        <div class="traffic-head">
+          <div>
+            <p class="label">Launch ops</p>
+            <h2 class="section-title" id="opsToolsTitle">Incident &amp; broadcast</h2>
+            <p class="section-sub">Post to /status without redeploy, or email workspace owners.</p>
+          </div>
+        </div>
+        <div style="display:grid;gap:1rem;padding:0 0 .25rem">
+          <label style="display:grid;gap:.35rem;font-size:.85rem;color:var(--muted)">
+            Incident message (shown on status page)
+            <textarea id="incidentMsg" rows="3" placeholder="WebRCON reconnects delayed — investigating. Next update 15:30 UTC." style="width:100%;resize:vertical;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);color:var(--text);padding:.75rem;font:inherit"></textarea>
+          </label>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center">
+            <select id="incidentSev" style="background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);color:var(--text);padding:.45rem .6rem;font:inherit">
+              <option value="warning">warning</option>
+              <option value="critical">critical</option>
+              <option value="info">info</option>
+            </select>
+            <button class="btn btn-primary btn-sm" type="button" id="incidentSave">Post incident</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="incidentClear">Clear</button>
+          </div>
+          <label style="display:grid;gap:.35rem;font-size:.85rem;color:var(--muted)">
+            Broadcast subject
+            <input id="bcastSubject" type="text" placeholder="Usely beta: short downtime tonight" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);color:var(--text);padding:.65rem .75rem;font:inherit" />
+          </label>
+          <label style="display:grid;gap:.35rem;font-size:.85rem;color:var(--muted)">
+            Broadcast body
+            <textarea id="bcastBody" rows="3" placeholder="What changed, who is affected, what to do…" style="width:100%;resize:vertical;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);color:var(--text);padding:.75rem;font:inherit"></textarea>
+          </label>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+            <button class="btn btn-ghost btn-sm" type="button" id="bcastDry">Preview recipients</button>
+            <button class="btn btn-primary btn-sm" type="button" id="bcastSend">Send to owners</button>
+          </div>
+          <p class="banner" id="opsToolsBanner"></p>
+        </div>
+      </div>
+    </section>
+
     <div class="toolbar">
       <input type="search" id="q" placeholder="Filter by name, slug, email, plan, status…" autocomplete="off" />
       <button class="btn btn-ghost" type="button" id="previewSetup">Free setup preview</button>
@@ -448,7 +488,84 @@
         btn.textContent = "Free setup preview";
       }
     });
+
+    const toolsBanner = document.getElementById("opsToolsBanner");
+    function toolsMsg(text, ok) {
+      toolsBanner.classList.add("on");
+      toolsBanner.textContent = text;
+      toolsBanner.style.borderColor = ok ? "var(--ok)" : "var(--bad)";
+    }
+    async function loadIncident() {
+      try {
+        const r = await fetch("/api/ops/incident", { credentials: "same-origin" }).then((x) => x.json());
+        if (r.incident?.message) {
+          document.getElementById("incidentMsg").value = r.incident.message;
+          document.getElementById("incidentSev").value = r.incident.severity || "warning";
+          toolsMsg(`Active incident (${r.incident.severity || "warning"}).`, true);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    document.getElementById("incidentSave").addEventListener("click", async () => {
+      const message = document.getElementById("incidentMsg").value.trim();
+      const severity = document.getElementById("incidentSev").value;
+      try {
+        const r = await fetch("/api/ops/incident", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, severity }),
+        }).then((x) => x.json());
+        if (!r.ok) throw new Error(r.error || "Failed");
+        toolsMsg("Incident posted to /status.", true);
+      } catch (e) {
+        toolsMsg(e.message || "Failed", false);
+      }
+    });
+    document.getElementById("incidentClear").addEventListener("click", async () => {
+      try {
+        const r = await fetch("/api/ops/incident", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clear: true }),
+        }).then((x) => x.json());
+        if (!r.ok) throw new Error(r.error || "Failed");
+        document.getElementById("incidentMsg").value = "";
+        toolsMsg("Incident cleared.", true);
+      } catch (e) {
+        toolsMsg(e.message || "Failed", false);
+      }
+    });
+    async function broadcast(dryRun) {
+      const subject = document.getElementById("bcastSubject").value.trim();
+      const body = document.getElementById("bcastBody").value.trim();
+      try {
+        const r = await fetch("/api/ops/broadcast", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject, body, dryRun }),
+        }).then((x) => x.json());
+        if (!r.ok) throw new Error(r.error || "Failed");
+        if (dryRun) {
+          toolsMsg(`Would email ${r.count} owner(s): ${(r.recipients || []).slice(0, 8).join(", ")}${(r.recipients || []).length > 8 ? "…" : ""}`, true);
+        } else {
+          toolsMsg(`Sent ${r.sent}; failed ${r.failed || 0}.`, r.ok);
+        }
+      } catch (e) {
+        toolsMsg(e.message || "Failed", false);
+      }
+    }
+    document.getElementById("bcastDry").addEventListener("click", () => broadcast(true));
+    document.getElementById("bcastSend").addEventListener("click", () => {
+      if (!confirm("Email all workspace owners (excluding @usely.dev previews)?")) return;
+      broadcast(false);
+    });
+
     load();
+    loadIncident();
   </script>
 </body>
 </html>

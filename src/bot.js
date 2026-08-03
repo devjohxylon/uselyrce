@@ -156,6 +156,10 @@ export async function startBot() {
       .catch(() => {});
   });
 
+  import("./saas/ops/alerts.js")
+    .then(({ attachDiscordOpsAlerts }) => attachDiscordOpsAlerts(client))
+    .catch(() => {});
+
   // Flush buffered killfeed lines and playtime before exiting
   for (const signal of ["SIGINT", "SIGTERM"]) {
     process.on(signal, async () => {

@@ -49,6 +49,16 @@ export async function createWebhookServer(client) {
         console.error("Stripe webhook failed:", error.message);
         const { captureException } = await import("../observability/sentry.js");
         captureException(error);
+        import("../saas/ops/alerts.js")
+          .then(({ notifyOps }) =>
+            notifyOps({
+              key: "stripe:webhook",
+              title: "Stripe webhook failed",
+              body: error.message,
+              severity: "critical",
+            }),
+          )
+          .catch(() => {});
         res.status(400).json({ error: error.message });
       }
     },
@@ -75,6 +85,10 @@ export async function createWebhookServer(client) {
     }
     next();
   });
+
+  // Holding page when MAINTENANCE_MODE=1 (keeps /health, Stripe, Resend, /api/status).
+  const { maintenanceMiddleware } = await import("../saas/ops/maintenance.js");
+  app.use(maintenanceMiddleware);
 
   app.use(express.json({ limit: "1mb" }));
   // The contact form posts urlencoded so it stays a simple cross-origin request.

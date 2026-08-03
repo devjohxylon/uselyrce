@@ -84,4 +84,25 @@ export async function noteRconState(serverId, connected, meta = {}) {
   } else {
     await sendAlert(embed);
   }
+
+  // Platform owner: repeated downs (not every flap — cooldown in notifyOps).
+  if (next === "down") {
+    import("../../saas/ops/alerts.js")
+      .then(({ notifyOps }) =>
+        notifyOps({
+          key: `rcon:down:${id}`,
+          title: "Customer WebRCON down",
+          body: [
+            `${label} lost WebRCON.`,
+            where ? `Endpoint: ${where}` : null,
+            orgId ? `Org: ${orgId}` : null,
+            "Customer Discord was notified if a channel is linked.",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          severity: "warning",
+        }),
+      )
+      .catch(() => {});
+  }
 }

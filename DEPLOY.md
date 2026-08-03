@@ -33,8 +33,8 @@ sockets and run the Discord bot twice.
 ```env
 DISCORD_TOKEN=...
 DISCORD_CLIENT_ID=...
-SUPABASE_URL=https://bahxlanmxxcovtpljjyj.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=...   # Supabase → Settings → API. Never expose this.
+SUPABASE_URL=https://iteyedqonfhwrrqtwrxm.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=...   # Supabase → Usely project → Settings → API. Never expose this.
 SUPABASE_ANON_KEY=...
 RCON_ENCRYPTION_KEY=...         # 32-byte hex; rotating it orphans stored passwords
 DISCORD_OAUTH_CLIENT_SECRET=...
@@ -55,11 +55,14 @@ RESEND_API_KEY=...              # verify usely.dev as a sending domain in Resend
 EMAIL_FROM=Usely <onboarding@usely.dev>
 SUPPORT_EMAIL=support@inbound.usely.dev
 SUPPORT_FORWARD_TO=you@gmail.com   # where contact + inbound mail is delivered
+OPS_ALERT_EMAIL=you@gmail.com      # optional; defaults to SUPPORT_FORWARD_TO
+OPS_ALERT_WEBHOOK_URL=https://discord.com/api/webhooks/...  # recommended paging
+SENTRY_DSN=https://...@....ingest.sentry.io/...
 RESEND_WEBHOOK_SECRET=...          # Resend webhook signing secret
 # Inbound: Vercel DNS MX on `inbound` → inbound-smtp.us-east-1.amazonaws.com
 # Resend Domains → usely.dev → enable Receiving → Webhook
 #   URL https://app.usely.dev/api/webhooks/resend  event: email.received
-STRIPE_SECRET_KEY=...
+STRIPE_SECRET_KEY=sk_live_...      # not sk_test_ on Railway
 STRIPE_WEBHOOK_SECRET=...
 STRIPE_PRICE_BASIC=price_...
 STRIPE_PRICE_PRO=price_...
@@ -69,7 +72,11 @@ USELY_OPS_CODE=your-long-secret-code
 ```
 
 Stripe keys aren't enforced at boot, but `/signup` can't take payment without
-them, so signup stays broken until they're set.
+them, so signup stays broken until they're set. Production refuses `sk_test_`
+unless `ALLOW_STRIPE_TEST=true`.
+
+Full soft-launch ops (rollback, kill switches, uptime, Stripe smoke): [docs/GO_LIVE.md](docs/GO_LIVE.md).
+Support canned replies: [docs/SUPPORT_RUNBOOK.md](docs/SUPPORT_RUNBOOK.md).
 
 3. Custom domains on the Railway service: `app.usely.dev` **and** `*.usely.dev`
    (wildcard — this is what makes `myserver.usely.dev` org panels work).
@@ -83,8 +90,8 @@ them, so signup stays broken until they're set.
 5. Stripe webhook: `https://app.usely.dev/billing/stripe/webhook`
    (events: `checkout.session.completed`, `customer.subscription.updated`,
    `customer.subscription.deleted`)
-6. Supabase migrations: **already applied** to project `bahxlanmxxcovtpljjyj`
-   (`saas_core`, `accounts`, `drop_owner_select_policies`). Only re-run
+6. Supabase migrations: **already applied** to Usely project `iteyedqonfhwrrqtwrxm`.
+   Do not point production at the shared Aces project. Only re-run
    `supabase/migrations/` against a fresh project.
 
 ### DNS at your registrar

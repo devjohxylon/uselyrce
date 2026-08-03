@@ -8,7 +8,19 @@ function getStripe() {
   if (!config.saas.stripeSecretKey) {
     throw new Error("STRIPE_SECRET_KEY is not configured");
   }
-  if (!stripe) stripe = new Stripe(config.saas.stripeSecretKey);
+  const key = config.saas.stripeSecretKey;
+  const onRailway = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
+  const isProdLike =
+    onRailway ||
+    process.env.NODE_ENV === "production" ||
+    String(process.env.RAILWAY_ENVIRONMENT || "").toLowerCase() === "production";
+  const allowTest = String(process.env.ALLOW_STRIPE_TEST || "").toLowerCase() === "true";
+  if (isProdLike && !allowTest && key.startsWith("sk_test")) {
+    throw new Error(
+      "STRIPE_SECRET_KEY is a test key on production. Use sk_live_… or set ALLOW_STRIPE_TEST=true deliberately.",
+    );
+  }
+  if (!stripe) stripe = new Stripe(key);
   return stripe;
 }
 

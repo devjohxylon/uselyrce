@@ -127,11 +127,23 @@ export function attachStatusRoute(app, client) {
       };
     }
 
+    const { readIncident, getFeatureFlags } = await import("../../saas/ops/flags.js");
+    const incident = await readIncident();
+    const flags = getFeatureFlags();
+    let overall = overallFrom(components);
+    if (flags.maintenanceMode) overall = "degraded";
+    if (incident?.severity === "critical") overall = "down";
+    else if (incident && overall === "operational") overall = "degraded";
+
     res.json({
       ok: true,
       scope: "platform",
-      overall: overallFrom(components),
+      overall,
       components,
+      incident: incident
+        ? { message: incident.message, severity: incident.severity, updatedAt: incident.updatedAt }
+        : null,
+      maintenance: flags.maintenanceMode,
       uptimeSeconds: Math.floor(process.uptime()),
       checkedAt: new Date().toISOString(),
     });

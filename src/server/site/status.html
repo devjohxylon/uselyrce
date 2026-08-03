@@ -102,6 +102,31 @@
     }
     .meta-line a { color: var(--muted); text-decoration: underline; }
     .hidden { display: none !important; }
+
+    .incident {
+      border: 1px solid var(--warn);
+      border-radius: var(--radius);
+      background: rgba(232, 168, 56, .08);
+      padding: 1.15rem 1.4rem;
+      margin-bottom: 1rem;
+      animation: rise .55s ease .02s both;
+    }
+    .incident.critical {
+      border-color: var(--bad);
+      background: rgba(232, 80, 80, .08);
+    }
+    .incident h2 {
+      margin: 0 0 .35rem;
+      font-size: .95rem;
+      font-weight: 600;
+    }
+    .incident p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -112,6 +137,11 @@
       <h1 id="statusTitle">System status</h1>
       <p id="statusLead">Panel · Discord · WebRCON — live check</p>
     </header>
+
+    <div class="incident hidden" id="incidentBox">
+      <h2 id="incidentTitle">Incident</h2>
+      <p id="incidentText"></p>
+    </div>
 
     <div class="overall">
       <span class="dot unknown" id="overallDot"></span>
@@ -210,6 +240,25 @@
         setOverall(data.overall);
         for (const [key, value] of Object.entries(data.components || {})) {
           paint(key, value.state, value.detail);
+        }
+
+        const box = document.getElementById("incidentBox");
+        if (data.incident?.message) {
+          box.classList.remove("hidden");
+          box.classList.toggle("critical", data.incident.severity === "critical");
+          document.getElementById("incidentTitle").textContent =
+            data.maintenance ? "Maintenance" : "Active incident";
+          document.getElementById("incidentText").textContent = data.incident.message;
+          if (data.incident.message && data.overall === "operational") {
+            document.getElementById("overallSub").textContent = data.incident.message;
+          }
+        } else if (data.maintenance) {
+          box.classList.remove("hidden");
+          document.getElementById("incidentTitle").textContent = "Maintenance";
+          document.getElementById("incidentText").textContent =
+            "Usely is in maintenance mode. Health probes stay up.";
+        } else {
+          box.classList.add("hidden");
         }
 
         const when = new Date(data.checkedAt);

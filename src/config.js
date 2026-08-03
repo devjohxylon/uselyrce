@@ -148,6 +148,20 @@ if (saasEnabled && !saasMock) {
       `SAAS_MODE=true requires: ${missing.join(", ")}. See .env.example.`,
     );
   }
+  if (isProdLike && /bahxlanmxxcovtpljjyj/.test(String(saasConfig.supabaseUrl || ""))) {
+    console.warn(
+      "SUPABASE_URL still points at the shared Aces Rust project. Cut over to the Usely project (iteyedqonfhwrrqtwrxm) — see docs/GO_LIVE.md.",
+    );
+  }
+  if (isProdLike) {
+    for (const [label, val] of [
+      ["STRIPE_PRICE_BASIC", saasConfig.stripePriceBasic],
+      ["STRIPE_PRICE_PRO", saasConfig.stripePricePro],
+      ["STRIPE_PRICE_NETWORK", saasConfig.stripePriceNetwork],
+    ]) {
+      if (!val) console.warn(`${label} unset — signup checkout for that plan will fail`);
+    }
+  }
 }
 
 if (isProdLike) {

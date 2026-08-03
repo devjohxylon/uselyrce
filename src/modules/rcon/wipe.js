@@ -199,7 +199,12 @@ export function startWipeScheduler(client) {
   if (wipeTimer) return;
   syncWipeStatus(client, { force: true }).catch(() => {});
   wipeTimer = setInterval(() => {
-    syncWipeStatus(client).catch(() => {});
+    import("../../saas/ops/flags.js")
+      .then(({ featureDisabled }) => {
+        if (featureDisabled("wipe")) return;
+        return syncWipeStatus(client);
+      })
+      .catch(() => {});
   }, 60_000);
 }
 

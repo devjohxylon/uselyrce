@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from "async_hooks";
 import { RCEManager, LogLevel, RCEEvent, RCEIntent } from "rce.js";
 import { noteRconState } from "../../modules/rcon/connection-alerts.js";
 import { friendlyRconError } from "../../lib/rcon-messages.js";
+import { getFeatureFlags } from "../ops/flags.js";
 
 const WATCHDOG_MS = 12_000;
 const serverContext = new AsyncLocalStorage();
@@ -95,6 +96,23 @@ function serverOptions(server) {
 
 async function attachOne(server) {
   const m = ensureManager();
+  const { maxRconConnections } = getFeatureFlags();
+  if (!states.has(server.id) && states.size >= maxRconConnections) {
+    console.error(
+      `RCON pool at MAX_RCON_CONNECTIONS=${maxRconConnections}; refusing ${server.name || server.id}`,
+    );
+    import("../ops/alerts.js")
+      .then(({ notifyOps }) =>
+        notifyOps({
+          key: "rcon:cap",
+          title: "RCON pool at capacity",
+          body: `Refused attach for ${server.name || server.id}. Raise MAX_RCON_CONNECTIONS or free slots.`,
+          severity: "critical",
+        }),
+      )
+      .catch(() => {});
+    return false;
+  }
   const prev = states.get(server.id);
   states.set(server.id, {
     host: server.host,

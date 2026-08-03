@@ -7,7 +7,24 @@ setupProcessHandlers();
 if (isSentryEnabled()) {
   console.log("Sentry error monitoring enabled");
 } else {
-  console.log("Sentry off — set SENTRY_DSN on Railway to enable");
+  console.warn("Sentry off — set SENTRY_DSN on Railway and enable email/Slack alerts in Sentry");
+}
+
+const onRailway = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
+if (onRailway || process.env.NODE_ENV === "production") {
+  if (!String(process.env.SUPPORT_FORWARD_TO || "").trim()) {
+    console.warn("SUPPORT_FORWARD_TO unset — contact form may not reach you");
+  }
+  if (
+    !String(process.env.OPS_ALERT_EMAIL || "").trim() &&
+    !String(process.env.OPS_ALERT_WEBHOOK_URL || "").trim()
+  ) {
+    console.warn("Set OPS_ALERT_WEBHOOK_URL or OPS_ALERT_EMAIL for Discord/bot/RCON/Stripe paging");
+  }
+  const stripeKey = String(process.env.STRIPE_SECRET_KEY || "");
+  if (stripeKey.startsWith("sk_test") && process.env.ALLOW_STRIPE_TEST !== "true") {
+    console.warn("STRIPE_SECRET_KEY looks like test mode — checkout will refuse on prod until sk_live_ is set");
+  }
 }
 
 startBot().catch((error) => {
