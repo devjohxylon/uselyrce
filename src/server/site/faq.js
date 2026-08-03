@@ -80,38 +80,26 @@ export const groups = [
 ];
 
 export function renderFaq() {
-  const nav = groups
-    .map((g) => `        <a href="#${g.id}">${g.label}</a>`)
-    .join("\n");
-
-  let n = 0;
-  const body = groups
+  return groups
     .map((group) => {
       const items = group.items
-        .map((item) => {
-          n += 1;
-          const num = String(n).padStart(2, "0");
-          return `        <details class="faq-card">
-          <summary><span class="faq-num">${num}</span><span class="faq-q">${item.q}</span></summary>
-          <div class="faq-a"><p>${item.a}</p></div>
-        </details>`;
-        })
+        .map(
+          (item) => `        <article class="entry">
+          <h2 class="entry-q">${item.q}</h2>
+          <p class="entry-a">${item.a}</p>
+        </article>`,
+        )
         .join("\n");
 
-      return `      <section class="faq-section" id="${group.id}">
-        <h2>${group.label}</h2>
+      const count = group.items.length;
+      return `      <section class="topic" id="${group.id}">
+        <div class="topic-label"><a href="#${group.id}">${group.label}</a><span>${count} question${count === 1 ? "" : "s"}</span></div>
+        <div class="topic-entries">
 ${items}
+        </div>
       </section>`;
     })
-    .join("\n\n");
-
-  return `      <nav class="faq-nav" aria-label="FAQ topics">
-        <p class="label">Topics</p>
-${nav}
-      </nav>
-      <div class="faq-main" data-acc>
-${body}
-      </div>`;
+    .join("\n");
 }
 
 /** Google's FAQPage rich result. Tags are stripped from answers. */

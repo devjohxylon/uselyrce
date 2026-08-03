@@ -4,8 +4,10 @@
 <!--HEAD:faq-->
   <style>
     .faq-hero {
-      padding: clamp(2.5rem, 6vh, 3.5rem) 0 0;
+      padding: clamp(2.5rem, 6vh, 3.75rem) 0 1.75rem;
       animation: rise .5s ease both;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 2rem;
     }
     .faq-hero .label {
       margin-bottom: .85rem;
@@ -19,128 +21,109 @@
       font-weight: 700;
       letter-spacing: -.03em;
       line-height: 1.1;
-      max-width: 14ch;
     }
     .faq-hero > p:not(.label) {
-      margin: .9rem 0 0;
+      margin: .85rem 0 0;
       color: var(--muted);
       font-size: .95rem;
+      max-width: 48ch;
       line-height: 1.6;
-      max-width: 42ch;
     }
 
-    .faq-layout {
+    .timeline {
       display: grid;
-      grid-template-columns: 11rem minmax(0, 1fr);
-      gap: 3rem;
-      align-items: start;
-      margin-top: 2.5rem;
+      gap: 2.75rem;
       padding-bottom: 1rem;
-      animation: rise .55s ease .08s both;
+      animation: rise .55s ease .05s both;
     }
-
-    .faq-nav {
+    .topic {
+      display: grid;
+      grid-template-columns: 9.5rem 1fr;
+      gap: 1.75rem;
+      align-items: start;
+      scroll-margin-top: 1.5rem;
+    }
+    .topic-label {
       position: sticky;
       top: 1.5rem;
-      display: grid;
-      gap: .2rem;
-    }
-    .faq-nav .label { margin: 0 0 .55rem; }
-    .faq-nav a {
-      color: var(--muted);
-      font-size: .84rem;
-      padding: .4rem .65rem;
-      border-radius: var(--radius);
-      border: 1px solid transparent;
-    }
-    .faq-nav a:hover {
-      color: var(--text);
-      background: rgba(255,255,255,.03);
-    }
-
-    .faq-main { display: grid; gap: 2.75rem; min-width: 0; }
-    .faq-section { scroll-margin-top: 1.5rem; }
-    .faq-section h2 {
-      margin: 0 0 1rem;
-      font-family: var(--mono);
-      font-size: .7rem;
-      font-weight: 500;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      color: var(--chrome-dim);
-    }
-
-    .faq-card {
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--bg2);
-      margin-bottom: .55rem;
-      overflow: hidden;
-    }
-    .faq-card summary {
-      display: grid;
-      grid-template-columns: 2.4rem 1fr;
-      gap: .85rem;
-      align-items: baseline;
-      padding: 1rem 1.1rem;
-      cursor: pointer;
-      list-style: none;
-    }
-    .faq-card summary::-webkit-details-marker { display: none; }
-    .faq-card summary:hover .faq-q { color: var(--accent); }
-    .faq-num {
       font-family: var(--mono);
       font-size: .75rem;
-      letter-spacing: .08em;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--chrome-dim);
+      padding-top: .35rem;
+    }
+    .topic-label span {
+      display: block;
+      margin-top: .35rem;
       color: var(--faint);
+      letter-spacing: .08em;
+      font-size: .65rem;
     }
-    .faq-q {
-      font-size: .975rem;
+    .topic-label a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .topic-label a:hover { color: var(--accent); }
+
+    .topic-entries {
+      display: grid;
+      gap: 0;
+      border-left: 1px solid var(--line);
+      padding-left: 1.5rem;
+    }
+    .entry {
+      position: relative;
+      padding: 0 0 1.85rem;
+    }
+    .entry:last-child { padding-bottom: 0; }
+    .entry::before {
+      content: "";
+      position: absolute;
+      left: -1.7rem;
+      top: .45rem;
+      width: .45rem;
+      height: .45rem;
+      border-radius: 1px;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--bg);
+    }
+    .entry-q {
+      margin: 0 0 .55rem;
+      font-size: 1.05rem;
       font-weight: 600;
-      letter-spacing: -.01em;
+      letter-spacing: -.015em;
       line-height: 1.35;
+      max-width: 48ch;
     }
-    .faq-a {
-      padding: 0 1.1rem 1.1rem 4.25rem;
-    }
-    .faq-a p {
+    .entry-a {
       margin: 0;
       color: var(--muted);
-      font-size: .925rem;
-      line-height: 1.65;
-      max-width: 62ch;
+      font-size: .9rem;
+      line-height: 1.55;
+      max-width: 68ch;
     }
-    .faq-a a { color: var(--accent); text-decoration: underline; }
+    .entry-a a { color: var(--accent); text-decoration: underline; }
+    .entry-a code {
+      font-family: var(--mono);
+      font-size: .82em;
+      color: var(--text);
+    }
 
-    .still-stuck {
-      margin: 2.75rem 0 3rem;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 1.25rem;
-      align-items: center;
-      padding: 1.35rem 0 0;
+    .subscribe {
+      margin: 2.5rem 0 3rem;
+      padding-top: 1.5rem;
       border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .9rem;
     }
-    .still-stuck h2 { margin: 0 0 .25rem; font-size: 1rem; font-weight: 600; }
-    .still-stuck p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .subscribe a { color: var(--accent); text-decoration: underline; }
 
-    @media (max-width: 900px) {
-      .faq-layout { grid-template-columns: 1fr; gap: 1.5rem; }
-      .faq-nav {
-        position: static;
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        gap: .35rem;
-      }
-      .faq-nav .label { display: none; }
-      .faq-nav a {
-        flex: none;
-        white-space: nowrap;
-        border-color: var(--line);
-      }
-      .faq-a { padding-left: 1.1rem; }
-      .still-stuck { grid-template-columns: 1fr; }
+    @media (max-width: 820px) {
+      .topic { grid-template-columns: 1fr; gap: .75rem; }
+      .topic-label { position: static; }
+      .topic-entries { padding-left: 1.15rem; }
+      .entry::before { left: -1.35rem; }
     }
   </style>
 </head>
@@ -150,21 +133,17 @@
 
     <header class="faq-hero">
       <p class="label">Help</p>
-      <h1>Frequently asked questions</h1>
+      <h1>FAQ</h1>
       <p>Setup, the panel, Discord, staff access, and billing — short answers.</p>
     </header>
 
-    <div class="faq-layout" data-reveal>
+    <div class="timeline" data-reveal>
 <!--FAQ-->
     </div>
 
-    <div class="still-stuck">
-      <div>
-        <h2>Still stuck?</h2>
-        <p>Send a note with your panel address and we’ll help.</p>
-      </div>
-      <a class="btn btn-primary" href="/contact">Contact us</a>
-    </div>
+    <p class="subscribe">
+      Still stuck? <a href="/contact">Contact us</a> with your panel address.
+    </p>
 
 <!--FOOTER-->
   </div>
